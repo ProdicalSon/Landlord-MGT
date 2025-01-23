@@ -86,11 +86,19 @@
                 <p>Overview of your properties</p>
 
                 <div class="cards">
-                    <div class="card">
+                   <!-- Active Properties Card -->
+                      <div class="card" id="active-properties-card">
                         <h3>Active Properties</h3>
-                        <p>5 Properties</p>
-                        <button onclick="window.location.href='propertydetails.html'">View Details</button> <!-- Link to property details -->
-                    </div>
+                        <p id="active-properties-count">5 Properties</p>
+                        <button>View Details</button>
+                      </div>
+
+                      <!-- Property Form -->
+                      <form id="add-property-form" action="submit_property.php" method="post" enctype="multipart/form-data">
+                        <!-- Form fields here -->
+                        <button type="submit" class="submit-btn">Submit Property</button>
+                      </form>
+
 
                     <div class="card">
                         <h3>Inquiries</h3>
