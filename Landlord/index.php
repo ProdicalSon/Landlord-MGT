@@ -74,19 +74,19 @@
                         <a href="#"><img src="assets/icons/loginicon.png" alt="Login Icon"></a>
                         <div class="dropdown-content">
                             <a href="login.php">Login</a>
-                            <a href="login.php">Sign Up</a> <!-- Added signup link -->
+                            <a href="login.php">Sign Up</a> 
                         </div>
                     </li>    
                 </div>
             </nav>
 
-            <!-- Dashboard Body -->
+            
             <section class="content">
                 <h1>Welcome Back, User!</h1>
                 <p>Overview of your properties</p>
 
                 <div class="cards">
-                   <!-- Active Properties Card -->
+                   
                       <div class="card" id="active-properties-card">
                         <h3>Active Properties</h3>
                         <p id="active-properties-count">5 Properties</p>
@@ -112,7 +112,7 @@
                       <div class="progress-bar">
                           <div id="progress" class="progress" style="width: 0%;"></div>
                       </div>
-                      <!-- Button to simulate room occupancy -->
+                      
                   <button onclick="occupyRoom()" class="occupybtn">Occupy a Room</button>
                   <button onclick="vacateRoom()">Vacate a Room</button>
                   </div>
@@ -144,10 +144,10 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo"> <!-- Corrected path -->
+        <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo"> 
         <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
     </footer>
 
-    <script src="script.js"></script> <!-- Ensure correct path -->
+    <script src="script.js"></script> 
 </body>
 </html>

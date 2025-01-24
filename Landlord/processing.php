@@ -20,7 +20,7 @@ $email = $_POST['email'];
 $password2 = $_POST['passwordd'];
 $hashed_password = password_hash($password2, PASSWORD_BCRYPT);
 
-$query = "INSERT INTO landlord  (username,email,passwordd) VALUES('$username', '$email', '$password2')";
+$query = "INSERT INTO landlordd  (username,email,passwordd) VALUES('$username', '$email', '$password2')";
 $result = mysqli_query($connection, $query);
 
 
