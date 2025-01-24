@@ -33,7 +33,7 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Sidebar -->
         <header class="logo-container">
             <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo">
-            <h5>Kisii Online BNB</h5>
+            <h5>Homely BNB</h5>
         </header>
 
         <aside class="sidebar">
@@ -83,7 +83,7 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">KISII ONLINE BNB</div>
+                <div class="navbar-brand">HOMELY BNB</div>
                 
                 <div class="login-image">
                     <li class="dropdown">
