@@ -1,5 +1,6 @@
 <?php
 session_start();
+include("login.php");
 
 if (!isset($_SESSION['user_id'])) {
     header("Location: login.php");
@@ -31,51 +32,51 @@ if (!isset($_SESSION['user_id'])) {
     <div class="dashboard-container">
         <!-- Sidebar -->
         <header class="logo-container">
-            <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo"> <!-- Corrected path -->
+            <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo">
             <h5>Kisii Online BNB</h5>
         </header>
 
         <aside class="sidebar">
             <ul class="sidebar-menu">
-                <li><a href="index.html" class="active"><img src="assets/icons/homeicon.png" alt=""> Dashboard</a></li> <!-- Ensure correct path -->
+                <li><a href="index.php" class="active"><img src="assets/icons/homeicon.png" alt=""> Dashboard</a></li> >
                 <li class="dropdown">
                     <a href="#"><img src="assets/icons/propertyicon.png" alt=""> Properties</a>
                     <div class="dropdown-content">
-                        <a href="addproperty.html">Add Property</a>
-                        <a href="editlistings.html">Edit Listings</a>
-                        <a href="managelocation.html">Manage Location</a>
+                        <a href="addproperty.php">Add Property</a>
+                        <a href="editlistings.php">Edit Listings</a>
+                        <a href="managelocation.php">Manage Location</a>
                     </div>
                 </li>
                 <li class="dropdown">
                     <a href="#"><img src="assets/icons/manageroomicon.png" alt=""> Manage Rooms</a>
                     <div class="dropdown-content">
-                        <a href="roomdetails.html">Room Details</a>
-                        <a href="editrooms.html">Edit Rooms</a>
+                        <a href="roomdetails.php">Room Details</a>
+                        <a href="editrooms.php">Edit Rooms</a>
                     </div>
                 </li>
                 <!-- More Menu Items -->
                 <li class="dropdown">
               <a href="#"><img src="assets/icons/tenantsicon.png" alt="">Tenants</a> 
               <div class="dropdown-content">
-                <a href="viewtenants.html">View Tenants</a>
-                <a href="tenantbookings.html">Tenant Bookings</a>
+                <a href="viewtenants.php">View Tenants</a>
+                <a href="tenantbookings.php">Tenant Bookings</a>
               </div>
             </li>
             <li class="dropdown">
               <a href="#"><img src="assets/icons/inquiriesicon.png" alt="">Inquiries</a>
               <div class="dropdown-content">
-                <a href="inquiries.html">Inquiries</a>
-                <a href="chat.html">Chat</a>
+                <a href="inquiries.php">Inquiries</a>
+                <a href="chat.php">Chat</a>
               
               </div>
             </li>
-                <li><a href="payments.html"><img src="assets/icons/paymentsicon.png" alt=""> Payments</a></li>
-                <li><a href="location.html"><img src="assets/icons/locationicon.png" alt=""> Location</a></li>
-                <li><a href="announcements.html"><img src="assets/icons/announcementicon.png" alt=""> Announcements</a></li>
-              <li><a href="reports.html"><img src="assets/icons/reporticon.png" alt="">Reports</a></li>
-              <li><a href="profilesettings.html"><img src="assets/icons/profileicon.png" alt="">Profile Setting</a></li>
-              <li><a href="notifications.html"><img src="assets/icons/notificationicon.png" alt="">Notifications</a></li>
-              <li><a href="support.html"><img src="assets/icons/supporticon.png" alt="">Support</a></li>
+                <li><a href="payments.php"><img src="assets/icons/paymentsicon.png" alt=""> Payments</a></li>
+                <li><a href="location.php"><img src="assets/icons/locationicon.png" alt=""> Location</a></li>
+                <li><a href="announcements.php"><img src="assets/icons/announcementicon.png" alt=""> Announcements</a></li>
+              <li><a href="reports.php"><img src="assets/icons/reporticon.png" alt="">Reports</a></li>
+              <li><a href="profilesettings.php"><img src="assets/icons/profileicon.png" alt="">Profile Setting</a></li>
+              <li><a href="notifications.php"><img src="assets/icons/notificationicon.png" alt="">Notifications</a></li>
+              <li><a href="support.php"><img src="assets/icons/supporticon.png" alt="">Support</a></li>
             </ul>
         </aside>
 
@@ -88,8 +89,8 @@ if (!isset($_SESSION['user_id'])) {
                     <li class="dropdown">
                         <a href="#"><img src="assets/icons/loginicon.png" alt="Login Icon"></a>
                         <div class="dropdown-content">
-                            <a href="login.php">Login</a>
-                            <a href="login.php">Sign Up</a> 
+                            <a href="Landlord\login.php">Login</a>
+                            <a href="Landlord\login.php">Sign Up</a> 
                         </div>
                     </li>    
                 </div>
@@ -112,13 +113,13 @@ if (!isset($_SESSION['user_id'])) {
                     <div class="card">
                         <h3>Inquiries</h3>
                         <p>12 New Inquiries</p>
-                        <button onclick="window.location.href='inquiries.html'">Check Now</button> 
+                        <button onclick="window.location.href='inquiries.php'">Check Now</button> 
                     </div>
 
                     <div class="card">
                         <h3>Current Tenants</h3>
                         <p>8 Tenants</p>
-                        <button onclick="window.location.href='tenantbookings.html'">Manage Tenants</button> 
+                        <button onclick="window.location.href='tenantbookings.php'">Manage Tenants</button> 
                     </div>
 
                     <div class="card">

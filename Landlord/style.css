@@ -613,77 +613,7 @@ textarea {
     height: 400px;
   }
 /* Responsive Design */
-@media (max-width: 625px) {
-    body {
-        margin: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-        'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-        sans-serif;
-        -webkit-font-smoothing: antialiased;
-        -moz-osx-font-smoothing: grayscale;
-        background-color: #eeeeed ;
-        display: flex;
-        flex-direction: column;
-        height: 100vh;
-    }
-    .dashboard-container {
-        display: flex;
-        flex: 1;
-        overflow: hidden;
-       
-        /* background-color: red ; */
-    }
-    
-    /* Sidebar Styles */
-    .sidebar {
-        width: 190px;
-        background-color: #f1f1f1;
-        color: black;
-        display: flex;
-        flex-direction: column;
-        /* background-color: blue; */
-        margin-top: 70px;
-        margin-left: -205px;
-        margin-top: 55px;
-        border: 1px solide #eeeeed;
-        padding: 10px 0;
-        
-    }
-    .sidebar-menu {
-        list-style: none;
-        padding: 0;
-        margin: 0;
-        overflow-y: auto;
-    }
-    
-    .sidebar-menu li {
-        margin: 10px;
-        font-size: 18px;
-    }
-    
-    .sidebar-menu a {
-        display: flex;
-        align-items: center;
-        padding: 5px 10px;
-        color: #6C5555;
-        font-weight: 500;
-        text-decoration: none;
-        border-radius: 5px;
-        transition: background-color 0.3s;
-    }
-    
+@media only screen and (max-width: 600px) {
 
-    .main-content {
-        margin-left: 0;
-        width: 100%;
-       
-    }
-
-    .cards {
-        flex-direction: block;
-        width: 350px;
-        height: 300px;
-        margin-left: 25px;
-        
-    }
+    
 }
