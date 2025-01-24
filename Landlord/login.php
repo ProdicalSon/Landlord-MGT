@@ -23,7 +23,7 @@
             <!-- Login Form -->
             <div class="login-details" id="login-form">
                 <h1>Login</h1>
-                <form action="">
+                <form action="login_processing.php" method="post">
                     <label for="email">Email</label>
                     <input type="email" id="email" placeholder="example@gmail.com" required name="email">
 
@@ -34,8 +34,8 @@
                     <div class="form-a-container">
                         <a href="#" onclick="showRegisterForm()">Create Account!!</a>
                     </div>
-                   
                 </form>
+
             </div>
 
             <!-- Registration Form -->
