@@ -73,8 +73,8 @@
                     <li class="dropdown">
                         <a href="#"><img src="assets/icons/loginicon.png" alt="Login Icon"></a>
                         <div class="dropdown-content">
-                            <a href="login.html">Login</a>
-                            <a href="login.html">Sign Up</a> <!-- Added signup link -->
+                            <a href="login.php">Login</a>
+                            <a href="login.php">Sign Up</a> <!-- Added signup link -->
                         </div>
                     </li>    
                 </div>

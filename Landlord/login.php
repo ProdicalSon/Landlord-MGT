@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
     <link rel="icon" href="assets/icons/logoX.png">
-    <title>Login</title>
+    <title>Register</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
