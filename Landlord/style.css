@@ -321,12 +321,16 @@ body {
     background-color: #E13D27;
 }
 
+.announcement{
+    margin-top: 30px;
+}
 /* Footer Styles */
 .footer {
     background-color: #3584E4;
     display: flex;
     justify-content: center;
     align-items: center;
+    /* flex-direction: column; */
     color: white;
     text-align: center;
     height: 25px;
@@ -336,6 +340,7 @@ body {
 .footer img {
     width: 20px;
     height: 20px;
+    margin-right: 50px;
 }
 .footer h6 {
     font-size: 12px;
