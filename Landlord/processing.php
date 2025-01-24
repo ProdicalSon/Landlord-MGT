@@ -17,9 +17,9 @@ if($connection){
 
 $username = $_POST['username'];
 $email = $_POST['email'];
-$password2 = $_POST['password'];
+$password2 = $_POST['passwordd'];
 
-$query = "INSERT INTO users  (username,email,passwordd) VALUES('$username', '$email', '$password2')";
+$query = "INSERT INTO landlord  (username,email,passwordd) VALUES('$username', '$email', '$password2')";
 $result = mysqli_query($connection, $query);
 
 ?>
