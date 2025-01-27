@@ -1,8 +1,4 @@
-<?php
-session_start();
 
-include("index.php");
-?>
 
 
 <!DOCTYPE html>

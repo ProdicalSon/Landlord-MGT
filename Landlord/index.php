@@ -1,12 +1,4 @@
-<?php
-session_start();
-include("login.php");
 
-if (!isset($_SESSION['user_id'])) {
-    header("Location: login.php");
-    exit();
-}
-?>
 
 
 
@@ -33,12 +25,12 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Sidebar -->
         <header class="logo-container">
             <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo">
-            <h5>Homely BNB</h5>
+            <h5>Homely</h5>
         </header>
 
         <aside class="sidebar">
             <ul class="sidebar-menu">
-                <li><a href="index.php" class="active"><img src="assets/icons/homeicon.png" alt=""> Dashboard</a></li> >
+                <li><a href="index.php" class="active"><img src="assets/icons/homeicon.png" alt=""> Dashboard</a></li> 
                 <li class="dropdown">
                     <a href="#"><img src="assets/icons/propertyicon.png" alt=""> Properties</a>
                     <div class="dropdown-content">
@@ -83,7 +75,7 @@ if (!isset($_SESSION['user_id'])) {
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">HOMELY BNB</div>
+                <div class="navbar-brand">HOMELY</div>
                 
                 <div class="login-image">
                     <li class="dropdown">
