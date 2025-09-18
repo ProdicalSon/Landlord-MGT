@@ -1,150 +1,530 @@
-
-
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,100..900;1,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css"> 
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="assets/icons/smartlogo.png">
+    <title>SmartHunt - Landlord Dashboard</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap">
-    <link rel="icon" href="assets/icons/logoX.png"> 
-    <title>Landlord Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        :root {
+            --primary: #FF385C;
+            --secondary: #4285F4;
+            --dark: #222222;
+            --light: #FFFFFF;
+            --gray: #DDDDDD;
+            --light-gray: #F7F7F7;
+            --text: #484848;
+            --success: #00A699;
+            --warning: #FFB400;
+            --danger: #FF5A5F;
+        }
+
+        body {
+            color: var(--text);
+            background-color: #f5f7f9;
+            line-height: 1.5;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        /* Dashboard Layout */
+        .dashboard-container {
+            display: flex;
+            flex: 1;
+        }
+
+        /* Sidebar Styles */
+        .sidebar {
+            width: 260px;
+            background: var(--light);
+            height: 100vh;
+            position: fixed;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+            padding: 20px 0;
+            overflow-y: auto;
+        }
+
+        .logo-container {
+            padding: 0 25px 20px;
+            display: flex;
+            align-items: center;
+            border-bottom: 1px solid var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .logo-container img {
+            height: 80px;
+            border-radius: 50%;
+            margin-right: 10px;
+        }
+
+        .logo-container h2 {
+            font-size: 20px;
+            color: var(--primary);
+        }
+
+        .sidebar-menu {
+            list-style: none;
+            padding: 0 15px;
+        }
+
+        .sidebar-menu li {
+            margin-bottom: 5px;
+        }
+
+        .sidebar-menu a {
+            display: flex;
+            align-items: center;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: var(--text);
+            border-radius: 8px;
+            transition: all 0.3s;
+        }
+
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: var(--light-gray);
+            color: var(--primary);
+        }
+
+        .sidebar-menu img {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+        }
+
+        .dropdown {
+            position: relative;
+        }
+
+        .dropdown-content {
+            display: none;
+            position: static;
+            background-color: var(--light-gray);
+            border-radius: 8px;
+            padding: 5px 0;
+            margin: 5px 0 5px 30px;
+            min-width: 200px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .dropdown:hover .dropdown-content {
+            display: block;
+        }
+
+        .dropdown-content a {
+            padding: 10px 15px;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 20px;
+        }
+
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 25px;
+            background-color: var(--light);
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+            margin-bottom: 25px;
+        }
+
+        .navbar-brand {
+            font-size: 22px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .login-image {
+            display: flex;
+            align-items: center;
+        }
+
+        .login-image img {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            cursor: pointer;
+        }
+
+        /* Content Section */
+        .content h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .content > p {
+            color: var(--text);
+            margin-bottom: 25px;
+        }
+
+        /* Cards Layout */
+        .cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+        }
+
+        .card h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .card p {
+            margin-bottom: 15px;
+            font-size: 15px;
+        }
+
+        .card button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-right: 8px;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+
+        .card button:hover {
+            background-color: #e61e4d;
+        }
+
+        /* Progress Bar */
+        .progress-bar {
+            width: 100%;
+            background-color: var(--gray);
+            border-radius: 10px;
+            margin: 10px 0;
+            height: 10px;
+        }
+
+        .progress {
+            height: 100%;
+            background-color: var(--success);
+            border-radius: 10px;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+
+        /* Alert Box */
+        .alert {
+            background-color: #fff3cd;
+            border-left: 4px solid var(--warning);
+            padding: 10px 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        /* Footer */
+        .footer {
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+
+        .footer img {
+            height: 40px;
+            margin-bottom: 10px;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 220px;
+            }
+            .main-content {
+                margin-left: 220px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .cards {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Additional UI Improvements */
+        .stats-container {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 10px;
+        }
+
+        .stat-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .stat-label {
+            font-size: 14px;
+            color: var(--text);
+        }
+
+        .quick-actions {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .action-btn {
+            background-color: var(--light-gray);
+            border: 1px solid var(--gray);
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .action-btn:hover {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .notification-badge {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 8px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+    </style>
 </head>
 <body>
     <div class="dashboard-container">
         <!-- Sidebar -->
-        <header class="logo-container">
-            <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo">
-            <h5>Homely</h5>
-        </header>
-
         <aside class="sidebar">
+            <div class="logo-container">
+                <img src="assets\icons\smartlogo.png" alt="SmartHunt Logo">
+                <h2>SmartHunt</h2>
+            </div>
+
             <ul class="sidebar-menu">
-                <li><a href="index.php" class="active"><img src="assets/icons/homeicon.png" alt=""> Dashboard</a></li> 
+                <li><a href="index.php" class="active"><i class="fas fa-home"></i> Dashboard</a></li> 
                 <li class="dropdown">
-                    <a href="#"><img src="assets/icons/propertyicon.png" alt=""> Properties</a>
+                    <a href="#"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="addproperty.php">Add Property</a>
-                        <a href="editlistings.php">Edit Listings</a>
-                        <a href="managelocation.php">Manage Location</a>
+                        <a href="addproperty.php"><i class="fas fa-plus"></i> Add Property</a>
+                        <a href="editlistings.php"><i class="fas fa-edit"></i> Edit Listings</a>
+                        <a href="managelocation.php"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#"><img src="assets/icons/manageroomicon.png" alt=""> Manage Rooms</a>
+                    <a href="#"><i class="fas fa-bed"></i> Manage Rooms</a>
                     <div class="dropdown-content">
-                        <a href="roomdetails.php">Room Details</a>
-                        <a href="editrooms.php">Edit Rooms</a>
+                        <a href="roomdetails.php"><i class="fas fa-info-circle"></i> Room Details</a>
+                        <a href="editrooms.php"><i class="fas fa-edit"></i> Edit Rooms</a>
                     </div>
                 </li>
-                <!-- More Menu Items -->
                 <li class="dropdown">
-              <a href="#"><img src="assets/icons/tenantsicon.png" alt="">Tenants</a> 
-              <div class="dropdown-content">
-                <a href="viewtenants.php">View Tenants</a>
-                <a href="tenantbookings.php">Tenant Bookings</a>
-              </div>
-            </li>
-            <li class="dropdown">
-              <a href="#"><img src="assets/icons/inquiriesicon.png" alt="">Inquiries</a>
-              <div class="dropdown-content">
-                <a href="inquiries.php">Inquiries</a>
-                <a href="chat.php">Chat</a>
-              
-              </div>
-            </li>
-                <li><a href="payments.php"><img src="assets/icons/paymentsicon.png" alt=""> Payments</a></li>
-                <li><a href="location.php"><img src="assets/icons/locationicon.png" alt=""> Location</a></li>
-                <li><a href="announcements.php"><img src="assets/icons/announcementicon.png" alt=""> Announcements</a></li>
-              <li><a href="reports.php"><img src="assets/icons/reporticon.png" alt="">Reports</a></li>
-              <li><a href="profilesettings.php"><img src="assets/icons/profileicon.png" alt="">Profile Setting</a></li>
-              <li><a href="notifications.php"><img src="assets/icons/notificationicon.png" alt="">Notifications</a></li>
-              <li><a href="support.php"><img src="assets/icons/supporticon.png" alt="">Support</a></li>
+                    <a href="#"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
+                    <div class="dropdown-content">
+                        <a href="viewtenants.php"><i class="fas fa-list"></i> View Tenants</a>
+                        <a href="tenantbookings.php"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
+                    </div>
+                </li>
+                <li class="dropdown">
+                    <a href="#"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge">5</span></a>
+                    <div class="dropdown-content">
+                        <a href="inquiries.php"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="chat.php"><i class="fas fa-comments"></i> Chat</a>
+                    </div>
+                </li>
+                <li><a href="payments.php"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
+                <li><a href="location.php"><i class="fas fa-map-marked-alt"></i> Location</a></li>
+                <li><a href="announcements.php"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="profilesettings.php"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
+                <li><a href="notifications.php"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
+                <li><a href="support.php"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">HOMELY</div>
+                <div class="navbar-brand">Landlord Dashboard</div>
                 
                 <div class="login-image">
-                    <li class="dropdown">
-                        <a href="#"><img src="assets/icons/loginicon.png" alt="Login Icon"></a>
+                    <div class="dropdown">
+                        <a href="#"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=U" alt="User Icon"></a>
                         <div class="dropdown-content">
-                            <a href="Landlord\login.php">Login</a>
-                            <a href="Landlord\login.php">Sign Up</a> 
+                            <a href="login.php"><i class="fas fa-sign-in-alt"></i> Login</a>
+                            <a href="register.php"><i class="fas fa-user-plus"></i> Sign Up</a> 
+                            <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>
-                    </li>    
+                    </div>    
                 </div>
             </nav>
 
             
             <section class="content">
-                <h1>Welcome Back, User!</h1>
-                <p>Overview of your properties</p>
+                <h1 id="greeting">Welcome Back, Landlord!</h1>
+                <p>Manage your properties and track performance</p>
 
                 <div class="cards">
-                   
-                      <div class="card" id="active-properties-card">
-                        <h3>Active Properties</h3>
+                    <div class="card" id="active-properties-card">
+                        <h3><i class="fas fa-building"></i> Active Properties</h3>
                         <p id="active-properties-count">5 Properties</p>
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <div class="stat-value">3</div>
+                                <div class="stat-label">Occupied</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">2</div>
+                                <div class="stat-label">Vacant</div>
+                            </div>
+                        </div>
                         <button>View Details</button>
-                      </div>
-
+                    </div>
 
                     <div class="card">
-                        <h3>Inquiries</h3>
+                        <h3><i class="fas fa-question-circle"></i> Inquiries</h3>
                         <p>12 New Inquiries</p>
+                        <div class="quick-actions">
+                            <button class="action-btn">Respond to All</button>
+                            <button class="action-btn">Sort by Priority</button>
+                        </div>
                         <button onclick="window.location.href='inquiries.php'">Check Now</button> 
                     </div>
 
                     <div class="card">
-                        <h3>Current Tenants</h3>
+                        <h3><i class="fas fa-users"></i> Current Tenants</h3>
                         <p>8 Tenants</p>
+                        <div class="stats-container">
+                            <div class="stat-item">
+                                <div class="stat-value">5</div>
+                                <div class="stat-label">Active</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value">3</div>
+                                <div class="stat-label">Pending</div>
+                            </div>
+                        </div>
                         <button onclick="window.location.href='tenantbookings.php'">Manage Tenants</button> 
                     </div>
 
                     <div class="card">
-                      <h3>Occupancy Rate</h3>
-                      <p>Occupancy: <span id="occupancyPercentage">0%</span></p>
-                      <div class="progress-bar">
-                          <div id="progress" class="progress" style="width: 0%;"></div>
-                      </div>
-                      
-                  <button onclick="occupyRoom()" class="occupybtn">Occupy a Room</button>
-                  <button onclick="vacateRoom()">Vacate a Room</button>
-                  </div>
-                  
-                  
+                        <h3><i class="fas fa-chart-pie"></i> Occupancy Rate</h3>
+                        <p>Occupancy: <span id="occupancyPercentage">0%</span></p>
+                        <div class="progress-bar">
+                            <div id="progress" class="progress" style="width: 0%;"></div>
+                        </div>
+                        <div class="quick-actions">
+                            <button onclick="occupyRoom()" class="action-btn">Occupy a Room</button>
+                            <button onclick="vacateRoom()" class="action-btn">Vacate a Room</button>
+                        </div>
+                    </div>
 
                     <div class="card">
-                      <h3>Payments</h3>
-                      <p>2 Pending Payments</p>
-                      <div class="alert">
-                          <p><strong>Alert:</strong> 2 tenants have not paid their rent.</p>
-                      </div>
-                    
-                  </div>
+                        <h3><i class="fas fa-credit-card"></i> Payments</h3>
+                        <p>2 Pending Payments</p>
+                        <div class="alert">
+                            <p><strong>Alert:</strong> 2 tenants have not paid their rent.</p>
+                        </div>
+                        <div class="quick-actions">
+                            <button class="action-btn">Send Reminders</button>
+                            <button class="action-btn">View Payment History</button>
+                        </div>
+                    </div>
 
-                  <div class="card">
-                    <h3>Announcements</h3>
-                    <p>8 Announcements</p>
-                    <button class="announcement">View Announcements</button>
+                    <div class="card">
+                        <h3><i class="fas fa-bullhorn"></i> Announcements</h3>
+                        <p>8 Announcements</p>
+                        <div class="quick-actions">
+                            <button class="action-btn">Create New</button>
+                            <button class="action-btn">Schedule</button>
+                        </div>
+                        <button class="announcement">View Announcements</button>
+                    </div>
                 </div>
-              
-                
-              
-                  
+
+                <!-- Additional Dashboard Sections -->
+                <h2 style="margin: 30px 0 20px;">Recent Activity</h2>
+                <div class="card">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+                        <h3>Property Performance</h3>
+                        <select style="padding: 5px; border-radius: 4px; border: 1px solid var(--gray);">
+                            <option>Last 7 Days</option>
+                            <option>Last 30 Days</option>
+                            <option>Last 90 Days</option>
+                        </select>
+                    </div>
+                    
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                            <h4>Views vs Inquiries</h4>
+                            <div style="height: 200px; background: var(--light-gray); border-radius: 8px; display: flex; justify-content: center; align-items: center;">
+                                <p>Chart would be displayed here</p>
+                            </div>
+                        </div>
+                        <div>
+                            <h4>Earnings Overview</h4>
+                            <div style="height: 200px; background: var(--light-gray); border-radius: 8px; display: flex; justify-content: center; align-items: center;">
+                                <p>Charts would be displayed here</p>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </section>
         </main>
@@ -152,10 +532,64 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <img src="assets/icons/logoX.png" alt="Kisii Online BNB Logo"> 
+        <img src="https://placehold.co/100x30/FFFFFF/FF385C?text=SmartHunt" alt="SmartHunt Logo"> 
         <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
     </footer>
 
-    <script src="script.js"></script> 
+    <script>
+        // Time-based greeting function
+        function updateGreeting() {
+            const now = new Date();
+            const hour = now.getHours();
+            const greetingElement = document.getElementById('greeting');
+            
+            if (hour >= 5 && hour < 12) {
+                greetingElement.textContent = 'Good Morning, Landlord!';
+            } else if (hour >= 12 && hour < 18) {
+                greetingElement.textContent = 'Good Afternoon, Landlord!';
+            } else {
+                greetingElement.textContent = 'Good Evening, Landlord!';
+            }
+        }
+
+        // Initialize occupancy rate
+        let occupiedRooms = 3;
+        let totalRooms = 8;
+        
+        function updateOccupancy() {
+            const percentage = Math.round((occupiedRooms / totalRooms) * 100);
+            document.getElementById('occupancyPercentage').textContent = `${percentage}%`;
+            document.getElementById('progress').style.width = `${percentage}%`;
+        }
+        
+        function occupyRoom() {
+            if (occupiedRooms < totalRooms) {
+                occupiedRooms++;
+                updateOccupancy();
+            } else {
+                alert('All rooms are already occupied!');
+            }
+        }
+        
+        function vacateRoom() {
+            if (occupiedRooms > 0) {
+                occupiedRooms--;
+                updateOccupancy();
+            } else {
+                alert('No rooms are currently occupied!');
+            }
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            updateGreeting();
+            updateOccupancy();
+            
+            // Simulate loading of active properties count
+            setTimeout(() => {
+                document.getElementById('active-properties-count').textContent = '5 Properties';
+            }, 500);
+        });
+    </script>
 </body>
 </html>
