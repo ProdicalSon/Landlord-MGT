@@ -850,7 +850,8 @@
                 </div>
             </section>
 
-            <!-- Other content sections would go here -->
+           
+            
             <section class="content hidden" id="edit-listings-content">
                 <h1>Edit Listings</h1>
                 <p>This is where you would edit your property listings</p>
