@@ -552,7 +552,7 @@
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
+                        <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
                         <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i> Edit Listings</a>
                         <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
@@ -823,7 +823,7 @@
             </section>
 
             <!-- Other content sections would go here -->
-            <section class="content hidden" id="edit-listings-content">
+            <!-- <section class="content hidden" id="edit-listings-content">
                 <h1>Edit Listings</h1>
                 <p>This is where you would edit your property listings</p>
             </section>
@@ -831,7 +831,7 @@
             <section class="content hidden" id="manage-location-content">
                 <h1>Manage Location</h1>
                 <p>This is where you would manage property locations</p>
-            </section>
+            </section> -->
         </main>
     </div>
 
