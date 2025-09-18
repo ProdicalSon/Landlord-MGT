@@ -1,11 +1,13 @@
 <?php
-require_once 'config.php';
+session_start();
+require_once 'includes/config.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // Get form data
+    // Get form data safely
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
-    $password = $_POST['passwordd'];
+    $password = $_POST['password'];
+    $confirmPassword = $_POST['confirm_password'];
     $userType = isset($_POST['user_type']) ? $_POST['user_type'] : 'student';
     
     // Validate input
@@ -23,6 +25,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     if (empty($password) || strlen($password) < 6) {
         $errors[] = "Password must be at least 6 characters long.";
+    }
+    
+    if ($password !== $confirmPassword) {
+        $errors[] = "Passwords do not match.";
     }
     
     // If no errors, process registration
@@ -59,9 +65,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $stmt->execute([$userId]);
                 }
                 
-                // TODO: Send verification email
+                // Auto-verify since email not yet set up
+                $stmt = $pdo->prepare("UPDATE users SET is_verified = TRUE WHERE id = ?");
+                $stmt->execute([$userId]);
+                
+                // Clear form data
+                unset($_SESSION['form_data']);
                 
                 // Redirect to success page
+                $_SESSION['registration_success'] = true;
                 header("Location: registration_success.php");
                 exit();
             }
@@ -70,9 +82,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
     }
     
-    // If there are errors, redirect back to form with error messages
+    // If there are errors, redirect back with messages
     $_SESSION['errors'] = $errors;
     $_SESSION['form_data'] = $_POST;
+    header("Location: register.php");
+    exit();
+} else {
+    // If accessed directly
     header("Location: register.php");
     exit();
 }
