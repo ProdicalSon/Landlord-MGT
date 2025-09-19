@@ -41,7 +41,7 @@
         <aside class="sidebar">
 
             <div class="logo-container">
-                <img src="student\smartlogo.png" alt="SmartHunt Logo">
+                <img src="assets/smartlogo.png" alt="SmartHunt Logo">
                 <h2>SmartHunt</h2>
             </div>
 
