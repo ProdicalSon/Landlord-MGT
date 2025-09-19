@@ -1,0 +1,152 @@
+/* dashboard.css */
+
+.dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 20px;
+    margin-bottom: 30px;
+}
+
+.card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    align-items: center;
+    transition: var(--transition);
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-right: 15px;
+    font-size: 24px;
+}
+
+.card:nth-child(1) .card-icon {
+    background-color: rgba(255, 90, 95, 0.1);
+    color: var(--primary);
+}
+
+.card:nth-child(2) .card-icon {
+    background-color: rgba(0, 166, 153, 0.1);
+    color: var(--secondary);
+}
+
+.card:nth-child(3) .card-icon {
+    background-color: rgba(255, 180, 0, 0.1);
+    color: #FFB400;
+}
+
+.card:nth-child(4) .card-icon {
+    background-color: rgba(118, 118, 118, 0.1);
+    color: var(--gray);
+}
+
+.card-content h3 {
+    font-size: 16px;
+    font-weight: 500;
+    margin-bottom: 5px;
+    color: var(--gray);
+}
+
+.card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dark);
+    margin-bottom: 5px;
+}
+
+.card-desc {
+    color: var(--gray);
+    font-size: 14px;
+}
+
+
+/* Viewings Section */
+
+.viewings-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 20px;
+}
+
+.viewing-card {
+    background: var(--white);
+    border-radius: var(--border-radius);
+    padding: 20px;
+    box-shadow: var(--shadow);
+    display: flex;
+    transition: var(--transition);
+}
+
+.viewing-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.viewing-date {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background-color: rgba(255, 90, 95, 0.1);
+    border-radius: 8px;
+    margin-right: 15px;
+    color: var(--primary);
+}
+
+.date-day {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.date-month {
+    font-size: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.viewing-details {
+    flex: 1;
+}
+
+.viewing-details h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.viewing-time,
+.viewing-location {
+    display: flex;
+    align-items: center;
+    color: var(--gray);
+    font-size: 14px;
+    margin-bottom: 5px;
+}
+
+.viewing-time i,
+.viewing-location i {
+    margin-right: 8px;
+}
+
+.viewing-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-left: 15px;
+}
