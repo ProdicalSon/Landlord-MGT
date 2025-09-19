@@ -1,0 +1,36 @@
+smartHunt-student-dashboard/
+│
+├── index.html
+├── styles/
+│   ├── main.css
+│   ├── dashboard.css
+│   ├── properties.css
+│   ├── chat.css
+│   └── responsive.css
+├── scripts/
+│   ├── main.js
+│   ├── dashboard.js
+│   ├── property-search.js
+│   ├── chat.js
+│   ├── map-integration.js
+│   └── payment-integration.js
+├── assets/
+│   ├── images/
+│   │   ├── logo.png
+│   │   ├── icons/
+│   │   │   ├── dashboard.svg
+│   │   │   ├── search.svg
+│   │   │   ├── properties.svg
+│   │   │   ├── chat.svg
+│   │   │   └── profile.svg
+│   │   └── properties/
+│   │       ├── property1.jpg
+│   │       ├── property2.jpg
+│   │       └── ...
+│   └── fonts/
+│       └── (font files if using custom fonts)
+├── vendor/
+│   ├── socket.io/
+│   ├── chartjs/
+│   └── (other third-party libraries)
+└── README.md
