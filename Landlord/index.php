@@ -576,7 +576,7 @@
             </div>
 
             <ul class="sidebar-menu">
-                <li><a href="#" class="active" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
+                <li><a href="index.php" class="active" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
@@ -612,7 +612,7 @@
                 <li><a href="#" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="#" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
                 <li><a href="#" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
-                <li><a href="#" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
+                <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
 

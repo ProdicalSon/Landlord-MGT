@@ -435,6 +435,39 @@
             margin-top: 5px;
         }
 
+
+        #toast {
+      visibility: hidden;
+      min-width: 300px;
+      margin-left: -150px;
+      background-color: #28a745;
+      color: white;
+      text-align: center;
+      border-radius: 8px;
+      padding: 16px;
+      position: fixed;
+      z-index: 1000;
+      left: 50%;
+      bottom: 30px;
+      font-size: 16px;
+      box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
+    }
+
+    /* Show animation */
+    #toast.show {
+      visibility: visible;
+      animation: fadein 0.5s, fadeout 0.5s 3s;
+    }
+
+    @keyframes fadein {
+      from {bottom: 0; opacity: 0;}
+      to {bottom: 30px; opacity: 1;}
+    }
+
+    @keyframes fadeout {
+      from {bottom: 30px; opacity: 1;}
+      to {bottom: 0; opacity: 0;}
+    }
         /* Responsive Design */
         @media (max-width: 992px) {
             .sidebar {
@@ -814,9 +847,10 @@
                                 </div>
                             </div>
                             
-                            <button type="submit" class="submit-btn">
-                                <i class="fas fa-plus-circle"></i> Submit Property
+                            <button type="submit" class="submit-btn" onclick="showToast()">
+                                <i class="fas fa-plus-circle"></i> Add Property
                             </button>
+                            <div id="toast">✅ Property added successfully!</div>
                         </form>
                     </div>
                 </div>
@@ -937,6 +971,12 @@
                 }
             });
         }
+
+           function showToast() {
+      let toast = document.getElementById("toast");
+      toast.className = "show";
+      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3500);
+    }
     </script>
 </body>
 </html>
