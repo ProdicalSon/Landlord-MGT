@@ -581,15 +581,8 @@
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
                         <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i> Edit Listings</a>
+                        <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
                         <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
-                    </div>
-                </li>
-                <li class="dropdown">
-                    <a href="#" data-content="manage-rooms"><i class="fas fa-bed"></i> Manage Rooms</a>
-                    <div class="dropdown-content">
-                        <a href="#" data-content="room-details"><i class="fas fa-info-circle"></i> Room Details</a>
-                        <a href="editrooms.php" data-content="edit-rooms"><i class="fas fa-edit"></i> Edit Rooms</a>
                     </div>
                 </li>
                 <li class="dropdown">
