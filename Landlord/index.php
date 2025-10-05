@@ -627,7 +627,7 @@
                 </div>
             </nav>
 
-            <!-- Dashboard Content (Default View) -->
+
             <section class="content" id="dashboard-content">
                 <h1 id="greeting">Welcome Back, Landlord!</h1>
                 <p>Manage your properties and track performance</p>
