@@ -18,6 +18,7 @@ function updateOccupancy() {
     document.getElementById('progress').style.width = `${occupancyPercentage}%`;
 }
 
+
 function occupyRoom() {
     if (occupiedRooms < totalRooms) {
         occupiedRooms++;

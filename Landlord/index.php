@@ -739,6 +739,7 @@
                 </div>
             </section>
 
+
             <!-- Add Property Form (Hidden by default) -->
             <section class="content hidden" id="add-property-content">
                 <div class="property-form-container">
