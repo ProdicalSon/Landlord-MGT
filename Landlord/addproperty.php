@@ -911,7 +911,7 @@
             }
         }
 
-        // Content switching functionality
+
         document.addEventListener('DOMContentLoaded', function() {
             updateGreeting();
             updateOccupancy();
@@ -947,7 +947,7 @@
             }, 500);
         });
 
-        // Character count for description textarea
+
         const descriptionTextarea = document.getElementById('description');
         const characterCount = document.querySelector('.character-count');
         
