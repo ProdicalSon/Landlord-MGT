@@ -892,7 +892,7 @@
             document.getElementById('occupancyPercentage').textContent = `${percentage}%`;
             document.getElementById('progress').style.width = `${percentage}%`;
         }
-        
+       
         function occupyRoom() {
             if (occupiedRooms < totalRooms) {
                 occupiedRooms++;
