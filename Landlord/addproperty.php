@@ -884,11 +884,8 @@
                 greetingElement.textContent = 'Good Evening, Landlord!';
             }
         }
-
-
         let occupiedRooms = 3;
         let totalRooms = 8;
-        
         
         function updateOccupancy() {
             const percentage = Math.round((occupiedRooms / totalRooms) * 100);
