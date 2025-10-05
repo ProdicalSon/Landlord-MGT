@@ -868,8 +868,9 @@
         <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
     </footer>
 
+
     <script>
-        // Time-based greeting function
+
         function updateGreeting() {
             const now = new Date();
             const hour = now.getHours();
@@ -884,9 +885,10 @@
             }
         }
 
-        // Initialize occupancy rate
+
         let occupiedRooms = 3;
         let totalRooms = 8;
+        
         
         function updateOccupancy() {
             const percentage = Math.round((occupiedRooms / totalRooms) * 100);
