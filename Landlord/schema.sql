@@ -2,7 +2,7 @@
 CREATE DATABASE IF NOT EXISTS smarthunt_db;
 USE smarthunt_db;
 
--- Users Table (for both landlords and students)
+-- Users Table 
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE users (
     INDEX idx_user_type (user_type)
 );
 
--- Landlords Table (extends users table)
+-- Landlords Table 
 CREATE TABLE landlords (
     user_id INT PRIMARY KEY,
     company_name VARCHAR(100),
@@ -36,7 +36,7 @@ CREATE TABLE landlords (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Students Table (extends users table)
+-- Students Table 
 CREATE TABLE students (
     user_id INT PRIMARY KEY,
     university VARCHAR(100),
@@ -49,7 +49,7 @@ CREATE TABLE students (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Login Attempts Table (for security)
+-- Login Attempts Table 
 CREATE TABLE login_attempts (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -62,7 +62,7 @@ CREATE TABLE login_attempts (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Sessions Table (for managing user sessions)
+-- Sessions Table 
 CREATE TABLE sessions (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT,
@@ -76,7 +76,7 @@ CREATE TABLE sessions (
     FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
--- Password Reset Table (alternative approach)
+-- Password Reset Table 
 CREATE TABLE password_resets (
     id INT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(100) NOT NULL,
@@ -87,7 +87,7 @@ CREATE TABLE password_resets (
     INDEX idx_email (email)
 );
 
--- Sample Data (for testing)
+-- Sample Data 
 INSERT INTO users (username, email, password_hash, user_type, first_name, last_name, is_verified) 
 VALUES 
 ('john_doe', 'john@example.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'landlord', 'John', 'Doe', TRUE),
