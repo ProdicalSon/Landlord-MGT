@@ -582,7 +582,7 @@
                     <div class="dropdown-content">
                         <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
                         <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
-                        <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
+                        
                     </div>
                 </li>
                 <li class="dropdown">
@@ -600,9 +600,9 @@
                     </div>
                 </li>
                 <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
-                <li><a href="#" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
-                <li><a href="#" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-                <li><a href="#" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
+                <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="#" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
                 <li><a href="#" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
