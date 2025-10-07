@@ -581,7 +581,7 @@
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
                         <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
+                        <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
                         <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>

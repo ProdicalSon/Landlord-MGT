@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         * {
             margin: 0;
@@ -435,39 +436,6 @@
             margin-top: 5px;
         }
 
-
-        #toast {
-      visibility: hidden;
-      min-width: 300px;
-      margin-left: -150px;
-      background-color: #28a745;
-      color: white;
-      text-align: center;
-      border-radius: 8px;
-      padding: 16px;
-      position: fixed;
-      z-index: 1000;
-      left: 50%;
-      bottom: 30px;
-      font-size: 16px;
-      box-shadow: 0px 4px 8px rgba(0,0,0,0.3);
-    }
-
-    /* Show animation */
-    #toast.show {
-      visibility: visible;
-      animation: fadein 0.5s, fadeout 0.5s 3s;
-    }
-
-    @keyframes fadein {
-      from {bottom: 0; opacity: 0;}
-      to {bottom: 30px; opacity: 1;}
-    }
-
-    @keyframes fadeout {
-      from {bottom: 30px; opacity: 1;}
-      to {bottom: 0; opacity: 0;}
-    }
         /* Responsive Design */
         @media (max-width: 992px) {
             .sidebar {
@@ -565,9 +533,294 @@
             margin-left: 5px;
         }
 
-
+        /* Hidden class for toggling content */
         .hidden {
             display: none;
+        }
+
+        /* Chart container styles */
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+
+        .chart-title {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .chart-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .chart-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Listings Styles */
+        .listings-container {
+            background: var(--light);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .listings-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 25px 30px;
+            text-align: center;
+        }
+
+        .listings-header h1 {
+            font-size: 28px;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .listings-header p {
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .listings-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 30px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .search-box {
+            position: relative;
+            width: 300px;
+        }
+
+        .search-box input {
+            padding-left: 40px;
+            border-radius: 20px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 15px;
+        }
+
+        .filter-controls select {
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid var(--gray);
+            background-color: var(--light);
+        }
+
+        .listings-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            padding: 30px;
+        }
+
+        .listing-card {
+            background: var(--light);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: transform 0.3s ease;
+        }
+
+        .listing-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .listing-image {
+            height: 200px;
+            width: 100%;
+            background-color: var(--light-gray);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .listing-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .listing-status {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .status-occupied {
+            background-color: var(--success);
+        }
+
+        .status-vacant {
+            background-color: var(--warning);
+        }
+
+        .status-maintenance {
+            background-color: var(--danger);
+        }
+
+        .listing-details {
+            padding: 20px;
+        }
+
+        .listing-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .listing-location {
+            display: flex;
+            align-items: center;
+            color: var(--text);
+            font-size: 14px;
+            margin-bottom: 10px;
+        }
+
+        .listing-location i {
+            margin-right: 5px;
+            color: var(--primary);
+        }
+
+        .listing-info {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+        }
+
+        .listing-info-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .info-label {
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .listing-actions {
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .listing-btn {
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+        }
+
+        .btn-edit {
+            background-color: var(--secondary);
+            color: white;
+        }
+
+        .btn-edit:hover {
+            background-color: #3367d6;
+        }
+
+        .btn-delete {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        .btn-delete:hover {
+            background-color: #e04a50;
+        }
+
+        .btn-view {
+            background-color: var(--primary);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background-color: #e61e4d;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 50px 30px;
+            color: var(--text);
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 22px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            margin-bottom: 20px;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            padding: 20px 0;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .pagination button {
+            background-color: var(--light);
+            border: 1px solid var(--gray);
+            padding: 8px 15px;
+            margin: 0 5px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .pagination button.active {
+            background-color: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+
+        .pagination button:hover:not(.active) {
+            background-color: var(--light-gray);
         }
     </style>
 </head>
@@ -581,13 +834,13 @@
             </div>
 
             <ul class="sidebar-menu">
-                <li><a href="#" class="active" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
+                <li><a href="index.php" class="active" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i> Edit Listings</a>
-                        <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
+                        <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
+                        <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
+                        
                     </div>
                 </li>
                 <li class="dropdown">
@@ -610,7 +863,7 @@
                 <li><a href="#" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="#" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
                 <li><a href="#" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
-                <li><a href="#" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
+                <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
 
@@ -631,7 +884,6 @@
                     </div>    
                 </div>
             </nav>
-
 
             <section class="content" id="dashboard-content">
                 <h1 id="greeting">Welcome Back, Landlord!</h1>
@@ -720,31 +972,31 @@
                 <div class="card">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
                         <h3>Property Performance</h3>
-                        <select style="padding: 5px; border-radius: 4px; border: 1px solid var(--gray);">
-                            <option>Last 7 Days</option>
-                            <option>Last 30 Days</option>
-                            <option>Last 90 Days</option>
+                        <select id="timeRange" style="padding: 5px; border-radius: 4px; border: 1px solid var(--gray);">
+                            <option value="7">Last 7 Days</option>
+                            <option value="30" selected>Last 30 Days</option>
+                            <option value="90">Last 90 Days</option>
                         </select>
                     </div>
                     
-                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                    <div class="chart-grid">
                         <div>
-                            <h4>Views vs Inquiries</h4>
-                            <div style="height: 200px; background: var(--light-gray); border-radius: 8px; display: flex; justify-content: center; align-items: center;">
-                                <p>Chart would be displayed here</p>
+                            <div class="chart-title">Views vs Inquiries</div>
+                            <div class="chart-container">
+                                <canvas id="viewsInquiriesChart"></canvas>
                             </div>
                         </div>
                         <div>
-                            <h4>Earnings Overview</h4>
-                            <div style="height: 200px; background: var(--light-gray); border-radius: 8px; display: flex; justify-content: center; align-items: center;">
-                                <p>Chart would be displayed here</p>
+                            <div class="chart-title">Earnings Overview</div>
+                            <div class="chart-container">
+                                <canvas id="earningsChart"></canvas>
                             </div>
                         </div>
                     </div>
                 </div>
             </section>
 
-
+            <!-- Add Property Form (Hidden by default) -->
             <section class="content hidden" id="add-property-content">
                 <div class="property-form-container">
                     <div class="form-header">
@@ -840,25 +1092,58 @@
                                 </div>
                             </div>
                             
-                            <button type="submit" class="submit-btn" onclick="showToast()">
-                                <i class="fas fa-plus-circle"></i> Add Property
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-plus-circle"></i> Submit Property
                             </button>
-                            <div id="toast">✅ Property added successfully!</div>
                         </form>
                     </div>
                 </div>
             </section>
 
-            <!-- Other content sections would go here -->
-            <!-- <section class="content hidden" id="edit-listings-content">
-                <h1>Edit Listings</h1>
-                <p>This is where you would edit your property listings</p>
+            <!-- Listings Section -->
+            <section class="content hidden" id="edit-listings-content">
+                <div class="listings-container">
+                    <div class="listings-header">
+                        <h1><i class="fas fa-building"></i> My Property Listings</h1>
+                        <p>Manage and monitor all your property listings in one place</p>
+                    </div>
+                    
+                    <div class="listings-controls">
+                        <div class="search-box">
+                            <i class="fas fa-search"></i>
+                            <input type="text" id="search-listings" placeholder="Search properties...">
+                        </div>
+                        <div class="filter-controls">
+                            <select id="status-filter">
+                                <option value="all">All Status</option>
+                                <option value="occupied">Occupied</option>
+                                <option value="vacant">Vacant</option>
+                                <option value="maintenance">Maintenance</option>
+                            </select>
+                            <select id="type-filter">
+                                <option value="all">All Types</option>
+                                <option value="single-room">Single Room</option>
+                                <option value="bedsitter">Bedsitter</option>
+                                <option value="1-bedroom">1 Bedroom</option>
+                                <option value="2-bedroom">2 Bedrooms</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="listings-grid" id="listings-grid">
+                        <!-- Listings will be dynamically populated here -->
+                    </div>
+                    
+                    <div class="pagination" id="listings-pagination">
+                        <!-- Pagination will be dynamically populated here -->
+                    </div>
+                </div>
             </section>
-
+           
             <section class="content hidden" id="manage-location-content">
                 <h1>Manage Location</h1>
                 <p>This is where you would manage property locations</p>
-            </section> -->
+            </section>
         </main>
     </div>
 
@@ -868,9 +1153,249 @@
         <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
     </footer>
 
-
     <script>
+        // Sample property listings data
+        const propertyListings = [
+            {
+                id: 1,
+                title: "Tripple A Apartments",
+                location: "123 Main Gate, Campus",
+                type: "Single Rooms & Bedsitters",
+                price: 5000,
+                rooms: 12,
+                occupied: 8,
+                status: "occupied",
+                image: "https://placehold.co/400x200/4285F4/FFFFFF?text=Tripple+A+Apartments",
+                description: "Modern apartments with all amenities included. Close to campus and shopping centers."
+            },
+            {
+                id: 2,
+                title: "Green Valley Homes",
+                location: "456 University Road",
+                type: "Bedsitters",
+                price: 7000,
+                rooms: 8,
+                occupied: 3,
+                status: "vacant",
+                image: "https://placehold.co/400x200/00A699/FFFFFF?text=Green+Valley+Homes",
+                description: "Spacious bedsitters with beautiful garden views. Secure and quiet neighborhood."
+            },
+            {
+                id: 3,
+                title: "Campus View Apartments",
+                location: "789 Student Lane",
+                type: "1 Bedroom",
+                price: 12000,
+                rooms: 6,
+                occupied: 6,
+                status: "occupied",
+                image: "https://placehold.co/400x200/FF385C/FFFFFF?text=Campus+View+Apartments",
+                description: "Luxury 1-bedroom apartments with stunning campus views. All utilities included."
+            },
+            {
+                id: 4,
+                title: "Sunset Heights",
+                location: "321 Hilltop Avenue",
+                type: "2 Bedrooms",
+                price: 15000,
+                rooms: 4,
+                occupied: 2,
+                status: "vacant",
+                image: "https://placehold.co/400x200/FFB400/FFFFFF?text=Sunset+Heights",
+                description: "Modern 2-bedroom apartments perfect for students. Close to public transport."
+            },
+            {
+                id: 5,
+                title: "River Side Apartments",
+                location: "654 Riverside Drive",
+                type: "Single Rooms",
+                price: 4500,
+                rooms: 10,
+                occupied: 10,
+                status: "occupied",
+                image: "https://placehold.co/400x200/4285F4/FFFFFF?text=River+Side+Apartments",
+                description: "Affordable single rooms with shared amenities. Perfect for budget-conscious students."
+            },
+            {
+                id: 6,
+                title: "Downtown Suites",
+                location: "987 Central Business District",
+                type: "Bedsitters",
+                price: 8000,
+                rooms: 5,
+                occupied: 0,
+                status: "maintenance",
+                image: "https://placehold.co/400x200/FF5A5F/FFFFFF?text=Downtown+Suites",
+                description: "Currently under renovation. Modern bedsitters coming soon in prime location."
+            }
+        ];
 
+        // Function to render property listings
+        function renderListings(listings = propertyListings) {
+            const listingsGrid = document.getElementById('listings-grid');
+            
+            if (listings.length === 0) {
+                listingsGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-home"></i>
+                        <h3>No Properties Found</h3>
+                        <p>You don't have any properties matching your search criteria.</p>
+                        <button class="listing-btn btn-view" onclick="showAddProperty()">Add New Property</button>
+                    </div>
+                `;
+                return;
+            }
+            
+            listingsGrid.innerHTML = listings.map(listing => `
+                <div class="listing-card" data-id="${listing.id}">
+                    <div class="listing-image">
+                        <img src="${listing.image}" alt="${listing.title}">
+                        <div class="listing-status status-${listing.status}">
+                            ${listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
+                        </div>
+                    </div>
+                    <div class="listing-details">
+                        <h3 class="listing-title">${listing.title}</h3>
+                        <div class="listing-location">
+                            <i class="fas fa-map-marker-alt"></i>
+                            ${listing.location}
+                        </div>
+                        <p>${listing.description}</p>
+                        <div class="listing-info">
+                            <div class="listing-info-item">
+                                <span class="info-label">Type</span>
+                                <span class="info-value">${listing.type}</span>
+                            </div>
+                            <div class="listing-info-item">
+                                <span class="info-label">Price</span>
+                                <span class="info-value">Ksh ${listing.price.toLocaleString()}</span>
+                            </div>
+                            <div class="listing-info-item">
+                                <span class="info-label">Occupancy</span>
+                                <span class="info-value">${listing.occupied}/${listing.rooms}</span>
+                            </div>
+                        </div>
+                        <div class="listing-actions">
+                            <button class="listing-btn btn-edit" onclick="editListing(${listing.id})">
+                                <i class="fas fa-edit"></i> Edit
+                            </button>
+                            <button class="listing-btn btn-view" onclick="viewListing(${listing.id})">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="listing-btn btn-delete" onclick="deleteListing(${listing.id})">
+                                <i class="fas fa-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Function to filter listings
+        function filterListings() {
+            const searchTerm = document.getElementById('search-listings').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
+            
+            const filteredListings = propertyListings.filter(listing => {
+                const matchesSearch = listing.title.toLowerCase().includes(searchTerm) || 
+                                     listing.location.toLowerCase().includes(searchTerm);
+                const matchesStatus = statusFilter === 'all' || listing.status === statusFilter;
+                const matchesType = typeFilter === 'all' || listing.type.toLowerCase().includes(typeFilter);
+                
+                return matchesSearch && matchesStatus && matchesType;
+            });
+            
+            renderListings(filteredListings);
+        }
+
+        // Function to show add property form
+        function showAddProperty() {
+            document.querySelectorAll('.content').forEach(section => {
+                section.classList.add('hidden');
+            });
+            
+            document.getElementById('add-property-content').classList.remove('hidden');
+            
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar-menu a').forEach(link => {
+                link.classList.remove('active');
+            });
+            document.querySelector('[data-content="add-property"]').classList.add('active');
+        }
+
+        // Function to edit a listing
+        function editListing(id) {
+            alert(`Editing property with ID: ${id}`);
+            // In a real application, this would open an edit form with the property data
+        }
+
+        // Function to view a listing
+        function viewListing(id) {
+            alert(`Viewing property with ID: ${id}`);
+            // In a real application, this would show a detailed view of the property
+        }
+
+        // Function to delete a listing
+        function deleteListing(id) {
+            if (confirm('Are you sure you want to delete this property listing?')) {
+                alert(`Property with ID: ${id} deleted`);
+                // In a real application, this would remove the property from the database
+                // For now, we'll just remove it from the UI
+                const index = propertyListings.findIndex(listing => listing.id === id);
+                if (index !== -1) {
+                    propertyListings.splice(index, 1);
+                    renderListings();
+                }
+            }
+        }
+
+        // Initialize listings when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            renderListings();
+            
+            // Add event listeners for filtering
+            document.getElementById('search-listings').addEventListener('input', filterListings);
+            document.getElementById('status-filter').addEventListener('change', filterListings);
+            document.getElementById('type-filter').addEventListener('change', filterListings);
+            
+            // Rest of your existing code...
+            updateGreeting();
+            updateOccupancy();
+            
+            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
+            sidebarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    const contentId = this.getAttribute('data-content') + '-content';
+                    
+                    document.querySelectorAll('.content').forEach(section => {
+                        section.classList.add('hidden');
+                    });
+                    
+                    const targetSection = document.getElementById(contentId);
+                    if (targetSection) {
+                        targetSection.classList.remove('hidden');
+                    }
+                    
+                    sidebarLinks.forEach(l => l.classList.remove('active'));
+                    this.classList.add('active');
+                });
+            });
+            
+            setTimeout(() => {
+                document.getElementById('active-properties-count').textContent = '5 Properties';
+            }, 500);
+
+            initializeCharts();
+            
+            document.getElementById('timeRange').addEventListener('change', function() {
+                updateCharts(this.value);
+            });
+        });
+
+        // Rest of your existing functions...
         function updateGreeting() {
             const now = new Date();
             const hour = now.getHours();
@@ -884,6 +1409,7 @@
                 greetingElement.textContent = 'Good Evening, Landlord!';
             }
         }
+
         let occupiedRooms = 3;
         let totalRooms = 8;
         
@@ -892,7 +1418,7 @@
             document.getElementById('occupancyPercentage').textContent = `${percentage}%`;
             document.getElementById('progress').style.width = `${percentage}%`;
         }
-
+        
         function occupyRoom() {
             if (occupiedRooms < totalRooms) {
                 occupiedRooms++;
@@ -911,43 +1437,6 @@
             }
         }
 
-
-        document.addEventListener('DOMContentLoaded', function() {
-            updateGreeting();
-            updateOccupancy();
-         
-            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-               
-                    const contentId = this.getAttribute('data-content') + '-content';
-                    
-                
-                    document.querySelectorAll('.content').forEach(section => {
-                        section.classList.add('hidden');
-                    });
-                    
-                   
-                    const targetSection = document.getElementById(contentId);
-                    if (targetSection) {
-                        targetSection.classList.remove('hidden');
-                    }
-                    
-                   
-                    sidebarLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-            
-            
-            setTimeout(() => {
-                document.getElementById('active-properties-count').textContent = '5 Properties';
-            }, 500);
-        });
-
-
         const descriptionTextarea = document.getElementById('description');
         const characterCount = document.querySelector('.character-count');
         
@@ -964,11 +1453,140 @@
             });
         }
 
-           function showToast() {
-      let toast = document.getElementById("toast");
-      toast.className = "show";
-      setTimeout(() => { toast.className = toast.className.replace("show", ""); }, 3500);
-    }
+        // Chart initialization and data
+        let viewsInquiriesChart, earningsChart;
+
+        function initializeCharts() {
+            const ctx1 = document.getElementById('viewsInquiriesChart').getContext('2d');
+            const ctx2 = document.getElementById('earningsChart').getContext('2d');
+            
+            // Generate data for the last 30 days by default
+            const days = generateDays(30);
+            const viewsData = generateRandomData(30, 50, 200);
+            const inquiriesData = generateRandomData(30, 5, 40);
+            const earningsData = generateRandomData(30, 5000, 25000);
+            
+            // Create Views vs Inquiries chart
+            viewsInquiriesChart = new Chart(ctx1, {
+                type: 'line',
+                data: {
+                    labels: days,
+                    datasets: [
+                        {
+                            label: 'Views',
+                            data: viewsData,
+                            borderColor: '#4285F4',
+                            backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Inquiries',
+                            data: inquiriesData,
+                            borderColor: '#FF385C',
+                            backgroundColor: 'rgba(255, 56, 92, 0.1)',
+                            tension: 0.3,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+            
+            // Creating Earning chart
+            earningsChart = new Chart(ctx2, {
+                type: 'bar',
+                data: {
+                    labels: days,
+                    datasets: [{
+                        label: 'Earnings (Ksh)',
+                        data: earningsData,
+                        backgroundColor: 'rgba(0, 166, 153, 0.7)',
+                        borderColor: 'rgba(0, 166, 153, 1)',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                drawBorder: false
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts(daysCount) {
+            const days = generateDays(daysCount);
+            const viewsData = generateRandomData(daysCount, 50, 200);
+            const inquiriesData = generateRandomData(daysCount, 5, 40);
+            const earningsData = generateRandomData(daysCount, 5000, 25000);
+            
+            // Update Views vs Inquiries chart
+            viewsInquiriesChart.data.labels = days;
+            viewsInquiriesChart.data.datasets[0].data = viewsData;
+            viewsInquiriesChart.data.datasets[1].data = inquiriesData;
+            viewsInquiriesChart.update();
+            
+            // Update Earnings chart
+            earningsChart.data.labels = days;
+            earningsChart.data.datasets[0].data = earningsData;
+            earningsChart.update();
+        }
+
+        function generateDays(count) {
+            const days = [];
+            for (let i = count - 1; i >= 0; i--) {
+                const date = new Date();
+                date.setDate(date.getDate() - i);
+                days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+            }
+            return days;
+        }
+
+        function generateRandomData(count, min, max) {
+            const data = [];
+            for (let i = 0; i < count; i++) {
+                data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+            }
+            return data;
+        }
     </script>
 </body>
 </html>
