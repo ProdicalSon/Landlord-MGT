@@ -588,18 +588,18 @@
                 <li class="dropdown">
                     <a href="#" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
                     <div class="dropdown-content">
-                        <a href="#" data-content="view-tenants"><i class="fas fa-list"></i> View Tenants</a>
+                        <a href="view-tenant.php" data-content="view-tenants"><i class="fas fa-list"></i> View Tenants</a>
                         <a href="#" data-content="tenant-bookings"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
                     </div>
                 </li>
                 <li class="dropdown">
                     <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge">5</span></a>
                     <div class="dropdown-content">
-                        <a href="#" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="inquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
                         <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>
-                <li><a href="#" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
+                <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
                 <li><a href="#" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="#" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="#" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
@@ -616,7 +616,7 @@
                 
                 <div class="login-image">
                     <div class="dropdown">
-                        <a href="#"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=U" alt="User Icon"></a>
+                        <a href="tenantbookings.php"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=U" alt="User Icon"></a>
                         <div class="dropdown-content">
                             <a href="login.php"><i class="fas fa-sign-in-alt"></i> Login</a>
                             <a href="register.php"><i class="fas fa-user-plus"></i> Sign Up</a> 
