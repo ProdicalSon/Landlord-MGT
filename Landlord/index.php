@@ -580,7 +580,7 @@
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
+                        <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
                         <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
                         
                     </div>
@@ -603,8 +603,8 @@
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                <li><a href="#" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
-                <li><a href="#" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
+                <li><a href="profilesettings.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
+                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
