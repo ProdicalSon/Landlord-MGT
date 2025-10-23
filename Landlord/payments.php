@@ -873,6 +873,13 @@
                                 <option value="april">April</option>
                                 <option value="may">May</option>
                                 <option value="june" selected>June</option>
+                                 <option value="july">July</option>
+                                <option value="august">August</option>
+                                <option value="september">September</option>
+                                <option value="october">October</option>
+                                <option value="november">November</option>
+                                <option value="december">December</option>
+                                <option value="october" selected>October</option>
                             </select>
                         </div>
                     </div>
@@ -905,9 +912,9 @@
                     
                     <div class="history-filters">
                         <div class="date-range">
-                            <input type="month" id="start-date" value="2023-01">
+                            <input type="month" id="start-date" value="2025-01">
                             <span>to</span>
-                            <input type="month" id="end-date" value="2023-06">
+                            <input type="month" id="end-date" value="2025-06">
                         </div>
                         
                         <button class="export-btn">
@@ -971,9 +978,9 @@
                 },
                 property: "Tripple A Apartments",
                 amount: 5000,
-                dueDate: "2023-06-05",
+                dueDate: "2025-10-01",
                 status: "paid",
-                paidDate: "2023-06-01",
+                paidDate: "2025-10-01",
                 method: "M-Pesa",
                 reference: "MP23456789"
             },
@@ -986,7 +993,7 @@
                 },
                 property: "Green Valley Homes",
                 amount: 7000,
-                dueDate: "2023-06-05",
+                dueDate: "2025-10-01",
                 status: "pending",
                 paidDate: null,
                 method: "",
@@ -1001,9 +1008,9 @@
                 },
                 property: "Campus View Apartments",
                 amount: 12000,
-                dueDate: "2023-06-05",
+                dueDate: "2025-10-01",
                 status: "paid",
-                paidDate: "2023-06-03",
+                paidDate: "2025-10-05",
                 method: "Bank Transfer",
                 reference: "BT98765432"
             },
@@ -1016,7 +1023,7 @@
                 },
                 property: "Sunset Heights",
                 amount: 15000,
-                dueDate: "2023-06-05",
+                dueDate: "2025-10-01",
                 status: "overdue",
                 paidDate: null,
                 method: "",
@@ -1031,9 +1038,9 @@
                 },
                 property: "River Side Apartments",
                 amount: 4500,
-                dueDate: "2023-06-05",
+                dueDate: "2025-10-01",
                 status: "partial",
-                paidDate: "2023-06-04",
+                paidDate: "2025-10-01",
                 method: "M-Pesa",
                 reference: "MP34567890",
                 paidAmount: 3000
@@ -1047,9 +1054,9 @@
                 },
                 property: "Tripple A Apartments",
                 amount: 5000,
-                dueDate: "2023-06-05",
+                dueDate: "2025-10-01",
                 status: "paid",
-                paidDate: "2023-06-02",
+                paidDate: "2025-10-01",
                 method: "Cash",
                 reference: "CASH001"
             }
@@ -1059,7 +1066,7 @@
         const paymentHistoryData = [
             {
                 id: 1,
-                date: "2023-06-01",
+                date: "2025-10-01",
                 tenant: "John Mwangi",
                 property: "Tripple A Apartments",
                 amount: 5000,
@@ -1068,7 +1075,7 @@
             },
             {
                 id: 2,
-                date: "2023-06-02",
+                date: "2025-10-02",
                 tenant: "Mary Njeri",
                 property: "Tripple A Apartments",
                 amount: 5000,
@@ -1077,7 +1084,7 @@
             },
             {
                 id: 3,
-                date: "2023-06-03",
+                date: "2025-10-03",
                 tenant: "David Ochieng",
                 property: "Campus View Apartments",
                 amount: 12000,
@@ -1086,7 +1093,7 @@
             },
             {
                 id: 4,
-                date: "2023-06-04",
+                date: "2025-10-04",
                 tenant: "Peter Kamau",
                 property: "River Side Apartments",
                 amount: 3000,
@@ -1095,7 +1102,7 @@
             },
             {
                 id: 5,
-                date: "2023-05-28",
+                date: "2025-10-01",
                 tenant: "James Mutiso",
                 property: "Green Valley Homes",
                 amount: 7000,
@@ -1104,7 +1111,7 @@
             },
             {
                 id: 6,
-                date: "2023-05-25",
+                date: "2025-10-01",
                 tenant: "Lucy Adhiambo",
                 property: "Campus View Apartments",
                 amount: 12000,

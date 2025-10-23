@@ -836,24 +836,24 @@
                                             </button>
                                         </div>
                                         <div class="avatar-info">
-                                            <h4>John Doe</h4>
+                                            <h4>Jack Dans</h4>
                                             <p>Landlord Account</p>
-                                            <p>Member since January 2022</p>
+                                            <p>Member since January 2025</p>
                                         </div>
                                     </div>
                                     
                                     <div class="form-grid">
                                         <div class="form-group">
                                             <label for="first-name">First Name</label>
-                                            <input type="text" id="first-name" value="John">
+                                            <input type="text" id="first-name" value="Jack">
                                         </div>
                                         <div class="form-group">
                                             <label for="last-name">Last Name</label>
-                                            <input type="text" id="last-name" value="Doe">
+                                            <input type="text" id="last-name" value="Dan">
                                         </div>
                                         <div class="form-group">
                                             <label for="email">Email Address</label>
-                                            <input type="email" id="email" value="john.doe@example.com">
+                                            <input type="email" id="email" value="smarthunt@example.com">
                                         </div>
                                         <div class="form-group">
                                             <label for="phone">Phone Number</label>
@@ -1227,7 +1227,7 @@
     </footer>
 
     <script>
-        // Profile navigation functionality
+     
         document.addEventListener('DOMContentLoaded', function() {
             const profileNavItems = document.querySelectorAll('.profile-nav-item');
             const profileSections = document.querySelectorAll('.profile-section');
@@ -1236,21 +1236,20 @@
                 item.addEventListener('click', function() {
                     const targetSection = this.getAttribute('data-section');
                     
-                    // Remove active class from all items and sections
+                
                     profileNavItems.forEach(navItem => navItem.classList.remove('active'));
                     profileSections.forEach(section => section.classList.remove('active'));
                     
-                    // Add active class to clicked item and corresponding section
                     this.classList.add('active');
                     document.getElementById(`${targetSection}-section`).classList.add('active');
                 });
             });
             
-            // Save button functionality
+           
             const saveButtons = document.querySelectorAll('.btn-save');
             saveButtons.forEach(button => {
                 button.addEventListener('click', function() {
-                    // Show a temporary success message
+                   
                     const originalText = this.textContent;
                     this.textContent = 'Saved!';
                     this.style.backgroundColor = 'var(--success)';
@@ -1262,33 +1261,31 @@
                 });
             });
             
-            // Cancel button functionality
             const cancelButtons = document.querySelectorAll('.btn-cancel');
             cancelButtons.forEach(button => {
                 button.addEventListener('click', function() {
                     if (confirm('Are you sure you want to discard changes?')) {
-                        // Reset form fields to their original values
+                     
                         const form = this.closest('.profile-section');
                         const inputs = form.querySelectorAll('input, select, textarea');
                         inputs.forEach(input => {
-                            // In a real app, you would reset to original values from database
-                            // For demo purposes, we'll just blur the field
+                        
                             input.blur();
                         });
                     }
                 });
             });
             
-            // Avatar upload simulation
+       
             const avatarUpload = document.querySelector('.avatar-upload');
             if (avatarUpload) {
                 avatarUpload.addEventListener('click', function() {
-                    // In a real app, this would open a file picker
+                
                     alert('Avatar upload feature would open here. In a real application, this would allow you to select and crop a new profile image.');
                 });
             }
             
-            // Toggle switch functionality
+
             const toggleSwitches = document.querySelectorAll('.toggle-switch input');
             toggleSwitches.forEach(toggle => {
                 toggle.addEventListener('change', function() {
