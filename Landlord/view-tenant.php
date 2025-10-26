@@ -4,12 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="assets/icons/smartlogo.png">
-    <title>SmartHunt - Landlord Dashboard</title>
+    <title>SmartHunt - Tenant Management</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* All your CSS styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -40,13 +40,11 @@
             min-height: 100vh;
         }
 
-        /* Dashboard Layout */
         .dashboard-container {
             display: flex;
             flex: 1;
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: 260px;
             background: var(--light);
@@ -131,7 +129,6 @@
             font-size: 14px;
         }
 
-        /* Main Content */
         .main-content {
             flex: 1;
             margin-left: 260px;
@@ -167,7 +164,6 @@
             cursor: pointer;
         }
 
-        /* Content Section */
         .content h1 {
             font-size: 28px;
             margin-bottom: 5px;
@@ -179,7 +175,6 @@
             margin-bottom: 25px;
         }
 
-        /* Cards Layout */
         .cards {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
@@ -227,7 +222,6 @@
             background-color: #e61e4d;
         }
 
-        /* Progress Bar */
         .progress-bar {
             width: 100%;
             background-color: var(--gray);
@@ -244,7 +238,6 @@
             transition: width 0.5s ease;
         }
 
-        /* Alert Box */
         .alert {
             background-color: #fff3cd;
             border-left: 4px solid var(--warning);
@@ -254,7 +247,6 @@
             font-size: 14px;
         }
 
-        /* Footer */
         .footer {
             background-color: var(--dark);
             color: white;
@@ -268,8 +260,21 @@
             margin-bottom: 10px;
         }
 
-        /* Add property form styles */
-        .property-form-container {
+        .hidden {
+            display: none !important;
+        }
+
+        .notification-badge {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 8px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        /* Tenant Management Styles */
+        .tenants-container {
             background: var(--light);
             border-radius: 12px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
@@ -277,163 +282,484 @@
             margin-bottom: 30px;
         }
 
-        .form-header {
+        .tenants-header {
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
             padding: 25px 30px;
-            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
-        .form-header h1 {
+        .tenants-header h1 {
             font-size: 28px;
             font-weight: 600;
             margin-bottom: 5px;
         }
 
-        .form-header p {
+        .tenants-header p {
             font-size: 16px;
             opacity: 0.9;
         }
 
-        .property-form {
-            padding: 30px;
-        }
-
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group.full-width {
-            grid-column: span 2;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark);
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid var(--gray);
-            border-radius: 8px;
-            font-size: 15px;
-            transition: all 0.3s;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.2);
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 100px;
-        }
-
-        .file-input-container {
-            position: relative;
-        }
-
-        .file-input-container input[type="file"] {
-            padding: 10px;
-            background: var(--light-gray);
-            border: 1px dashed var(--gray);
-        }
-
-        .file-input-container input[type="file"]::file-selector-button {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 10px 15px;
-            border-radius: 6px;
-            margin-right: 15px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-
-        .file-input-container input[type="file"]::file-selector-button:hover {
-            background: var(--primary-light);
-        }
-
-        .submit-btn {
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 14px 25px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: block;
-            width: 100%;
-            margin-top: 20px;
-            transition: all 0.3s;
-        }
-
-        .submit-btn:hover {
-            background: var(--primary-light);
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 56, 92, 0.3);
-        }
-
-        .form-section {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .form-section h2 {
-            font-size: 20px;
-            color: var(--primary);
-            margin-bottom: 20px;
+        .tenants-actions {
             display: flex;
-            align-items: center;
-        }
-
-        .form-section h2 i {
-            margin-right: 10px;
-        }
-
-        .amenities-grid {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
             gap: 15px;
         }
 
-        .amenity-checkbox {
+        .tenants-actions button {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
             display: flex;
             align-items: center;
+            gap: 8px;
         }
 
-        .amenity-checkbox input {
-            width: auto;
+        .tenants-actions button:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .tenants-content {
+            padding: 30px;
+        }
+
+        .tenants-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--light);
+            border-radius: 12px;
+            padding: 25px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            border-left: 4px solid var(--primary);
+        }
+
+        .stat-card i {
+            font-size: 32px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .stat-card h3 {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--dark);
+            margin-bottom: 5px;
+        }
+
+        .stat-card p {
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .tenants-tabs {
+            display: flex;
+            background: var(--light-gray);
+            border-bottom: 1px solid var(--gray);
+            margin-bottom: 25px;
+        }
+
+        .tenants-tab {
+            padding: 15px 25px;
+            cursor: pointer;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .tenants-tab.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+            background: white;
+        }
+
+        .tenants-tab-badge {
+            background: var(--primary);
+            color: white;
+            border-radius: 10px;
+            padding: 2px 8px;
+            font-size: 12px;
+            margin-left: 5px;
+        }
+
+        .tenants-table-container {
+            background: var(--light);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+        }
+
+        .tenants-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .tenants-table th {
+            background: var(--light-gray);
+            padding: 15px 20px;
+            text-align: left;
+            font-weight: 600;
+            color: var(--dark);
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .tenants-table td {
+            padding: 15px 20px;
+            border-bottom: 1px solid var(--light-gray);
+            vertical-align: middle;
+        }
+
+        .tenants-table tr:hover {
+            background: var(--light-gray);
+        }
+
+        .tenant-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
             margin-right: 10px;
         }
 
-        /* Form validation styles */
-        input:invalid, select:invalid, textarea:invalid {
-            border-color: var(--danger);
-        }
-        
-        input:valid, select:valid, textarea:valid {
-            border-color: var(--success);
+        .tenant-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .character-count {
-            text-align: right;
-            font-size: 12px;
+        .tenant-details h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--dark);
+            margin-bottom: 2px;
+        }
+
+        .tenant-details p {
+            font-size: 13px;
             color: var(--text);
-            margin-top: 5px;
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(0, 166, 153, 0.1);
+            color: var(--success);
+        }
+
+        .status-pending {
+            background: rgba(255, 180, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .status-inactive {
+            background: rgba(255, 90, 95, 0.1);
+            color: var(--danger);
+        }
+
+        .rent-status {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .rent-paid {
+            color: var(--success);
+        }
+
+        .rent-overdue {
+            color: var(--danger);
+        }
+
+        .rent-pending {
+            color: var(--warning);
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 500;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .btn-view {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #3367d6;
+        }
+
+        .btn-edit {
+            background: var(--light-gray);
+            color: var(--text);
+        }
+
+        .btn-edit:hover {
+            background: var(--gray);
+        }
+
+        .btn-message {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-message:hover {
+            background: #009688;
+        }
+
+        .search-filter {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: center;
+        }
+
+        .search-box {
+            flex: 1;
+            position: relative;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 12px 15px 12px 40px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box i {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--text);
+        }
+
+        .filter-select {
+            padding: 12px 15px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 14px;
+            background: white;
+            min-width: 150px;
+        }
+
+        /* Tenant Details Modal */
+        .tenant-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            width: 100%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .modal-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h2 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-modal {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 4px;
+            transition: background-color 0.3s;
+        }
+
+        .close-modal:hover {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .tenant-profile {
+            display: grid;
+            grid-template-columns: 150px 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+
+        .profile-avatar {
+            text-align: center;
+        }
+
+        .profile-avatar img {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 4px solid var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .profile-details h3 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .profile-details p {
+            color: var(--text);
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .details-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .detail-card {
+            background: var(--light-gray);
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .detail-card h4 {
+            font-size: 16px;
+            margin-bottom: 15px;
+            color: var(--dark);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .detail-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid var(--gray);
+        }
+
+        .detail-item:last-child {
+            margin-bottom: 0;
+            padding-bottom: 0;
+            border-bottom: none;
+        }
+
+        .detail-label {
+            color: var(--text);
+            font-weight: 500;
+        }
+
+        .detail-value {
+            color: var(--dark);
+            font-weight: 600;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 15px;
+            justify-content: flex-end;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-secondary {
+            background: var(--light-gray);
+            color: var(--text);
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+
+        .btn-secondary:hover {
+            background: var(--gray);
         }
 
         /* Responsive Design */
@@ -443,6 +769,13 @@
             }
             .main-content {
                 margin-left: 220px;
+            }
+            .tenant-profile {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .details-grid {
+                grid-template-columns: 1fr;
             }
         }
 
@@ -458,651 +791,34 @@
             .main-content {
                 margin-left: 0;
             }
-            .cards, .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .form-group.full-width {
-                grid-column: span 1;
-            }
-            .amenities-grid {
+            .tenants-stats {
                 grid-template-columns: repeat(2, 1fr);
+            }
+            .tenants-tabs {
+                flex-wrap: wrap;
+            }
+            .tenants-tab {
+                flex: 1;
+                min-width: 120px;
+                text-align: center;
+            }
+            .search-filter {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .action-buttons {
+                flex-direction: column;
             }
         }
 
         @media (max-width: 480px) {
-            .amenities-grid {
+            .tenants-stats {
                 grid-template-columns: 1fr;
             }
-            
-            .property-form {
-                padding: 20px;
+            .tenants-actions {
+                flex-direction: column;
+                width: 100%;
             }
-        }
-
-        /* Additional UI Improvements */
-        .stats-container {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 15px;
-        }
-
-        .stat-item {
-            text-align: center;
-            padding: 10px;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--primary);
-        }
-
-        .stat-label {
-            font-size: 14px;
-            color: var(--text);
-        }
-
-        .quick-actions {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 10px;
-            margin-top: 15px;
-        }
-
-        .action-btn {
-            background-color: var(--light-gray);
-            border: 1px solid var(--gray);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        .action-btn:hover {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .notification-badge {
-            background-color: var(--danger);
-            color: white;
-            border-radius: 50%;
-            padding: 3px 8px;
-            font-size: 12px;
-            margin-left: 5px;
-        }
-
-        /* Hidden class for toggling content */
-        .hidden {
-            display: none;
-        }
-
-        /* Chart container styles */
-        .chart-container {
-            position: relative;
-            height: 200px;
-            width: 100%;
-        }
-
-        .chart-title {
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .chart-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-
-        @media (max-width: 768px) {
-            .chart-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
-        /* Listings Styles */
-        .listings-container {
-            background: var(--light);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .listings-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 25px 30px;
-            text-align: center;
-        }
-
-        .listings-header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .listings-header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-
-        .listings-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 30px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .search-box {
-            position: relative;
-            width: 300px;
-        }
-
-        .search-box input {
-            padding-left: 40px;
-            border-radius: 20px;
-        }
-
-        .search-box i {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            color: var(--text);
-        }
-
-        .filter-controls {
-            display: flex;
-            gap: 15px;
-        }
-
-        .filter-controls select {
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--gray);
-            background-color: var(--light);
-        }
-
-        .listings-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 20px;
-            padding: 30px;
-        }
-
-        .listing-card {
-            background: var(--light);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .listing-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .listing-image {
-            height: 200px;
-            width: 100%;
-            background-color: var(--light-gray);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .listing-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .listing-status {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            color: white;
-        }
-
-        .status-occupied {
-            background-color: var(--success);
-        }
-
-        .status-vacant {
-            background-color: var(--warning);
-        }
-
-        .status-maintenance {
-            background-color: var(--danger);
-        }
-
-        .listing-details {
-            padding: 20px;
-        }
-
-        .listing-title {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--dark);
-        }
-
-        .listing-location {
-            display: flex;
-            align-items: center;
-            color: var(--text);
-            font-size: 14px;
-            margin-bottom: 10px;
-        }
-
-        .listing-location i {
-            margin-right: 5px;
-            color: var(--primary);
-        }
-
-        .listing-info {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 15px;
-        }
-
-        .listing-info-item {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .info-label {
-            font-size: 12px;
-            color: var(--text);
-        }
-
-        .info-value {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .listing-actions {
-            display: flex;
-            justify-content: space-between;
-        }
-
-        .listing-btn {
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-        }
-
-        .btn-edit {
-            background-color: var(--secondary);
-            color: white;
-        }
-
-        .btn-edit:hover {
-            background-color: #3367d6;
-        }
-
-        .btn-delete {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .btn-delete:hover {
-            background-color: #e04a50;
-        }
-
-        .btn-view {
-            background-color: var(--primary);
-            color: white;
-        }
-
-        .btn-view:hover {
-            background-color: #e61e4d;
-        }
-
-        .empty-state {
-            text-align: center;
-            padding: 50px 30px;
-            color: var(--text);
-        }
-
-        .empty-state i {
-            font-size: 60px;
-            color: var(--gray);
-            margin-bottom: 20px;
-        }
-
-        .empty-state h3 {
-            font-size: 22px;
-            margin-bottom: 10px;
-            color: var(--dark);
-        }
-
-        .empty-state p {
-            margin-bottom: 20px;
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            padding: 20px 0;
-            border-top: 1px solid var(--light-gray);
-        }
-
-        .pagination button {
-            background-color: var(--light);
-            border: 1px solid var(--gray);
-            padding: 8px 15px;
-            margin: 0 5px;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: all 0.3s;
-        }
-
-        .pagination button.active {
-            background-color: var(--primary);
-            color: white;
-            border-color: var(--primary);
-        }
-
-        .pagination button:hover:not(.active) {
-            background-color: var(--light-gray);
-        }
-
-        /* Tenants Styles */
-        .tenants-container {
-            background: var(--light);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .tenants-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 25px 30px;
-            text-align: center;
-        }
-
-        .tenants-header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .tenants-header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-
-        .tenants-controls {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 20px 30px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .tenants-stats {
-            display: flex;
-            gap: 20px;
-        }
-
-        .stat-card {
-            background: var(--light-gray);
-            border-radius: 8px;
-            padding: 15px;
-            text-align: center;
-            min-width: 120px;
-        }
-
-        .stat-card .value {
-            font-size: 24px;
-            font-weight: 700;
-            color: var(--primary);
-        }
-
-        .stat-card .label {
-            font-size: 14px;
-            color: var(--text);
-        }
-
-        .tenants-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-            gap: 20px;
-            padding: 30px;
-        }
-
-        .tenant-card {
-            background: var(--light);
-            border-radius: 12px;
-            overflow: hidden;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .tenant-card:hover {
-            transform: translateY(-5px);
-        }
-
-        .tenant-header {
-            padding: 20px;
-            background: var(--light-gray);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .tenant-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            overflow: hidden;
-        }
-
-        .tenant-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .tenant-info h3 {
-            font-size: 18px;
-            font-weight: 600;
-            margin-bottom: 5px;
-            color: var(--dark);
-        }
-
-        .tenant-info p {
-            font-size: 14px;
-            color: var(--text);
-        }
-
-        .tenant-details {
-            padding: 20px;
-        }
-
-        .tenant-detail {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .tenant-detail:last-child {
-            margin-bottom: 0;
-            border-bottom: none;
-        }
-
-        .detail-label {
-            font-weight: 500;
-            color: var(--dark);
-        }
-
-        .detail-value {
-            color: var(--text);
-        }
-
-        .tenant-actions {
-            display: flex;
-            justify-content: space-between;
-            padding: 15px 20px;
-            background: var(--light-gray);
-        }
-
-        .tenant-btn {
-            padding: 8px 15px;
-            border-radius: 6px;
-            font-size: 14px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-        }
-
-        .btn-contact {
-            background-color: var(--secondary);
-            color: white;
-        }
-
-        .btn-contact:hover {
-            background-color: #3367d6;
-        }
-
-        .btn-remind {
-            background-color: var(--warning);
-            color: white;
-        }
-
-        .btn-remind:hover {
-            background-color: #e6a200;
-        }
-
-        .btn-remove {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .btn-remove:hover {
-            background-color: #e04a50;
-        }
-
-        /* Tenant Bookings Styles */
-        .bookings-container {
-            background: var(--light);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-            margin-bottom: 30px;
-        }
-
-        .bookings-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 25px 30px;
-            text-align: center;
-        }
-
-        .bookings-header h1 {
-            font-size: 28px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .bookings-header p {
-            font-size: 16px;
-            opacity: 0.9;
-        }
-
-        .bookings-table {
-            width: 100%;
-            border-collapse: collapse;
-        }
-
-        .bookings-table th,
-        .bookings-table td {
-            padding: 15px;
-            text-align: left;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .bookings-table th {
-            background-color: var(--light-gray);
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .bookings-table tr:hover {
-            background-color: var(--light-gray);
-        }
-
-        .booking-status {
-            padding: 5px 10px;
-            border-radius: 20px;
-            font-size: 12px;
-            font-weight: 600;
-            color: white;
-        }
-
-        .status-pending {
-            background-color: var(--warning);
-        }
-
-        .status-confirmed {
-            background-color: var(--success);
-        }
-
-        .status-cancelled {
-            background-color: var(--danger);
-        }
-
-        .status-completed {
-            background-color: var(--secondary);
-        }
-
-        .action-cell {
-            display: flex;
-            gap: 10px;
-        }
-
-        .table-btn {
-            padding: 5px 10px;
-            border-radius: 4px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-        }
-
-        .btn-confirm {
-            background-color: var(--success);
-            color: white;
-        }
-
-        .btn-cancel {
-            background-color: var(--danger);
-            color: white;
-        }
-
-        .btn-details {
-            background-color: var(--secondary);
-            color: white;
         }
     </style>
 </head>
@@ -1116,7 +832,7 @@
             </div>
 
             <ul class="sidebar-menu">
-                <li><a href="index.php" class="active" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
+                <li><a href="index.php" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
@@ -1126,9 +842,9 @@
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
+                    <a href="#" class="active" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
                     <div class="dropdown-content">
-                        <a href="#" data-content="view-tenants"><i class="fas fa-list"></i> View Tenants</a>
+                        <a href="#" data-content="view-tenants" class="active"><i class="fas fa-list"></i> View Tenants</a>
                         <a href="#" data-content="tenant-bookings"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
                     </div>
                 </li>
@@ -1141,10 +857,10 @@
                 </li>
                 <li><a href="#" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
                 <li><a href="#" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
-                <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-                <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="#" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="#" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="#" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
-                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
+                <li><a href="#" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
@@ -1152,7 +868,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">Landlord Dashboard</div>
+                <div class="navbar-brand">Tenants</div>
                 
                 <div class="login-image">
                     <div class="dropdown">
@@ -1167,1188 +883,638 @@
                 </div>
             </nav>
 
-            <section class="content" id="dashboard-content">
-                <h1 id="greeting">Welcome Back, Landlord!</h1>
-                <p>Manage your properties and track performance</p>
-
-                <div class="cards">
-                    <div class="card" id="active-properties-card">
-                        <h3><i class="fas fa-building"></i> Active Properties</h3>
-                        <p id="active-properties-count">5 Properties</p>
-                        <div class="stats-container">
-                            <div class="stat-item">
-                                <div class="stat-value">3</div>
-                                <div class="stat-label">Occupied</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">2</div>
-                                <div class="stat-label">Vacant</div>
-                            </div>
-                        </div>
-                        <button>View Details</button>
-                    </div>
-
-                    <div class="card">
-                        <h3><i class="fas fa-question-circle"></i> Inquiries</h3>
-                        <p>12 New Inquiries</p>
-                        <div class="quick-actions">
-                            <button class="action-btn">Respond to All</button>
-                            <button class="action-btn">Sort by Priority</button>
-                        </div>
-                        <button>Check Now</button> 
-                    </div>
-
-                    <div class="card">
-                        <h3><i class="fas fa-users"></i> Current Tenants</h3>
-                        <p>8 Tenants</p>
-                        <div class="stats-container">
-                            <div class="stat-item">
-                                <div class="stat-value">5</div>
-                                <div class="stat-label">Active</div>
-                            </div>
-                            <div class="stat-item">
-                                <div class="stat-value">3</div>
-                                <div class="stat-label">Pending</div>
-                            </div>
-                        </div>
-                        <button>Manage Tenants</button> 
-                    </div>
-
-                    <div class="card">
-                        <h3><i class="fas fa-chart-pie"></i> Occupancy Rate</h3>
-                        <p>Occupancy: <span id="occupancyPercentage">0%</span></p>
-                        <div class="progress-bar">
-                            <div id="progress" class="progress" style="width: 0%;"></div>
-                        </div>
-                        <div class="quick-actions">
-                            <button onclick="occupyRoom()" class="action-btn">Occupy a Room</button>
-                            <button onclick="vacateRoom()" class="action-btn">Vacate a Room</button>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3><i class="fas fa-credit-card"></i> Payments</h3>
-                        <p>2 Pending Payments</p>
-                        <div class="alert">
-                            <p><strong>Alert:</strong> 2 tenants have not paid their rent.</p>
-                        </div>
-                        <div class="quick-actions">
-                            <button class="action-btn">Send Reminders</button>
-                            <button class="action-btn">View Payment History</button>
-                        </div>
-                    </div>
-
-                    <div class="card">
-                        <h3><i class="fas fa-bullhorn"></i> Announcements</h3>
-                        <p>8 Announcements</p>
-                        <div class="quick-actions">
-                            <button class="action-btn">Create New</button>
-                            <button class="action-btn">Schedule</button>
-                        </div>
-                        <button class="announcement">View Announcements</button>
-                    </div>
-                </div>
-
-                <!-- Additional Dashboard Sections -->
-                <h2 style="margin: 30px 0 20px;">Recent Activity</h2>
-                <div class="card">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-                        <h3>Property Performance</h3>
-                        <select id="timeRange" style="padding: 5px; border-radius: 4px; border: 1px solid var(--gray);">
-                            <option value="7">Last 7 Days</option>
-                            <option value="30" selected>Last 30 Days</option>
-                            <option value="90">Last 90 Days</option>
-                        </select>
-                    </div>
-                    
-                    <div class="chart-grid">
-                        <div>
-                            <div class="chart-title">Views vs Inquiries</div>
-                            <div class="chart-container">
-                                <canvas id="viewsInquiriesChart"></canvas>
-                            </div>
-                        </div>
-                        <div>
-                            <div class="chart-title">Earnings Overview</div>
-                            <div class="chart-container">
-                                <canvas id="earningsChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Add Property Form (Hidden by default) -->
-            <section class="content hidden" id="add-property-content">
-                <div class="property-form-container">
-                    <div class="form-header">
-                        <h1><i class="fas fa-home"></i> Add New Property</h1>
-                        <p>List your property to attract potential tenants</p>
-                    </div>
-                    
-                    <div class="property-form">
-                        <form action="submit_property.php" method="post" enctype="multipart/form-data">
-                            <div class="form-section">
-                                <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label for="property-name"><i class="fas fa-building"></i> Property Name</label>
-                                        <input type="text" id="property-name" name="property_name" placeholder="e.g., Tripple A Apartments" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="property-type"><i class="fas fa-home"></i> Property Type</label>
-                                        <select id="property-type" name="property_type" required>
-                                            <option value="" disabled selected>Select property type</option>
-                                            <option value="Single Rooms">Single Rooms</option>
-                                            <option value="Bedsitters">Bedsitters</option>
-                                            <option value="Single Rooms & Bedsitters">Single Rooms & Bedsitters</option>
-                                            <option value="1B">1 Bedroom</option>
-                                            <option value="2B">2 Bedrooms</option>
-                                        </select>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="location"><i class="fas fa-map-marker-alt"></i> Location</label>
-                                        <input type="text" id="location" name="location" placeholder="e.g., 123 Main Gate, Campus" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="rooms"><i class="fas fa-door-open"></i> Number of Rooms</label>
-                                        <input type="number" id="rooms" name="number_of_rooms" min="1" placeholder="How many rooms?" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="price"><i class="fas fa-tag"></i> Price (in Ksh)</label>
-                                        <input type="number" id="price" name="price" placeholder="e.g., 5000" min="0" required>
-                                    </div>
-                                    <div class="form-group full-width">
-                                        <label for="description"><i class="fas fa-align-left"></i> Property Description</label>
-                                        <textarea id="description" name="property_description" rows="4" placeholder="Describe your property, nearby amenities, and what makes it special"></textarea>
-                                        <div class="character-count">0/500 characters</div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-section">
-                                <h2><i class="fas fa-camera"></i> Media</h2>
-                                <div class="form-grid">
-                                    <div class="form-group">
-                                        <label for="photos"><i class="fas fa-images"></i> Upload Photos</label>
-                                        <div class="file-input-container">
-                                            <input type="file" id="photos" name="property_photos[]" accept="image/*" multiple required>
-                                        </div>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="rules"><i class="fas fa-file-alt"></i> Upload Property Rules</label>
-                                        <div class="file-input-container">
-                                            <input type="file" id="rules" name="property_rules[]" accept=".pdf, .doc, .docx, .txt, .ppt" multiple required>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="form-section">
-                                <h2><i class="fas fa-concierge-bell"></i> Amenities</h2>
-                                <div class="amenities-grid">
-                                    <div class="amenity-checkbox">
-                                        <input type="checkbox" id="wifi" name="amenities[]" value="wifi">
-                                        <label for="wifi">Wi-Fi</label>
-                                    </div>
-                                    <div class="amenity-checkbox">
-                                        <input type="checkbox" id="parking" name="amenities[]" value="parking">
-                                        <label for="parking">Parking</label>
-                                    </div>
-                                    <div class="amenity-checkbox">
-                                        <input type="checkbox" id="security" name="amenities[]" value="security">
-                                        <label for="security">Security</label>
-                                    </div>
-                                    <div class="amenity-checkbox">
-                                        <input type="checkbox" id="water" name="amenities[]" value="water">
-                                        <label for="water">Water Supply</label>
-                                    </div>
-                                    <div class="amenity-checkbox">
-                                        <input type="checkbox" id="electricity" name="amenities[]" value="electricity">
-                                        <label for="electricity">24/7 Electricity</label>
-                                    </div>
-                                    <div class="amenity-checkbox">
-                                        <input type="checkbox" id="laundry" name="amenities[]" value="laundry">
-                                        <label for="laundry">Laundry</label>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <button type="submit" class="submit-btn">
-                                <i class="fas fa-plus-circle"></i> Submit Property
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Listings Section -->
-            <section class="content hidden" id="edit-listings-content">
-                <div class="listings-container">
-                    <div class="listings-header">
-                        <h1><i class="fas fa-building"></i> My Property Listings</h1>
-                        <p>Manage and monitor all your property listings in one place</p>
-                    </div>
-                    
-                    <div class="listings-controls">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-listings" placeholder="Search properties...">
-                        </div>
-                        <div class="filter-controls">
-                            <select id="status-filter">
-                                <option value="all">All Status</option>
-                                <option value="occupied">Occupied</option>
-                                <option value="vacant">Vacant</option>
-                                <option value="maintenance">Maintenance</option>
-                            </select>
-                            <select id="type-filter">
-                                <option value="all">All Types</option>
-                                <option value="single-room">Single Room</option>
-                                <option value="bedsitter">Bedsitter</option>
-                                <option value="1-bedroom">1 Bedroom</option>
-                                <option value="2-bedroom">2 Bedrooms</option>
-                            </select>
-                        </div>
-                    </div>
-                    
-                    <div class="listings-grid" id="listings-grid">
-                        <!-- Listings will be dynamically populated here -->
-                    </div>
-                    
-                    <div class="pagination" id="listings-pagination">
-                        <!-- Pagination will be dynamically populated here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- View Tenants Section -->
-            <section class="content hidden" id="view-tenants-content">
+            <!-- Tenants Section -->
+            <section class="content" id="tenants-content">
                 <div class="tenants-container">
                     <div class="tenants-header">
-                        <h1><i class="fas fa-users"></i> Tenant Management</h1>
-                        <p>Manage all your tenants and their rental information</p>
+                        <div>
+                            <h1><i class="fas fa-users"></i> Tenants</h1>
+                            <p>Manage your tenants, track payments, and handle communications</p>
+                        </div>
+                        <div class="tenants-actions">
+                            <button id="add-tenant-btn">
+                                <i class="fas fa-user-plus"></i> Add Tenant
+                            </button>
+                            <button id="export-tenants">
+                                <i class="fas fa-download"></i> Export Data
+                            </button>
+                        </div>
                     </div>
                     
-                    <div class="tenants-controls">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-tenants" placeholder="Search tenants...">
-                        </div>
+                    <div class="tenants-content">
+                        <!-- Statistics Cards -->
                         <div class="tenants-stats">
                             <div class="stat-card">
-                                <div class="value" id="total-tenants">8</div>
-                                <div class="label">Total Tenants</div>
+                                <i class="fas fa-users"></i>
+                                <h3>12</h3>
+                                <p>Total Tenants</p>
                             </div>
                             <div class="stat-card">
-                                <div class="value" id="active-tenants">5</div>
-                                <div class="label">Active</div>
+                                <i class="fas fa-home"></i>
+                                <h3>8</h3>
+                                <p>Occupied Units</p>
                             </div>
                             <div class="stat-card">
-                                <div class="value" id="pending-tenants">3</div>
-                                <div class="label">Pending</div>
+                                <i class="fas fa-money-bill-wave"></i>
+                                <h3>KES 245,000</h3>
+                                <p>Monthly Revenue</p>
+                            </div>
+                            <div class="stat-card">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <h3>2</h3>
+                                <p>Rent Overdue</p>
                             </div>
                         </div>
-                    </div>
-                    
-                    <div class="tenants-grid" id="tenants-grid">
-                        <!-- Tenants will be dynamically populated here -->
-                    </div>
-                </div>
-            </section>
-
-            <!-- Tenant Bookings Section -->
-            <section class="content hidden" id="tenant-bookings-content">
-                <div class="bookings-container">
-                    <div class="bookings-header">
-                        <h1><i class="fas fa-calendar-check"></i> Tenant Bookings</h1>
-                        <p>Manage and track all tenant booking requests</p>
-                    </div>
-                    
-                    <div class="tenants-controls">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-bookings" placeholder="Search bookings...">
-                        </div>
-                        <div class="filter-controls">
-                            <select id="booking-status-filter">
+                        
+                        <!-- Search and Filter -->
+                        <div class="search-filter">
+                            <div class="search-box">
+                                <i class="fas fa-search"></i>
+                                <input type="text" id="tenant-search" placeholder="Search tenants by name, email, or property...">
+                            </div>
+                            <select class="filter-select" id="status-filter">
                                 <option value="all">All Status</option>
+                                <option value="active">Active</option>
                                 <option value="pending">Pending</option>
-                                <option value="confirmed">Confirmed</option>
-                                <option value="cancelled">Cancelled</option>
-                                <option value="completed">Completed</option>
+                                <option value="inactive">Inactive</option>
+                            </select>
+                            <select class="filter-select" id="property-filter">
+                                <option value="all">All Properties</option>
+                                <option value="westlands">Westlands Apartment</option>
+                                <option value="kilimani">Kilimani Studio</option>
+                                <option value="karen">Karen House</option>
                             </select>
                         </div>
-                    </div>
-                    
-                    <div class="property-form">
-                        <table class="bookings-table">
-                            <thead>
-                                <tr>
-                                    <th>Tenant</th>
-                                    <th>Property</th>
-                                    <th>Booking Date</th>
-                                    <th>Move-in Date</th>
-                                    <th>Status</th>
-                                    <th>Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="bookings-table-body">
-                                <!-- Bookings will be dynamically populated here -->
-                            </tbody>
-                        </table>
+                        
+                        <!-- Tabs -->
+                        <div class="tenants-tabs">
+                            <div class="tenants-tab active" data-tab="all">
+                                All Tenants <span class="tenants-tab-badge">12</span>
+                            </div>
+                            <div class="tenants-tab" data-tab="active">
+                                Active <span class="tenants-tab-badge">8</span>
+                            </div>
+                            <div class="tenants-tab" data-tab="pending">
+                                Pending <span class="tenants-tab-badge">2</span>
+                            </div>
+                            <div class="tenants-tab" data-tab="overdue">
+                                Rent Overdue <span class="tenants-tab-badge">2</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Tenants Table -->
+                        <div class="tenants-table-container">
+                            <div class="table-responsive">
+                                <table class="tenants-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Tenant</th>
+                                            <th>Property</th>
+                                            <th>Contact</th>
+                                            <th>Lease Period</th>
+                                            <th>Rent Status</th>
+                                            <th>Status</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Tenant 1 -->
+                                        <tr data-status="active" data-property="westlands">
+                                            <td>
+                                                <div class="tenant-info">
+                                                    <img src="https://placehold.co/40x40/4285F4/FFFFFF?text=JM" alt="John Mwangi" class="tenant-avatar">
+                                                    <div class="tenant-details">
+                                                        <h4>John Mwangi</h4>
+                                                        <p>ID: TN-001</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Westlands Apartment</td>
+                                            <td>
+                                                <div>john.mwangi@email.com</div>
+                                                <div>+254 712 345 678</div>
+                                            </td>
+                                            <td>
+                                                <div>Jan 15, 2024 - Jan 14, 2025</div>
+                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
+                                            </td>
+                                            <td>
+                                                <div class="rent-status">
+                                                    <i class="fas fa-check-circle rent-paid"></i>
+                                                    <span>Paid - Mar 2024</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge status-active">Active</span>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button class="btn-action btn-view" data-tenant-id="1">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </button>
+                                                    <button class="btn-action btn-message">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Tenant 2 -->
+                                        <tr data-status="active" data-property="kilimani">
+                                            <td>
+                                                <div class="tenant-info">
+                                                    <img src="https://placehold.co/40x40/00A699/FFFFFF?text=SK" alt="Sarah Kamau" class="tenant-avatar">
+                                                    <div class="tenant-details">
+                                                        <h4>Sarah Kamau</h4>
+                                                        <p>ID: TN-002</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Kilimani Studio</td>
+                                            <td>
+                                                <div>sarah.kamau@email.com</div>
+                                                <div>+254 723 456 789</div>
+                                            </td>
+                                            <td>
+                                                <div>Mar 1, 2024 - Feb 28, 2025</div>
+                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
+                                            </td>
+                                            <td>
+                                                <div class="rent-status">
+                                                    <i class="fas fa-exclamation-triangle rent-overdue"></i>
+                                                    <span>Overdue - Mar 2024</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge status-active">Active</span>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button class="btn-action btn-view" data-tenant-id="2">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </button>
+                                                    <button class="btn-action btn-message">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Tenant 3 -->
+                                        <tr data-status="pending" data-property="karen">
+                                            <td>
+                                                <div class="tenant-info">
+                                                    <img src="https://placehold.co/40x40/FF385C/FFFFFF?text=DN" alt="David Njoroge" class="tenant-avatar">
+                                                    <div class="tenant-details">
+                                                        <h4>David Njoroge</h4>
+                                                        <p>ID: TN-003</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Karen House</td>
+                                            <td>
+                                                <div>david.njoroge@email.com</div>
+                                                <div>+254 734 567 890</div>
+                                            </td>
+                                            <td>
+                                                <div>Apr 1, 2024 - Mar 31, 2025</div>
+                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
+                                            </td>
+                                            <td>
+                                                <div class="rent-status">
+                                                    <i class="fas fa-clock rent-pending"></i>
+                                                    <span>Pending - Apr 2024</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge status-pending">Pending</span>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button class="btn-action btn-view" data-tenant-id="3">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </button>
+                                                    <button class="btn-action btn-edit">
+                                                        <i class="fas fa-edit"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        
+                                        <!-- Tenant 4 -->
+                                        <tr data-status="active" data-property="westlands">
+                                            <td>
+                                                <div class="tenant-info">
+                                                    <img src="https://placehold.co/40x40/FFB400/FFFFFF?text=AK" alt="Alice Kariuki" class="tenant-avatar">
+                                                    <div class="tenant-details">
+                                                        <h4>Alice Kariuki</h4>
+                                                        <p>ID: TN-004</p>
+                                                    </div>
+                                                </div>
+                                            </td>
+                                            <td>Westlands Apartment</td>
+                                            <td>
+                                                <div>alice.kariuki@email.com</div>
+                                                <div>+254 745 678 901</div>
+                                            </td>
+                                            <td>
+                                                <div>Feb 15, 2024 - Feb 14, 2025</div>
+                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
+                                            </td>
+                                            <td>
+                                                <div class="rent-status">
+                                                    <i class="fas fa-check-circle rent-paid"></i>
+                                                    <span>Paid - Mar 2024</span>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <span class="status-badge status-active">Active</span>
+                                            </td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button class="btn-action btn-view" data-tenant-id="4">
+                                                        <i class="fas fa-eye"></i> View
+                                                    </button>
+                                                    <button class="btn-action btn-message">
+                                                        <i class="fas fa-envelope"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                     </div>
                 </div>
-            </section>
-           
-            <section class="content hidden" id="manage-location-content">
-                <h1>Manage Location</h1>
-                <p>This is where you would manage property locations</p>
             </section>
         </main>
     </div>
 
-    <!-- Footer -->
+    <!-- Tenant Details Modal -->
+    <div class="tenant-modal hidden" id="tenant-modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2><i class="fas fa-user"></i> Tenant Details</h2>
+                <button class="close-modal" id="close-modal-btn">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="tenant-profile">
+                    <div class="profile-avatar">
+                        <img src="https://placehold.co/120x120/4285F4/FFFFFF?text=JM" alt="Tenant Avatar" id="modal-avatar">
+                        <h3 id="modal-name">John Mwangi</h3>
+                        <span class="status-badge status-active" id="modal-status">Active</span>
+                    </div>
+                    <div class="profile-details">
+                        <h3>Contact Information</h3>
+                        <p><i class="fas fa-envelope"></i> <span id="modal-email">john.mwangi@email.com</span></p>
+                        <p><i class="fas fa-phone"></i> <span id="modal-phone">+254 712 345 678</span></p>
+                        <p><i class="fas fa-id-card"></i> Tenant ID: <span id="modal-id">TN-001</span></p>
+                        <p><i class="fas fa-calendar"></i> Member since: <span id="modal-join-date">January 2024</span></p>
+                    </div>
+                </div>
+                
+                <div class="details-grid">
+                    <div class="detail-card">
+                        <h4><i class="fas fa-home"></i> Property Information</h4>
+                        <div class="detail-item">
+                            <span class="detail-label">Property</span>
+                            <span class="detail-value" id="modal-property">Westlands Apartment</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Unit Number</span>
+                            <span class="detail-value" id="modal-unit">Unit 4B</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Monthly Rent</span>
+                            <span class="detail-value" id="modal-rent">KES 35,000</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h4><i class="fas fa-file-contract"></i> Lease Information</h4>
+                        <div class="detail-item">
+                            <span class="detail-label">Lease Start</span>
+                            <span class="detail-value" id="modal-lease-start">Jan 15, 2024</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Lease End</span>
+                            <span class="detail-value" id="modal-lease-end">Jan 14, 2025</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Duration</span>
+                            <span class="detail-value" id="modal-lease-duration">12 months</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h4><i class="fas fa-money-bill-wave"></i> Payment Information</h4>
+                        <div class="detail-item">
+                            <span class="detail-label">Last Payment</span>
+                            <span class="detail-value" id="modal-last-payment">Mar 1, 2024</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Next Payment Due</span>
+                            <span class="detail-value" id="modal-next-payment">Apr 1, 2024</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Payment Status</span>
+                            <span class="detail-value" id="modal-payment-status">Paid</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-card">
+                        <h4><i class="fas fa-sticky-note"></i> Additional Information</h4>
+                        <div class="detail-item">
+                            <span class="detail-label">Emergency Contact</span>
+                            <span class="detail-value" id="modal-emergency-contact">Mary Mwangi - +254 700 000 000</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Special Requirements</span>
+                            <span class="detail-value" id="modal-requirements">Pet friendly - 1 cat</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="modal-actions">
+                    <button class="btn-secondary" id="modal-close-btn">Close</button>
+                    <button class="btn-primary">
+                        <i class="fas fa-envelope"></i> Send Message
+                    </button>
+                    <button class="btn-primary">
+                        <i class="fas fa-edit"></i> Edit Tenant
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <footer class="footer">
-        <img src="https://placehold.co/100x30/FFFFFF/FF385C?text=SmartHunt" alt="SmartHunt Logo"> 
-        <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
+        <img src="assets/icons/smartlogo.png" alt="SmartHunt Logo">
+        <p>&copy; 2024 SmartHunt. All rights reserved.</p>
+        <p>Making property management smarter and easier.</p>
     </footer>
 
     <script>
-        // Sample property listings data
-        const propertyListings = [
-            {
-                id: 1,
-                title: "Tripple A Apartments",
-                location: "123 Main Gate, Campus",
-                type: "Single Rooms & Bedsitters",
-                price: 5000,
-                rooms: 12,
-                occupied: 8,
-                status: "occupied",
-                image: "https://placehold.co/400x200/4285F4/FFFFFF?text=Tripple+A+Apartments",
-                description: "Modern apartments with all amenities included. Close to campus and shopping centers."
-            },
-            {
-                id: 2,
-                title: "Green Valley Homes",
-                location: "456 University Road",
-                type: "Bedsitters",
-                price: 7000,
-                rooms: 8,
-                occupied: 3,
-                status: "vacant",
-                image: "https://placehold.co/400x200/00A699/FFFFFF?text=Green+Valley+Homes",
-                description: "Spacious bedsitters with beautiful garden views. Secure and quiet neighborhood."
-            },
-            {
-                id: 3,
-                title: "Campus View Apartments",
-                location: "789 Student Lane",
-                type: "1 Bedroom",
-                price: 12000,
-                rooms: 6,
-                occupied: 6,
-                status: "occupied",
-                image: "https://placehold.co/400x200/FF385C/FFFFFF?text=Campus+View+Apartments",
-                description: "Luxury 1-bedroom apartments with stunning campus views. All utilities included."
-            },
-            {
-                id: 4,
-                title: "Sunset Heights",
-                location: "321 Hilltop Avenue",
-                type: "2 Bedrooms",
-                price: 15000,
-                rooms: 4,
-                occupied: 2,
-                status: "vacant",
-                image: "https://placehold.co/400x200/FFB400/FFFFFF?text=Sunset+Heights",
-                description: "Modern 2-bedroom apartments perfect for students. Close to public transport."
-            },
-            {
-                id: 5,
-                title: "River Side Apartments",
-                location: "654 Riverside Drive",
-                type: "Single Rooms",
-                price: 4500,
-                rooms: 10,
-                occupied: 10,
-                status: "occupied",
-                image: "https://placehold.co/400x200/4285F4/FFFFFF?text=River+Side+Apartments",
-                description: "Affordable single rooms with shared amenities. Perfect for budget-conscious students."
-            },
-            {
-                id: 6,
-                title: "Downtown Suites",
-                location: "987 Central Business District",
-                type: "Bedsitters",
-                price: 8000,
-                rooms: 5,
-                occupied: 0,
-                status: "maintenance",
-                image: "https://placehold.co/400x200/FF5A5F/FFFFFF?text=Downtown+Suites",
-                description: "Currently under renovation. Modern bedsitters coming soon in prime location."
-            }
-        ];
-
-        // Sample tenants data
-        const tenantsData = [
-            {
-                id: 1,
-                name: "John Mwangi",
-                email: "john.mwangi@example.com",
-                phone: "+254 712 345 678",
-                property: "Tripple A Apartments",
-                room: "Room 5A",
-                rent: 5000,
-                status: "active",
-                moveInDate: "2023-01-15",
-                avatar: "https://placehold.co/60x60/4285F4/FFFFFF?text=JM"
-            },
-            {
-                id: 2,
-                name: "Sarah Wanjiku",
-                email: "sarah.wanjiku@example.com",
-                phone: "+254 723 456 789",
-                property: "Green Valley Homes",
-                room: "Bedsitter 3B",
-                rent: 7000,
-                status: "active",
-                moveInDate: "2023-03-10",
-                avatar: "https://placehold.co/60x60/00A699/FFFFFF?text=SW"
-            },
-            {
-                id: 3,
-                name: "David Ochieng",
-                email: "david.ochieng@example.com",
-                phone: "+254 734 567 890",
-                property: "Campus View Apartments",
-                room: "Apartment 2C",
-                rent: 12000,
-                status: "active",
-                moveInDate: "2023-02-20",
-                avatar: "https://placehold.co/60x60/FF385C/FFFFFF?text=DO"
-            },
-            {
-                id: 4,
-                name: "Grace Akinyi",
-                email: "grace.akinyi@example.com",
-                phone: "+254 745 678 901",
-                property: "Sunset Heights",
-                room: "Apartment 1A",
-                rent: 15000,
-                status: "active",
-                moveInDate: "2023-04-05",
-                avatar: "https://placehold.co/60x60/FFB400/FFFFFF?text=GA"
-            },
-            {
-                id: 5,
-                name: "Peter Kamau",
-                email: "peter.kamau@example.com",
-                phone: "+254 756 789 012",
-                property: "River Side Apartments",
-                room: "Room 8D",
-                rent: 4500,
-                status: "active",
-                moveInDate: "2023-05-12",
-                avatar: "https://placehold.co/60x60/4285F4/FFFFFF?text=PK"
-            },
-            {
-                id: 6,
-                name: "Mary Njeri",
-                email: "mary.njeri@example.com",
-                phone: "+254 767 890 123",
-                property: "Tripple A Apartments",
-                room: "Room 2B",
-                rent: 5000,
-                status: "pending",
-                moveInDate: "2023-06-01",
-                avatar: "https://placehold.co/60x60/00A699/FFFFFF?text=MN"
-            },
-            {
-                id: 7,
-                name: "James Mutiso",
-                email: "james.mutiso@example.com",
-                phone: "+254 778 901 234",
-                property: "Green Valley Homes",
-                room: "Bedsitter 5A",
-                rent: 7000,
-                status: "pending",
-                moveInDate: "2023-06-15",
-                avatar: "https://placehold.co/60x60/FF385C/FFFFFF?text=JM"
-            },
-            {
-                id: 8,
-                name: "Lucy Adhiambo",
-                email: "lucy.adhiambo@example.com",
-                phone: "+254 789 012 345",
-                property: "Campus View Apartments",
-                room: "Apartment 3B",
-                rent: 12000,
-                status: "pending",
-                moveInDate: "2023-07-01",
-                avatar: "https://placehold.co/60x60/FFB400/FFFFFF?text=LA"
-            }
-        ];
-
-        // Sample bookings data
-        const bookingsData = [
-            {
-                id: 1,
-                tenant: "Mary Njeri",
-                property: "Tripple A Apartments",
-                bookingDate: "2023-05-20",
-                moveInDate: "2023-06-01",
-                status: "pending"
-            },
-            {
-                id: 2,
-                tenant: "James Mutiso",
-                property: "Green Valley Homes",
-                bookingDate: "2023-05-25",
-                moveInDate: "2023-06-15",
-                status: "pending"
-            },
-            {
-                id: 3,
-                tenant: "Lucy Adhiambo",
-                property: "Campus View Apartments",
-                bookingDate: "2023-05-28",
-                moveInDate: "2023-07-01",
-                status: "pending"
-            },
-            {
-                id: 4,
-                tenant: "Brian Otieno",
-                property: "Sunset Heights",
-                bookingDate: "2023-04-15",
-                moveInDate: "2023-05-01",
-                status: "confirmed"
-            },
-            {
-                id: 5,
-                tenant: "Esther Wambui",
-                property: "River Side Apartments",
-                bookingDate: "2023-04-10",
-                moveInDate: "2023-05-15",
-                status: "completed"
-            },
-            {
-                id: 6,
-                tenant: "Michael Njoroge",
-                property: "Downtown Suites",
-                bookingDate: "2023-03-20",
-                moveInDate: "2023-04-01",
-                status: "cancelled"
-            },
-              {
-                id: 7,
-                tenant: "John Brian",
-                property: "Downtown Suites",
-                bookingDate: "2023-03-20",
-                moveInDate: "2023-04-01",
-                status: "cancelled"
-            }
-        ];
-
-        // Function to render property listings
-        function renderListings(listings = propertyListings) {
-            const listingsGrid = document.getElementById('listings-grid');
-            
-            if (listings.length === 0) {
-                listingsGrid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-home"></i>
-                        <h3>No Properties Found</h3>
-                        <p>You don't have any properties matching your search criteria.</p>
-                        <button class="listing-btn btn-view" onclick="showAddProperty()">Add New Property</button>
-                    </div>
-                `;
-                return;
-            }
-            
-            listingsGrid.innerHTML = listings.map(listing => `
-                <div class="listing-card" data-id="${listing.id}">
-                    <div class="listing-image">
-                        <img src="${listing.image}" alt="${listing.title}">
-                        <div class="listing-status status-${listing.status}">
-                            ${listing.status.charAt(0).toUpperCase() + listing.status.slice(1)}
-                        </div>
-                    </div>
-                    <div class="listing-details">
-                        <h3 class="listing-title">${listing.title}</h3>
-                        <div class="listing-location">
-                            <i class="fas fa-map-marker-alt"></i>
-                            ${listing.location}
-                        </div>
-                        <p>${listing.description}</p>
-                        <div class="listing-info">
-                            <div class="listing-info-item">
-                                <span class="info-label">Type</span>
-                                <span class="info-value">${listing.type}</span>
-                            </div>
-                            <div class="listing-info-item">
-                                <span class="info-label">Price</span>
-                                <span class="info-value">Ksh ${listing.price.toLocaleString()}</span>
-                            </div>
-                            <div class="listing-info-item">
-                                <span class="info-label">Occupancy</span>
-                                <span class="info-value">${listing.occupied}/${listing.rooms}</span>
-                            </div>
-                        </div>
-                        <div class="listing-actions">
-                            <button class="listing-btn btn-edit" onclick="editListing(${listing.id})">
-                                <i class="fas fa-edit"></i> Edit
-                            </button>
-                            <button class="listing-btn btn-view" onclick="viewListing(${listing.id})">
-                                <i class="fas fa-eye"></i> View
-                            </button>
-                            <button class="listing-btn btn-delete" onclick="deleteListing(${listing.id})">
-                                <i class="fas fa-trash"></i> Delete
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Function to render tenants
-        function renderTenants(tenants = tenantsData) {
-            const tenantsGrid = document.getElementById('tenants-grid');
-            
-            if (tenants.length === 0) {
-                tenantsGrid.innerHTML = `
-                    <div class="empty-state">
-                        <i class="fas fa-users"></i>
-                        <h3>No Tenants Found</h3>
-                        <p>You don't have any tenants matching your search criteria.</p>
-                    </div>
-                `;
-                return;
-            }
-            
-            // Update tenant stats
-            const totalTenants = tenants.length;
-            const activeTenants = tenants.filter(tenant => tenant.status === 'active').length;
-            const pendingTenants = tenants.filter(tenant => tenant.status === 'pending').length;
-            
-            document.getElementById('total-tenants').textContent = totalTenants;
-            document.getElementById('active-tenants').textContent = activeTenants;
-            document.getElementById('pending-tenants').textContent = pendingTenants;
-            
-            tenantsGrid.innerHTML = tenants.map(tenant => `
-                <div class="tenant-card" data-id="${tenant.id}">
-                    <div class="tenant-header">
-                        <div class="tenant-avatar">
-                            <img src="${tenant.avatar}" alt="${tenant.name}">
-                        </div>
-                        <div class="tenant-info">
-                            <h3>${tenant.name}</h3>
-                            <p>${tenant.email}</p>
-                        </div>
-                    </div>
-                    <div class="tenant-details">
-                        <div class="tenant-detail">
-                            <span class="detail-label">Phone</span>
-                            <span class="detail-value">${tenant.phone}</span>
-                        </div>
-                        <div class="tenant-detail">
-                            <span class="detail-label">Property</span>
-                            <span class="detail-value">${tenant.property}</span>
-                        </div>
-                        <div class="tenant-detail">
-                            <span class="detail-label">Room</span>
-                            <span class="detail-value">${tenant.room}</span>
-                        </div>
-                        <div class="tenant-detail">
-                            <span class="detail-label">Rent</span>
-                            <span class="detail-value">Ksh ${tenant.rent.toLocaleString()}</span>
-                        </div>
-                        <div class="tenant-detail">
-                            <span class="detail-label">Move-in Date</span>
-                            <span class="detail-value">${formatDate(tenant.moveInDate)}</span>
-                        </div>
-                        <div class="tenant-detail">
-                            <span class="detail-label">Status</span>
-                            <span class="detail-value">
-                                <span class="booking-status status-${tenant.status}">
-                                    ${tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)}
-                                </span>
-                            </span>
-                        </div>
-                    </div>
-                    <div class="tenant-actions">
-                        <button class="tenant-btn btn-contact" onclick="contactTenant(${tenant.id})">
-                            <i class="fas fa-envelope"></i> Contact
-                        </button>
-                        <button class="tenant-btn btn-remind" onclick="sendReminder(${tenant.id})">
-                            <i class="fas fa-bell"></i> Remind
-                        </button>
-                        <button class="tenant-btn btn-remove" onclick="removeTenant(${tenant.id})">
-                            <i class="fas fa-user-times"></i> Remove
-                        </button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // Function to render bookings
-        function renderBookings(bookings = bookingsData) {
-            const bookingsTableBody = document.getElementById('bookings-table-body');
-            
-            if (bookings.length === 0) {
-                bookingsTableBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 30px;">
-                            <div class="empty-state">
-                                <i class="fas fa-calendar-times"></i>
-                                <h3>No Bookings Found</h3>
-                                <p>You don't have any bookings matching your search criteria.</p>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            bookingsTableBody.innerHTML = bookings.map(booking => `
-                <tr>
-                    <td>${booking.tenant}</td>
-                    <td>${booking.property}</td>
-                    <td>${formatDate(booking.bookingDate)}</td>
-                    <td>${formatDate(booking.moveInDate)}</td>
-                    <td>
-                        <span class="booking-status status-${booking.status}">
-                            ${booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
-                        </span>
-                    </td>
-                    <td class="action-cell">
-                        ${booking.status === 'pending' ? `
-                            <button class="table-btn btn-confirm" onclick="confirmBooking(${booking.id})">
-                                <i class="fas fa-check"></i> Confirm
-                            </button>
-                            <button class="table-btn btn-cancel" onclick="cancelBooking(${booking.id})">
-                                <i class="fas fa-times"></i> Cancel
-                            </button>
-                        ` : ''}
-                        <button class="table-btn btn-details" onclick="viewBookingDetails(${booking.id})">
-                            <i class="fas fa-eye"></i> Details
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        // Function to filter listings
-        function filterListings() {
-            const searchTerm = document.getElementById('search-listings').value.toLowerCase();
-            const statusFilter = document.getElementById('status-filter').value;
-            const typeFilter = document.getElementById('type-filter').value;
-            
-            const filteredListings = propertyListings.filter(listing => {
-                const matchesSearch = listing.title.toLowerCase().includes(searchTerm) || 
-                                     listing.location.toLowerCase().includes(searchTerm);
-                const matchesStatus = statusFilter === 'all' || listing.status === statusFilter;
-                const matchesType = typeFilter === 'all' || listing.type.toLowerCase().includes(typeFilter);
-                
-                return matchesSearch && matchesStatus && matchesType;
-            });
-            
-            renderListings(filteredListings);
-        }
-
-        // Function to filter tenants
-        function filterTenants() {
-            const searchTerm = document.getElementById('search-tenants').value.toLowerCase();
-            
-            const filteredTenants = tenantsData.filter(tenant => {
-                const matchesSearch = tenant.name.toLowerCase().includes(searchTerm) || 
-                                     tenant.email.toLowerCase().includes(searchTerm) ||
-                                     tenant.property.toLowerCase().includes(searchTerm);
-                
-                return matchesSearch;
-            });
-            
-            renderTenants(filteredTenants);
-        }
-
-        // Function to filter bookings
-        function filterBookings() {
-            const searchTerm = document.getElementById('search-bookings').value.toLowerCase();
-            const statusFilter = document.getElementById('booking-status-filter').value;
-            
-            const filteredBookings = bookingsData.filter(booking => {
-                const matchesSearch = booking.tenant.toLowerCase().includes(searchTerm) || 
-                                     booking.property.toLowerCase().includes(searchTerm);
-                const matchesStatus = statusFilter === 'all' || booking.status === statusFilter;
-                
-                return matchesSearch && matchesStatus;
-            });
-            
-            renderBookings(filteredBookings);
-        }
-
-        // Function to show add property form
-        function showAddProperty() {
-            document.querySelectorAll('.content').forEach(section => {
-                section.classList.add('hidden');
-            });
-            
-            document.getElementById('add-property-content').classList.remove('hidden');
-            
-            // Update sidebar active state
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.querySelector('[data-content="add-property"]').classList.add('active');
-        }
-
-        // Function to edit a listing
-        function editListing(id) {
-            alert(`Editing property with ID: ${id}`);
-            // In a real application, this would open an edit form with the property data
-        }
-
-        // Function to view a listing
-        function viewListing(id) {
-            alert(`Viewing property with ID: ${id}`);
-            // In a real application, this would show a detailed view of the property
-        }
-
-        // Function to delete a listing
-        function deleteListing(id) {
-            if (confirm('Are you sure you want to delete this property listing?')) {
-                alert(`Property with ID: ${id} deleted`);
-                // In a real application, this would remove the property from the database
-                // For now, we'll just remove it from the UI
-                const index = propertyListings.findIndex(listing => listing.id === id);
-                if (index !== -1) {
-                    propertyListings.splice(index, 1);
-                    renderListings();
-                }
-            }
-        }
-
-        // Tenant management functions
-        function contactTenant(id) {
-            const tenant = tenantsData.find(t => t.id === id);
-            if (tenant) {
-                alert(`Contacting ${tenant.name} at ${tenant.email} or ${tenant.phone}`);
-                // In a real application, this would open a contact form or initiate a call
-            }
-        }
-
-        function sendReminder(id) {
-            const tenant = tenantsData.find(t => t.id === id);
-            if (tenant) {
-                alert(`Sending reminder to ${tenant.name} about rent payment`);
-                // In a real application, this would send an email or SMS reminder
-            }
-        }
-
-        function removeTenant(id) {
-            if (confirm('Are you sure you want to remove this tenant?')) {
-                const tenant = tenantsData.find(t => t.id === id);
-                if (tenant) {
-                    alert(`Removing tenant: ${tenant.name}`);
-                    // In a real application, this would remove the tenant from the database
-                    // For now, we'll just remove it from the UI
-                    const index = tenantsData.findIndex(t => t.id === id);
-                    if (index !== -1) {
-                        tenantsData.splice(index, 1);
-                        renderTenants();
+        // Tenant Management System
+        class TenantManager {
+            constructor() {
+                this.tenants = {
+                    1: {
+                        name: 'John Mwangi',
+                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
+                        email: 'john.mwangi@email.com',
+                        phone: '+254 712 345 678',
+                        id: 'TN-001',
+                        joinDate: 'January 2024',
+                        property: 'Westlands Apartment',
+                        unit: 'Unit 4B',
+                        rent: 'KES 35,000',
+                        leaseStart: 'Jan 15, 2024',
+                        leaseEnd: 'Jan 14, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Mar 1, 2024',
+                        nextPayment: 'Apr 1, 2024',
+                        paymentStatus: 'Paid',
+                        status: 'Active',
+                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
+                        requirements: 'Pet friendly - 1 cat'
+                    },
+                    2: {
+                        name: 'Sarah Kamau',
+                        avatar: 'https://placehold.co/120x120/00A699/FFFFFF?text=SK',
+                        email: 'sarah.kamau@email.com',
+                        phone: '+254 723 456 789',
+                        id: 'TN-002',
+                        joinDate: 'March 2024',
+                        property: 'Kilimani Studio',
+                        unit: 'Unit 2A',
+                        rent: 'KES 18,000',
+                        leaseStart: 'Mar 1, 2024',
+                        leaseEnd: 'Feb 28, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Feb 28, 2024',
+                        nextPayment: 'Mar 1, 2024',
+                        paymentStatus: 'Overdue',
+                        status: 'Active',
+                        emergencyContact: 'James Kamau - +254 711 111 111',
+                        requirements: 'None'
+                    },
+                    3: {
+                        name: 'David Njoroge',
+                        avatar: 'https://placehold.co/120x120/FF385C/FFFFFF?text=DN',
+                        email: 'david.njoroge@email.com',
+                        phone: '+254 734 567 890',
+                        id: 'TN-003',
+                        joinDate: 'April 2024',
+                        property: 'Karen House',
+                        unit: 'Main House',
+                        rent: 'KES 65,000',
+                        leaseStart: 'Apr 1, 2024',
+                        leaseEnd: 'Mar 31, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'N/A',
+                        nextPayment: 'Apr 1, 2024',
+                        paymentStatus: 'Pending',
+                        status: 'Pending',
+                        emergencyContact: 'Grace Njoroge - +254 722 222 222',
+                        requirements: 'Gardening services required'
+                    },
+                    4: {
+                        name: 'Alice Kariuki',
+                        avatar: 'https://placehold.co/120x120/FFB400/FFFFFF?text=AK',
+                        email: 'alice.kariuki@email.com',
+                        phone: '+254 745 678 901',
+                        id: 'TN-004',
+                        joinDate: 'February 2024',
+                        property: 'Westlands Apartment',
+                        unit: 'Unit 3C',
+                        rent: 'KES 42,000',
+                        leaseStart: 'Feb 15, 2024',
+                        leaseEnd: 'Feb 14, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Mar 5, 2024',
+                        nextPayment: 'Apr 5, 2024',
+                        paymentStatus: 'Paid',
+                        status: 'Active',
+                        emergencyContact: 'Peter Kariuki - +254 733 333 333',
+                        requirements: 'Parking space required'
                     }
-                }
+                };
+
+                this.modal = document.getElementById('tenant-modal');
+                this.init();
             }
-        }
 
-        // Booking management functions
-        function confirmBooking(id) {
-            const booking = bookingsData.find(b => b.id === id);
-            if (booking) {
-                booking.status = 'confirmed';
-                alert(`Booking confirmed for ${booking.tenant}`);
-                renderBookings();
+            init() {
+                this.bindEvents();
+                console.log('Tenant Manager initialized');
             }
-        }
 
-        function cancelBooking(id) {
-            const booking = bookingsData.find(b => b.id === id);
-            if (booking) {
-                booking.status = 'cancelled';
-                alert(`Booking cancelled for ${booking.tenant}`);
-                renderBookings();
-            }
-        }
-
-        function viewBookingDetails(id) {
-            const booking = bookingsData.find(b => b.id === id);
-            if (booking) {
-                alert(`Viewing booking details for ${booking.tenant}`);
-                // In a real application, this would show a detailed view of the booking
-            }
-        }
-
-        // Utility function to format dates
-        function formatDate(dateString) {
-            const options = { year: 'numeric', month: 'short', day: 'numeric' };
-            return new Date(dateString).toLocaleDateString('en-US', options);
-        }
-
-        // Initialize all features when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Hide all content sections except dashboard
-            document.querySelectorAll('.content').forEach(section => {
-                if (section.id !== 'dashboard-content') {
-                    section.classList.add('hidden');
-                }
-            });
-            
-            renderListings();
-            renderTenants();
-            renderBookings();
-            
-            // Add event listeners for filtering
-            document.getElementById('search-listings').addEventListener('input', filterListings);
-            document.getElementById('status-filter').addEventListener('change', filterListings);
-            document.getElementById('type-filter').addEventListener('change', filterListings);
-            
-            document.getElementById('search-tenants').addEventListener('input', filterTenants);
-            
-            document.getElementById('search-bookings').addEventListener('input', filterBookings);
-            document.getElementById('booking-status-filter').addEventListener('change', filterBookings);
-            
-            // Rest of your existing code...
-            updateGreeting();
-            updateOccupancy();
-            
-            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    
-                    const contentId = this.getAttribute('data-content') + '-content';
-                    
-                    // Hide all content sections
-                    document.querySelectorAll('.content').forEach(section => {
-                        section.classList.add('hidden');
+            bindEvents() {
+                // View tenant buttons
+                document.querySelectorAll('.btn-view').forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const tenantId = e.currentTarget.getAttribute('data-tenant-id');
+                        this.viewTenant(tenantId);
                     });
-                    
-                    // Show the selected content section
-                    const targetSection = document.getElementById(contentId);
-                    if (targetSection) {
-                        targetSection.classList.remove('hidden');
-                    }
-                    
-                    // Update sidebar active state
-                    sidebarLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
                 });
-            });
-            
-            setTimeout(() => {
-                document.getElementById('active-properties-count').textContent = '5 Properties';
-            }, 500);
 
-            initializeCharts();
-            
-            document.getElementById('timeRange').addEventListener('change', function() {
-                updateCharts(this.value);
-            });
-        });
+                // Close modal buttons
+                document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
+                document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
 
-        // Rest of your existing functions...
-        function updateGreeting() {
-            const now = new Date();
-            const hour = now.getHours();
-            const greetingElement = document.getElementById('greeting');
-            
-            if (hour >= 5 && hour < 12) {
-                greetingElement.textContent = 'Good Morning, Landlord!';
-            } else if (hour >= 12 && hour < 18) {
-                greetingElement.textContent = 'Good Afternoon, Landlord!';
-            } else {
-                greetingElement.textContent = 'Good Evening, Landlord!';
+                // Close modal when clicking outside
+                this.modal.addEventListener('click', (e) => {
+                    if (e.target === this.modal) {
+                        this.closeModal();
+                    }
+                });
+
+                // Close modal with Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !this.modal.classList.contains('hidden')) {
+                        this.closeModal();
+                    }
+                });
+
+                // Tabs
+                document.querySelectorAll('.tenants-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        this.handleTabClick(e.currentTarget);
+                    });
+                });
+
+                // Search
+                document.getElementById('tenant-search').addEventListener('input', (e) => {
+                    this.handleSearch(e.target.value);
+                });
+
+                // Filters
+                document.getElementById('status-filter').addEventListener('change', (e) => {
+                    this.applyFilters();
+                });
+                document.getElementById('property-filter').addEventListener('change', (e) => {
+                    this.applyFilters();
+                });
+
+                // Action buttons
+                document.getElementById('add-tenant-btn').addEventListener('click', () => {
+                    alert('Add tenant functionality would open here');
+                });
+
+                document.getElementById('export-tenants').addEventListener('click', () => {
+                    alert('Exporting tenant data...');
+                });
             }
-        }
 
-        let occupiedRooms = 3;
-        let totalRooms = 8;
-        
-        function updateOccupancy() {
-            const percentage = Math.round((occupiedRooms / totalRooms) * 100);
-            document.getElementById('occupancyPercentage').textContent = `${percentage}%`;
-            document.getElementById('progress').style.width = `${percentage}%`;
-        }
-        
-        function occupyRoom() {
-            if (occupiedRooms < totalRooms) {
-                occupiedRooms++;
-                updateOccupancy();
-            } else {
-                alert('All rooms are already occupied!');
-            }
-        }
-        
-        function vacateRoom() {
-            if (occupiedRooms > 0) {
-                occupiedRooms--;
-                updateOccupancy();
-            } else {
-                alert('No rooms are currently occupied!');
-            }
-        }
+            viewTenant(tenantId) {
+                const tenant = this.tenants[tenantId];
+                if (!tenant) return;
 
-        const descriptionTextarea = document.getElementById('description');
-        const characterCount = document.querySelector('.character-count');
-        
-        if (descriptionTextarea && characterCount) {
-            descriptionTextarea.addEventListener('input', function() {
-                const length = this.value.length;
-                characterCount.textContent = `${length}/500 characters`;
+                // Populate modal
+                Object.keys(tenant).forEach(key => {
+                    const element = document.getElementById(`modal-${key}`);
+                    if (element) {
+                        if (key === 'avatar') {
+                            element.src = tenant[key];
+                        } else {
+                            element.textContent = tenant[key];
+                        }
+                    }
+                });
+
+                // Update status badge
+                const statusBadge = document.getElementById('modal-status');
+                statusBadge.textContent = tenant.status;
+                statusBadge.className = 'status-badge ';
                 
-                if (length > 500) {
-                    characterCount.style.color = 'var(--danger)';
+                if (tenant.status === 'Active') {
+                    statusBadge.classList.add('status-active');
+                } else if (tenant.status === 'Pending') {
+                    statusBadge.classList.add('status-pending');
                 } else {
-                    characterCount.style.color = 'var(--text)';
+                    statusBadge.classList.add('status-inactive');
                 }
-            });
-        }
 
-        // Chart initialization and data
-        let viewsInquiriesChart, earningsChart;
-
-        function initializeCharts() {
-            const ctx1 = document.getElementById('viewsInquiriesChart').getContext('2d');
-            const ctx2 = document.getElementById('earningsChart').getContext('2d');
-            
-            // Generate data for the last 30 days by default
-            const days = generateDays(30);
-            const viewsData = generateRandomData(30, 50, 200);
-            const inquiriesData = generateRandomData(30, 5, 40);
-            const earningsData = generateRandomData(30, 5000, 25000);
-            
-            // Create Views vs Inquiries chart
-            viewsInquiriesChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: days,
-                    datasets: [
-                        {
-                            label: 'Views',
-                            data: viewsData,
-                            borderColor: '#4285F4',
-                            backgroundColor: 'rgba(66, 133, 244, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Inquiries',
-                            data: inquiriesData,
-                            borderColor: '#FF385C',
-                            backgroundColor: 'rgba(255, 56, 92, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Creating Earning chart
-            earningsChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: days,
-                    datasets: [{
-                        label: 'Earnings (Ksh)',
-                        data: earningsData,
-                        backgroundColor: 'rgba(0, 166, 153, 0.7)',
-                        borderColor: 'rgba(0, 166, 153, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateCharts(daysCount) {
-            const days = generateDays(daysCount);
-            const viewsData = generateRandomData(daysCount, 50, 200);
-            const inquiriesData = generateRandomData(daysCount, 5, 40);
-            const earningsData = generateRandomData(daysCount, 5000, 25000);
-            
-            // Update Views vs Inquiries chart
-            viewsInquiriesChart.data.labels = days;
-            viewsInquiriesChart.data.datasets[0].data = viewsData;
-            viewsInquiriesChart.data.datasets[1].data = inquiriesData;
-            viewsInquiriesChart.update();
-            
-            // Update Earnings chart
-            earningsChart.data.labels = days;
-            earningsChart.data.datasets[0].data = earningsData;
-            earningsChart.update();
-        }
-
-        function generateDays(count) {
-            const days = [];
-            for (let i = count - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+                this.showModal();
             }
-            return days;
+
+            showModal() {
+                this.modal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            }
+
+            closeModal() {
+                this.modal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            handleTabClick(tab) {
+                // Update active tab
+                document.querySelectorAll('.tenants-tab').forEach(t => t.classList.remove('active'));
+                tab.classList.add('active');
+
+                const tabType = tab.getAttribute('data-tab');
+                this.filterTable(tabType);
+            }
+
+            filterTable(tabType) {
+                const rows = document.querySelectorAll('.tenants-table tbody tr');
+                
+                rows.forEach(row => {
+                    if (tabType === 'all') {
+                        row.style.display = 'table-row';
+                    } else if (tabType === 'overdue') {
+                        const rentStatus = row.querySelector('.rent-status span').textContent;
+                        row.style.display = rentStatus.includes('Overdue') ? 'table-row' : 'none';
+                    } else {
+                        const rowStatus = row.getAttribute('data-status');
+                        row.style.display = rowStatus === tabType ? 'table-row' : 'none';
+                    }
+                });
+            }
+
+            handleSearch(searchTerm) {
+                const rows = document.querySelectorAll('.tenants-table tbody tr');
+                const term = searchTerm.toLowerCase();
+
+                rows.forEach(row => {
+                    const tenantName = row.querySelector('.tenant-details h4').textContent.toLowerCase();
+                    const tenantEmail = row.querySelector('td:nth-child(3) div:first-child').textContent.toLowerCase();
+                    const property = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+
+                    const matches = tenantName.includes(term) || tenantEmail.includes(term) || property.includes(term);
+                    row.style.display = matches ? 'table-row' : 'none';
+                });
+            }
+
+            applyFilters() {
+                const statusValue = document.getElementById('status-filter').value;
+                const propertyValue = document.getElementById('property-filter').value;
+                const searchValue = document.getElementById('tenant-search').value.toLowerCase();
+                const rows = document.querySelectorAll('.tenants-table tbody tr');
+
+                rows.forEach(row => {
+                    const rowStatus = row.getAttribute('data-status');
+                    const rowProperty = row.getAttribute('data-property');
+                    const tenantName = row.querySelector('.tenant-details h4').textContent.toLowerCase();
+                    const tenantEmail = row.querySelector('td:nth-child(3) div:first-child').textContent.toLowerCase();
+                    const property = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+
+                    const statusMatch = statusValue === 'all' || rowStatus === statusValue;
+                    const propertyMatch = propertyValue === 'all' || rowProperty === propertyValue;
+                    const searchMatch = tenantName.includes(searchValue) || tenantEmail.includes(searchValue) || property.includes(searchValue);
+
+                    row.style.display = statusMatch && propertyMatch && searchMatch ? 'table-row' : 'none';
+                });
+            }
         }
 
-        function generateRandomData(count, min, max) {
-            const data = [];
-            for (let i = 0; i < count; i++) {
-                data.push(Math.floor(Math.random() * (max - min + 1)) + min);
-            }
-            return data;
-        }
+        // Initialize the application when DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            new TenantManager();
+        });
     </script>
 </body>
 </html>

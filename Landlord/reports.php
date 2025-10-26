@@ -852,9 +852,9 @@
                     
                     <div class="reports-controls">
                         <div class="date-range">
-                            <input type="month" id="start-date" value="2023-01">
+                            <input type="month" id="start-date" value="2025-01">
                             <span>to</span>
-                            <input type="month" id="end-date" value="2023-06">
+                            <input type="month" id="end-date" value="2025-06">
                         </div>
                         
                         <div class="report-actions">
@@ -960,9 +960,9 @@
                 id: 1,
                 title: "Monthly Financial Report",
                 type: "financial",
-                period: "June 2023",
-                generatedDate: "2023-07-01T10:00:00",
-                description: "Comprehensive financial overview including revenue, expenses, and profit analysis for June 2023.",
+                period: "October 2025",
+                generatedDate: "2025-10-01T10:00:00",
+                description: "Comprehensive financial overview including revenue, expenses, and profit analysis for October 2025.",
                 stats: [
                     { value: "Ksh 145,000", label: "Total Revenue", type: "positive" },
                     { value: "Ksh 28,500", label: "Total Expenses", type: "negative" },
@@ -977,9 +977,9 @@
                 id: 2,
                 title: "Occupancy Analysis Report",
                 type: "occupancy",
-                period: "Q2 2023",
-                generatedDate: "2023-07-05T14:30:00",
-                description: "Detailed analysis of property occupancy rates, tenant turnover, and vacancy trends for Q2 2023.",
+                period: "Q2 2025",
+                generatedDate: "2025-10-05T14:30:00",
+                description: "Detailed analysis of property occupancy rates, tenant turnover, and vacancy trends for Q2 2025.",
                 stats: [
                     { value: "78%", label: "Avg Occupancy", type: "neutral" },
                     { value: "92%", label: "Retention Rate", type: "positive" },
@@ -994,8 +994,8 @@
                 id: 3,
                 title: "Property Performance Report",
                 type: "performance",
-                period: "January - June 2023",
-                generatedDate: "2023-07-10T09:15:00",
+                period: "June - October 2025",
+                generatedDate: "2025-10-10T09:15:00",
                 description: "Performance comparison across all properties including revenue per property and maintenance costs.",
                 stats: [
                     { value: "Ksh 845,000", label: "Total Revenue", type: "positive" },
@@ -1011,8 +1011,8 @@
                 id: 4,
                 title: "Tenant Analytics Report",
                 type: "tenant",
-                period: "Year 2023",
-                generatedDate: "2023-07-15T16:45:00",
+                period: "Year 2025",
+                generatedDate: "2025-10-15T16:45:00",
                 description: "Comprehensive tenant analytics including demographics, payment behavior, and satisfaction metrics.",
                 stats: [
                     { value: "32", label: "Active Tenants", type: "neutral" },
@@ -1028,8 +1028,8 @@
                 id: 5,
                 title: "Maintenance Cost Analysis",
                 type: "financial",
-                period: "Q2 2023",
-                generatedDate: "2023-07-08T11:20:00",
+                period: "Q2 2025",
+                generatedDate: "2025-10-08T11:20:00",
                 description: "Breakdown of maintenance costs by property and category with recommendations for cost optimization.",
                 stats: [
                     { value: "Ksh 45,200", label: "Total Cost", type: "negative" },
@@ -1045,8 +1045,8 @@
                 id: 6,
                 title: "Marketing Performance Report",
                 type: "performance",
-                period: "June 2023",
-                generatedDate: "2023-07-03T13:10:00",
+                period: "June 2025",
+                generatedDate: "2025-10-03T13:10:00",
                 description: "Analysis of marketing channels effectiveness and lead conversion rates for property listings.",
                 stats: [
                     { value: "156", label: "Total Leads", type: "positive" },
