@@ -856,7 +856,7 @@
                     
                     // Redirect to dashboard after 2 seconds
                     setTimeout(() => {
-                        window.location.href = 'dashboard.html';
+                        window.location.href = 'index.php';
                     }, 2000);
                 }, 1500);
             } else {
@@ -920,7 +920,7 @@
                 
                 // Redirect to dashboard after 2 seconds
                 setTimeout(() => {
-                    window.location.href = 'dashboard.html';
+                    window.location.href = 'index.php';
                 }, 2000);
             }, 1500);
         });
@@ -960,17 +960,14 @@
         document.getElementById('google-register-btn').addEventListener('click', function() {
             const btn = this;
             const originalText = btn.innerHTML;
-            
-            // Show loading state
+           
             btn.innerHTML = '<div class="spinner"></div> Connecting...';
             btn.disabled = true;
             
-            // Simulate Google OAuth flow
+           
             setTimeout(() => {
                 console.log('Google registration initiated');
                 
-                // In a real implementation, this would redirect to Google OAuth
-                // For demo purposes, we'll simulate a successful registration
                 simulateGoogleAuth('register');
                 
                 // Reset button after a delay
@@ -1000,7 +997,7 @@
             
             // Redirect to dashboard after 2 seconds
             setTimeout(() => {
-                window.location.href = 'dashboard.html';
+                window.location.href = 'index.php';
             }, 2000);
         }
 

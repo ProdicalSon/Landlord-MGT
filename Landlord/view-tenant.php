@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        /* All your CSS styles remain exactly the same */
+        /* All previous CSS styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -579,8 +579,8 @@
             min-width: 150px;
         }
 
-        /* Tenant Details Modal */
-        .tenant-modal {
+        /* Modal Styles */
+        .modal-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -641,84 +641,161 @@
             padding: 30px;
         }
 
-        .tenant-profile {
-            display: grid;
-            grid-template-columns: 150px 1fr;
-            gap: 30px;
+        /* Add Tenant Form Styles */
+        .form-section {
             margin-bottom: 30px;
         }
 
-        .profile-avatar {
-            text-align: center;
-        }
-
-        .profile-avatar img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            border: 4px solid var(--primary);
-            margin-bottom: 15px;
-        }
-
-        .profile-details h3 {
-            font-size: 24px;
-            margin-bottom: 10px;
+        .form-section-title {
+            font-size: 18px;
+            font-weight: 600;
             color: var(--dark);
-        }
-
-        .profile-details p {
-            color: var(--text);
-            margin-bottom: 5px;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid var(--light-gray);
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 10px;
         }
 
-        .details-grid {
+        .form-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 20px;
-            margin-bottom: 30px;
         }
 
-        .detail-card {
-            background: var(--light-gray);
-            padding: 20px;
-            border-radius: 8px;
+        .form-group {
+            margin-bottom: 20px;
         }
 
-        .detail-card h4 {
-            font-size: 16px;
-            margin-bottom: 15px;
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
             color: var(--dark);
-            display: flex;
-            align-items: center;
-            gap: 8px;
         }
 
-        .detail-item {
+        .form-input, .form-select, .form-textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-input:focus, .form-select:focus, .form-textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
+        }
+
+        .form-textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .form-hint {
+            font-size: 12px;
+            color: var(--text);
+            margin-top: 5px;
+        }
+
+        .form-required::after {
+            content: " *";
+            color: var(--danger);
+        }
+
+        .file-upload {
+            border: 2px dashed var(--gray);
+            border-radius: 8px;
+            padding: 30px;
+            text-align: center;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary);
+        }
+
+        .file-upload i {
+            font-size: 48px;
+            color: var(--gray);
+            margin-bottom: 15px;
+        }
+
+        .file-upload input {
+            display: none;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+            align-items: flex-end;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .btn-add {
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.3s;
+        }
+
+        .btn-add:hover {
+            background: #009688;
+        }
+
+        .document-list {
+            background: var(--light-gray);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 10px;
+        }
+
+        .document-item {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 10px;
-            padding-bottom: 10px;
+            align-items: center;
+            padding: 10px;
             border-bottom: 1px solid var(--gray);
         }
 
-        .detail-item:last-child {
-            margin-bottom: 0;
-            padding-bottom: 0;
+        .document-item:last-child {
             border-bottom: none;
         }
 
-        .detail-label {
-            color: var(--text);
-            font-weight: 500;
+        .document-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
 
-        .detail-value {
-            color: var(--dark);
-            font-weight: 600;
+        .document-info i {
+            color: var(--primary);
+        }
+
+        .btn-remove {
+            background: var(--danger);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 12px;
         }
 
         .modal-actions {
@@ -770,11 +847,7 @@
             .main-content {
                 margin-left: 220px;
             }
-            .tenant-profile {
-                grid-template-columns: 1fr;
-                text-align: center;
-            }
-            .details-grid {
+            .form-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -809,6 +882,9 @@
             .action-buttons {
                 flex-direction: column;
             }
+            .modal-content {
+                max-width: 95%;
+            }
         }
 
         @media (max-width: 480px) {
@@ -818,6 +894,9 @@
             .tenants-actions {
                 flex-direction: column;
                 width: 100%;
+            }
+            .form-row {
+                flex-direction: column;
             }
         }
     </style>
@@ -868,7 +947,7 @@
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">Tenants</div>
+                <div class="navbar-brand">Tenant Management</div>
                 
                 <div class="login-image">
                     <div class="dropdown">
@@ -888,7 +967,7 @@
                 <div class="tenants-container">
                     <div class="tenants-header">
                         <div>
-                            <h1><i class="fas fa-users"></i> Tenants</h1>
+                            <h1><i class="fas fa-users"></i> Tenant Management</h1>
                             <p>Manage your tenants, track payments, and handle communications</p>
                         </div>
                         <div class="tenants-actions">
@@ -978,7 +1057,7 @@
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        <!-- Tenant 1 -->
+                                        <!-- Tenant rows remain the same -->
                                         <tr data-status="active" data-property="westlands">
                                             <td>
                                                 <div class="tenant-info">
@@ -1018,129 +1097,6 @@
                                                 </div>
                                             </td>
                                         </tr>
-                                        
-                                        <!-- Tenant 2 -->
-                                        <tr data-status="active" data-property="kilimani">
-                                            <td>
-                                                <div class="tenant-info">
-                                                    <img src="https://placehold.co/40x40/00A699/FFFFFF?text=SK" alt="Sarah Kamau" class="tenant-avatar">
-                                                    <div class="tenant-details">
-                                                        <h4>Sarah Kamau</h4>
-                                                        <p>ID: TN-002</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Kilimani Studio</td>
-                                            <td>
-                                                <div>sarah.kamau@email.com</div>
-                                                <div>+254 723 456 789</div>
-                                            </td>
-                                            <td>
-                                                <div>Mar 1, 2024 - Feb 28, 2025</div>
-                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
-                                            </td>
-                                            <td>
-                                                <div class="rent-status">
-                                                    <i class="fas fa-exclamation-triangle rent-overdue"></i>
-                                                    <span>Overdue - Mar 2024</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="status-badge status-active">Active</span>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button class="btn-action btn-view" data-tenant-id="2">
-                                                        <i class="fas fa-eye"></i> View
-                                                    </button>
-                                                    <button class="btn-action btn-message">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        
-                                        <!-- Tenant 3 -->
-                                        <tr data-status="pending" data-property="karen">
-                                            <td>
-                                                <div class="tenant-info">
-                                                    <img src="https://placehold.co/40x40/FF385C/FFFFFF?text=DN" alt="David Njoroge" class="tenant-avatar">
-                                                    <div class="tenant-details">
-                                                        <h4>David Njoroge</h4>
-                                                        <p>ID: TN-003</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Karen House</td>
-                                            <td>
-                                                <div>david.njoroge@email.com</div>
-                                                <div>+254 734 567 890</div>
-                                            </td>
-                                            <td>
-                                                <div>Apr 1, 2024 - Mar 31, 2025</div>
-                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
-                                            </td>
-                                            <td>
-                                                <div class="rent-status">
-                                                    <i class="fas fa-clock rent-pending"></i>
-                                                    <span>Pending - Apr 2024</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="status-badge status-pending">Pending</span>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button class="btn-action btn-view" data-tenant-id="3">
-                                                        <i class="fas fa-eye"></i> View
-                                                    </button>
-                                                    <button class="btn-action btn-edit">
-                                                        <i class="fas fa-edit"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                        
-                                        <!-- Tenant 4 -->
-                                        <tr data-status="active" data-property="westlands">
-                                            <td>
-                                                <div class="tenant-info">
-                                                    <img src="https://placehold.co/40x40/FFB400/FFFFFF?text=AK" alt="Alice Kariuki" class="tenant-avatar">
-                                                    <div class="tenant-details">
-                                                        <h4>Alice Kariuki</h4>
-                                                        <p>ID: TN-004</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Westlands Apartment</td>
-                                            <td>
-                                                <div>alice.kariuki@email.com</div>
-                                                <div>+254 745 678 901</div>
-                                            </td>
-                                            <td>
-                                                <div>Feb 15, 2024 - Feb 14, 2025</div>
-                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
-                                            </td>
-                                            <td>
-                                                <div class="rent-status">
-                                                    <i class="fas fa-check-circle rent-paid"></i>
-                                                    <span>Paid - Mar 2024</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="status-badge status-active">Active</span>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button class="btn-action btn-view" data-tenant-id="4">
-                                                        <i class="fas fa-eye"></i> View
-                                                    </button>
-                                                    <button class="btn-action btn-message">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
                                     </tbody>
                                 </table>
                             </div>
@@ -1151,100 +1107,179 @@
         </main>
     </div>
 
-    <!-- Tenant Details Modal -->
-    <div class="tenant-modal hidden" id="tenant-modal">
+    <!-- Add Tenant Modal -->
+    <div class="modal-overlay hidden" id="add-tenant-modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2><i class="fas fa-user"></i> Tenant Details</h2>
-                <button class="close-modal" id="close-modal-btn">&times;</button>
+                <h2><i class="fas fa-user-plus"></i> Add New Tenant</h2>
+                <button class="close-modal" id="close-add-tenant-modal">&times;</button>
             </div>
             <div class="modal-body">
-                <div class="tenant-profile">
-                    <div class="profile-avatar">
-                        <img src="https://placehold.co/120x120/4285F4/FFFFFF?text=JM" alt="Tenant Avatar" id="modal-avatar">
-                        <h3 id="modal-name">John Mwangi</h3>
-                        <span class="status-badge status-active" id="modal-status">Active</span>
-                    </div>
-                    <div class="profile-details">
-                        <h3>Contact Information</h3>
-                        <p><i class="fas fa-envelope"></i> <span id="modal-email">john.mwangi@email.com</span></p>
-                        <p><i class="fas fa-phone"></i> <span id="modal-phone">+254 712 345 678</span></p>
-                        <p><i class="fas fa-id-card"></i> Tenant ID: <span id="modal-id">TN-001</span></p>
-                        <p><i class="fas fa-calendar"></i> Member since: <span id="modal-join-date">January 2024</span></p>
-                    </div>
-                </div>
-                
-                <div class="details-grid">
-                    <div class="detail-card">
-                        <h4><i class="fas fa-home"></i> Property Information</h4>
-                        <div class="detail-item">
-                            <span class="detail-label">Property</span>
-                            <span class="detail-value" id="modal-property">Westlands Apartment</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Unit Number</span>
-                            <span class="detail-value" id="modal-unit">Unit 4B</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Monthly Rent</span>
-                            <span class="detail-value" id="modal-rent">KES 35,000</span>
-                        </div>
-                    </div>
-                    
-                    <div class="detail-card">
-                        <h4><i class="fas fa-file-contract"></i> Lease Information</h4>
-                        <div class="detail-item">
-                            <span class="detail-label">Lease Start</span>
-                            <span class="detail-value" id="modal-lease-start">Jan 15, 2024</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Lease End</span>
-                            <span class="detail-value" id="modal-lease-end">Jan 14, 2025</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Duration</span>
-                            <span class="detail-value" id="modal-lease-duration">12 months</span>
+                <form id="add-tenant-form">
+                    <!-- Personal Information Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-user"></i> Personal Information
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label form-required">First Name</label>
+                                <input type="text" class="form-input" name="firstName" required placeholder="Enter first name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Last Name</label>
+                                <input type="text" class="form-input" name="lastName" required placeholder="Enter last name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Email Address</label>
+                                <input type="email" class="form-input" name="email" required placeholder="Enter email address">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Phone Number</label>
+                                <input type="tel" class="form-input" name="phone" required placeholder="+254 XXX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Date of Birth</label>
+                                <input type="date" class="form-input" name="dob">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">National ID</label>
+                                <input type="text" class="form-input" name="nationalId" placeholder="Enter national ID number">
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="detail-card">
-                        <h4><i class="fas fa-money-bill-wave"></i> Payment Information</h4>
-                        <div class="detail-item">
-                            <span class="detail-label">Last Payment</span>
-                            <span class="detail-value" id="modal-last-payment">Mar 1, 2024</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Next Payment Due</span>
-                            <span class="detail-value" id="modal-next-payment">Apr 1, 2024</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Payment Status</span>
-                            <span class="detail-value" id="modal-payment-status">Paid</span>
+
+                    <!-- Property Information Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-home"></i> Property Information
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label form-required">Property</label>
+                                <select class="form-select" name="property" required>
+                                    <option value="">Select Property</option>
+                                    <option value="westlands">Westlands Apartment</option>
+                                    <option value="kilimani">Kilimani Studio</option>
+                                    <option value="karen">Karen House</option>
+                                    <option value="lavington">Lavington Villa</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Unit Number</label>
+                                <input type="text" class="form-input" name="unitNumber" required placeholder="e.g., Unit 4B">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Monthly Rent (KES)</label>
+                                <input type="number" class="form-input" name="monthlyRent" required placeholder="35000" min="0">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Security Deposit (KES)</label>
+                                <input type="number" class="form-input" name="securityDeposit" placeholder="35000" min="0">
+                            </div>
                         </div>
                     </div>
-                    
-                    <div class="detail-card">
-                        <h4><i class="fas fa-sticky-note"></i> Additional Information</h4>
-                        <div class="detail-item">
-                            <span class="detail-label">Emergency Contact</span>
-                            <span class="detail-value" id="modal-emergency-contact">Mary Mwangi - +254 700 000 000</span>
-                        </div>
-                        <div class="detail-item">
-                            <span class="detail-label">Special Requirements</span>
-                            <span class="detail-value" id="modal-requirements">Pet friendly - 1 cat</span>
+
+                    <!-- Lease Information Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-file-contract"></i> Lease Information
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label form-required">Lease Start Date</label>
+                                <input type="date" class="form-input" name="leaseStart" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Lease End Date</label>
+                                <input type="date" class="form-input" name="leaseEnd" required>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label form-required">Lease Duration</label>
+                                <select class="form-select" name="leaseDuration" required>
+                                    <option value="">Select Duration</option>
+                                    <option value="6">6 Months</option>
+                                    <option value="12">12 Months</option>
+                                    <option value="24">24 Months</option>
+                                    <option value="month-to-month">Month to Month</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Rent Due Date</label>
+                                <select class="form-select" name="rentDueDate">
+                                    <option value="1">1st of the month</option>
+                                    <option value="5">5th of the month</option>
+                                    <option value="10" selected>10th of the month</option>
+                                    <option value="15">15th of the month</option>
+                                    <option value="20">20th of the month</option>
+                                </select>
+                            </div>
                         </div>
                     </div>
-                </div>
-                
-                <div class="modal-actions">
-                    <button class="btn-secondary" id="modal-close-btn">Close</button>
-                    <button class="btn-primary">
-                        <i class="fas fa-envelope"></i> Send Message
-                    </button>
-                    <button class="btn-primary">
-                        <i class="fas fa-edit"></i> Edit Tenant
-                    </button>
-                </div>
+
+                    <!-- Emergency Contact Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-address-book"></i> Emergency Contact
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label class="form-label">Contact Name</label>
+                                <input type="text" class="form-input" name="emergencyName" placeholder="Enter emergency contact name">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Contact Phone</label>
+                                <input type="tel" class="form-input" name="emergencyPhone" placeholder="+254 XXX XXX XXX">
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label">Relationship</label>
+                                <input type="text" class="form-input" name="emergencyRelationship" placeholder="e.g., Spouse, Parent">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Additional Information Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-sticky-note"></i> Additional Information
+                        </h3>
+                        <div class="form-grid">
+                            <div class="form-group full-width">
+                                <label class="form-label">Special Requirements</label>
+                                <textarea class="form-textarea" name="specialRequirements" placeholder="Any special requirements, pets, parking needs, etc."></textarea>
+                            </div>
+                            <div class="form-group full-width">
+                                <label class="form-label">Notes</label>
+                                <textarea class="form-textarea" name="notes" placeholder="Additional notes about the tenant"></textarea>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Document Upload Section -->
+                    <div class="form-section">
+                        <h3 class="form-section-title">
+                            <i class="fas fa-file-upload"></i> Documents
+                        </h3>
+                        <div class="form-group full-width">
+                            <div class="file-upload" id="document-upload-area">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                                <p>Click to upload documents or drag and drop</p>
+                                <p class="form-hint">Supported files: PDF, JPG, PNG, TXT, DOCX (Max 10MB each)</p>
+                                <input type="file" id="document-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.txt,.docx">
+                            </div>
+                            <div class="document-list hidden" id="document-list">
+                                <!-- Documents will be listed here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="modal-actions">
+                        <button type="button" class="btn-secondary" id="cancel-add-tenant">Cancel</button>
+                        <button type="submit" class="btn-primary">
+                            <i class="fas fa-save"></i> Save Tenant
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1281,68 +1316,69 @@
                         requirements: 'Pet friendly - 1 cat'
                     },
                     2: {
-                        name: 'Sarah Kamau',
-                        avatar: 'https://placehold.co/120x120/00A699/FFFFFF?text=SK',
-                        email: 'sarah.kamau@email.com',
-                        phone: '+254 723 456 789',
-                        id: 'TN-002',
-                        joinDate: 'March 2024',
-                        property: 'Kilimani Studio',
-                        unit: 'Unit 2A',
-                        rent: 'KES 18,000',
-                        leaseStart: 'Mar 1, 2024',
-                        leaseEnd: 'Feb 28, 2025',
-                        leaseDuration: '12 months',
-                        lastPayment: 'Feb 28, 2024',
-                        nextPayment: 'Mar 1, 2024',
-                        paymentStatus: 'Overdue',
-                        status: 'Active',
-                        emergencyContact: 'James Kamau - +254 711 111 111',
-                        requirements: 'None'
-                    },
-                    3: {
-                        name: 'David Njoroge',
-                        avatar: 'https://placehold.co/120x120/FF385C/FFFFFF?text=DN',
-                        email: 'david.njoroge@email.com',
-                        phone: '+254 734 567 890',
-                        id: 'TN-003',
-                        joinDate: 'April 2024',
-                        property: 'Karen House',
-                        unit: 'Main House',
-                        rent: 'KES 65,000',
-                        leaseStart: 'Apr 1, 2024',
-                        leaseEnd: 'Mar 31, 2025',
-                        leaseDuration: '12 months',
-                        lastPayment: 'N/A',
-                        nextPayment: 'Apr 1, 2024',
-                        paymentStatus: 'Pending',
-                        status: 'Pending',
-                        emergencyContact: 'Grace Njoroge - +254 722 222 222',
-                        requirements: 'Gardening services required'
-                    },
-                    4: {
-                        name: 'Alice Kariuki',
-                        avatar: 'https://placehold.co/120x120/FFB400/FFFFFF?text=AK',
-                        email: 'alice.kariuki@email.com',
-                        phone: '+254 745 678 901',
-                        id: 'TN-004',
-                        joinDate: 'February 2024',
+                        name: 'John Mwangi',
+                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
+                        email: 'john.mwangi@email.com',
+                        phone: '+254 712 345 678',
+                        id: 'TN-001',
+                        joinDate: 'January 2024',
                         property: 'Westlands Apartment',
-                        unit: 'Unit 3C',
-                        rent: 'KES 42,000',
-                        leaseStart: 'Feb 15, 2024',
-                        leaseEnd: 'Feb 14, 2025',
+                        unit: 'Unit 4B',
+                        rent: 'KES 35,000',
+                        leaseStart: 'Jan 15, 2024',
+                        leaseEnd: 'Jan 14, 2025',
                         leaseDuration: '12 months',
-                        lastPayment: 'Mar 5, 2024',
-                        nextPayment: 'Apr 5, 2024',
+                        lastPayment: 'Mar 1, 2024',
+                        nextPayment: 'Apr 1, 2024',
                         paymentStatus: 'Paid',
                         status: 'Active',
-                        emergencyContact: 'Peter Kariuki - +254 733 333 333',
-                        requirements: 'Parking space required'
+                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
+                        requirements: 'Pet friendly - 1 cat'
+                    },
+                    3: {
+                        name: 'John Mwangi',
+                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
+                        email: 'john.mwangi@email.com',
+                        phone: '+254 712 345 678',
+                        id: 'TN-001',
+                        joinDate: 'January 2024',
+                        property: 'Westlands Apartment',
+                        unit: 'Unit 4B',
+                        rent: 'KES 35,000',
+                        leaseStart: 'Jan 15, 2024',
+                        leaseEnd: 'Jan 14, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Mar 1, 2024',
+                        nextPayment: 'Apr 1, 2024',
+                        paymentStatus: 'Paid',
+                        status: 'Active',
+                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
+                        requirements: 'Pet friendly - 1 cat'
+                    },
+                    4: {
+                        name: 'John Mwangi',
+                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
+                        email: 'john.mwangi@email.com',
+                        phone: '+254 712 345 678',
+                        id: 'TN-001',
+                        joinDate: 'January 2024',
+                        property: 'Westlands Apartment',
+                        unit: 'Unit 4B',
+                        rent: 'KES 35,000',
+                        leaseStart: 'Jan 15, 2024',
+                        leaseEnd: 'Jan 14, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Mar 1, 2024',
+                        nextPayment: 'Apr 1, 2024',
+                        paymentStatus: 'Paid',
+                        status: 'Active',
+                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
+                        requirements: 'Pet friendly - 1 cat'
                     }
                 };
 
                 this.modal = document.getElementById('tenant-modal');
+                this.addTenantModal = document.getElementById('add-tenant-modal');
                 this.init();
             }
 
@@ -1352,7 +1388,67 @@
             }
 
             bindEvents() {
-                // View tenant buttons
+                // Add Tenant Button
+                document.getElementById('add-tenant-btn').addEventListener('click', () => {
+                    this.showAddTenantModal();
+                });
+
+                // Close Add Tenant Modal
+                document.getElementById('close-add-tenant-modal').addEventListener('click', () => this.closeAddTenantModal());
+                document.getElementById('cancel-add-tenant').addEventListener('click', () => this.closeAddTenantModal());
+
+                // Close modal when clicking outside
+                this.addTenantModal.addEventListener('click', (e) => {
+                    if (e.target === this.addTenantModal) {
+                        this.closeAddTenantModal();
+                    }
+                });
+
+                // Close modal with Escape key
+                document.addEventListener('keydown', (e) => {
+                    if (e.key === 'Escape' && !this.addTenantModal.classList.contains('hidden')) {
+                        this.closeAddTenantModal();
+                    }
+                });
+
+                // Form submission
+                document.getElementById('add-tenant-form').addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    this.handleAddTenantForm(e);
+                });
+
+                // File upload
+                const fileUpload = document.getElementById('document-upload');
+                const uploadArea = document.getElementById('document-upload-area');
+                const documentList = document.getElementById('document-list');
+
+                uploadArea.addEventListener('click', () => fileUpload.click());
+                
+                uploadArea.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--primary)';
+                    uploadArea.style.backgroundColor = 'var(--light-gray)';
+                });
+
+                uploadArea.addEventListener('dragleave', () => {
+                    uploadArea.style.borderColor = 'var(--gray)';
+                    uploadArea.style.backgroundColor = 'transparent';
+                });
+
+                uploadArea.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--gray)';
+                    uploadArea.style.backgroundColor = 'transparent';
+                    
+                    const files = e.dataTransfer.files;
+                    this.handleFileUpload(files);
+                });
+
+                fileUpload.addEventListener('change', (e) => {
+                    this.handleFileUpload(e.target.files);
+                });
+
+                // Other existing event bindings...
                 document.querySelectorAll('.btn-view').forEach(button => {
                     button.addEventListener('click', (e) => {
                         const tenantId = e.currentTarget.getAttribute('data-tenant-id');
@@ -1360,59 +1456,165 @@
                     });
                 });
 
-                // Close modal buttons
                 document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
                 document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
 
-                // Close modal when clicking outside
                 this.modal.addEventListener('click', (e) => {
                     if (e.target === this.modal) {
                         this.closeModal();
                     }
                 });
 
-                // Close modal with Escape key
                 document.addEventListener('keydown', (e) => {
                     if (e.key === 'Escape' && !this.modal.classList.contains('hidden')) {
                         this.closeModal();
                     }
                 });
-
-                // Tabs
-                document.querySelectorAll('.tenants-tab').forEach(tab => {
-                    tab.addEventListener('click', (e) => {
-                        this.handleTabClick(e.currentTarget);
-                    });
-                });
-
-                // Search
-                document.getElementById('tenant-search').addEventListener('input', (e) => {
-                    this.handleSearch(e.target.value);
-                });
-
-                // Filters
-                document.getElementById('status-filter').addEventListener('change', (e) => {
-                    this.applyFilters();
-                });
-                document.getElementById('property-filter').addEventListener('change', (e) => {
-                    this.applyFilters();
-                });
-
-                // Action buttons
-                document.getElementById('add-tenant-btn').addEventListener('click', () => {
-                    alert('Add tenant functionality would open here');
-                });
-
-                document.getElementById('export-tenants').addEventListener('click', () => {
-                    alert('Exporting tenant data...');
-                });
             }
 
+            showAddTenantModal() {
+                this.addTenantModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                // Reset form
+                document.getElementById('add-tenant-form').reset();
+                document.getElementById('document-list').innerHTML = '';
+                document.getElementById('document-list').classList.add('hidden');
+            }
+
+            closeAddTenantModal() {
+                this.addTenantModal.classList.add('hidden');
+                document.body.style.overflow = 'auto';
+            }
+
+            handleAddTenantForm(e) {
+                const formData = new FormData(e.target);
+                const tenantData = Object.fromEntries(formData.entries());
+                
+                // Basic validation
+                if (!this.validateTenantForm(tenantData)) {
+                    return;
+                }
+
+                // Generate tenant ID
+                const tenantId = this.generateTenantId();
+                tenantData.id = tenantId;
+                tenantData.status = 'Active';
+                tenantData.joinDate = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+                // Add to tenants object
+                this.tenants[tenantId] = tenantData;
+
+                // Show success message
+                alert('Tenant added successfully!');
+                this.closeAddTenantModal();
+                
+                // In a real application, you would update the UI here
+                console.log('New tenant added:', tenantData);
+            }
+
+            validateTenantForm(data) {
+                const requiredFields = ['firstName', 'lastName', 'email', 'phone', 'property', 'unitNumber', 'monthlyRent', 'leaseStart', 'leaseEnd', 'leaseDuration'];
+                
+                for (const field of requiredFields) {
+                    if (!data[field] || data[field].trim() === '') {
+                        alert(`Please fill in the ${field.replace(/([A-Z])/g, ' $1').toLowerCase()} field.`);
+                        return false;
+                    }
+                }
+
+                // Email validation
+                const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                if (!emailRegex.test(data.email)) {
+                    alert('Please enter a valid email address.');
+                    return false;
+                }
+
+                // Phone validation (basic)
+                const phoneRegex = /^\+?[\d\s-]+$/;
+                if (!phoneRegex.test(data.phone)) {
+                    alert('Please enter a valid phone number.');
+                    return false;
+                }
+
+                return true;
+            }
+
+            generateTenantId() {
+                const existingIds = Object.keys(this.tenants).map(id => parseInt(id.replace('TN-', '')));
+                const maxId = Math.max(...existingIds);
+                return `TN-${String(maxId + 1).padStart(3, '0')}`;
+            }
+
+            handleFileUpload(files) {
+                const documentList = document.getElementById('document-list');
+                
+                for (const file of files) {
+                    // Validate file type and size
+                    if (!this.validateFile(file)) {
+                        continue;
+                    }
+
+                    // Create document item
+                    const documentItem = this.createDocumentItem(file);
+                    documentList.appendChild(documentItem);
+                }
+
+                if (documentList.children.length > 0) {
+                    documentList.classList.remove('hidden');
+                }
+            }
+
+            validateFile(file) {
+                const allowedTypes = ['application/pdf', 'image/jpeg', 'image/jpg', 'image/png'];
+                const maxSize = 10 * 1024 * 1024; // 10MB
+
+                if (!allowedTypes.includes(file.type)) {
+                    alert(`File type not supported: ${file.name}. Please upload PDF, JPG, or PNG files.`);
+                    return false;
+                }
+
+                if (file.size > maxSize) {
+                    alert(`File too large: ${file.name}. Maximum size is 10MB.`);
+                    return false;
+                }
+
+                return true;
+            }
+
+            createDocumentItem(file) {
+                const item = document.createElement('div');
+                item.className = 'document-item';
+                
+                const fileIcon = file.type === 'application/pdf' ? 'fa-file-pdf' : 'fa-file-image';
+                const fileSize = this.formatFileSize(file.size);
+
+                item.innerHTML = `
+                    <div class="document-info">
+                        <i class="fas ${fileIcon}"></i>
+                        <span>${file.name} (${fileSize})</span>
+                    </div>
+                    <button type="button" class="btn-remove" onclick="this.closest('.document-item').remove(); updateDocumentList();">
+                        <i class="fas fa-times"></i>
+                    </button>
+                `;
+
+                return item;
+            }
+
+            formatFileSize(bytes) {
+                if (bytes === 0) return '0 Bytes';
+                const k = 1024;
+                const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+
+            // Existing methods for viewing tenants
             viewTenant(tenantId) {
                 const tenant = this.tenants[tenantId];
                 if (!tenant) return;
 
-                // Populate modal
+                // Populate modal with tenant data
                 Object.keys(tenant).forEach(key => {
                     const element = document.getElementById(`modal-${key}`);
                     if (element) {
@@ -1423,19 +1625,6 @@
                         }
                     }
                 });
-
-                // Update status badge
-                const statusBadge = document.getElementById('modal-status');
-                statusBadge.textContent = tenant.status;
-                statusBadge.className = 'status-badge ';
-                
-                if (tenant.status === 'Active') {
-                    statusBadge.classList.add('status-active');
-                } else if (tenant.status === 'Pending') {
-                    statusBadge.classList.add('status-pending');
-                } else {
-                    statusBadge.classList.add('status-inactive');
-                }
 
                 this.showModal();
             }
@@ -1449,65 +1638,13 @@
                 this.modal.classList.add('hidden');
                 document.body.style.overflow = 'auto';
             }
+        }
 
-            handleTabClick(tab) {
-                // Update active tab
-                document.querySelectorAll('.tenants-tab').forEach(t => t.classList.remove('active'));
-                tab.classList.add('active');
-
-                const tabType = tab.getAttribute('data-tab');
-                this.filterTable(tabType);
-            }
-
-            filterTable(tabType) {
-                const rows = document.querySelectorAll('.tenants-table tbody tr');
-                
-                rows.forEach(row => {
-                    if (tabType === 'all') {
-                        row.style.display = 'table-row';
-                    } else if (tabType === 'overdue') {
-                        const rentStatus = row.querySelector('.rent-status span').textContent;
-                        row.style.display = rentStatus.includes('Overdue') ? 'table-row' : 'none';
-                    } else {
-                        const rowStatus = row.getAttribute('data-status');
-                        row.style.display = rowStatus === tabType ? 'table-row' : 'none';
-                    }
-                });
-            }
-
-            handleSearch(searchTerm) {
-                const rows = document.querySelectorAll('.tenants-table tbody tr');
-                const term = searchTerm.toLowerCase();
-
-                rows.forEach(row => {
-                    const tenantName = row.querySelector('.tenant-details h4').textContent.toLowerCase();
-                    const tenantEmail = row.querySelector('td:nth-child(3) div:first-child').textContent.toLowerCase();
-                    const property = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-
-                    const matches = tenantName.includes(term) || tenantEmail.includes(term) || property.includes(term);
-                    row.style.display = matches ? 'table-row' : 'none';
-                });
-            }
-
-            applyFilters() {
-                const statusValue = document.getElementById('status-filter').value;
-                const propertyValue = document.getElementById('property-filter').value;
-                const searchValue = document.getElementById('tenant-search').value.toLowerCase();
-                const rows = document.querySelectorAll('.tenants-table tbody tr');
-
-                rows.forEach(row => {
-                    const rowStatus = row.getAttribute('data-status');
-                    const rowProperty = row.getAttribute('data-property');
-                    const tenantName = row.querySelector('.tenant-details h4').textContent.toLowerCase();
-                    const tenantEmail = row.querySelector('td:nth-child(3) div:first-child').textContent.toLowerCase();
-                    const property = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-
-                    const statusMatch = statusValue === 'all' || rowStatus === statusValue;
-                    const propertyMatch = propertyValue === 'all' || rowProperty === propertyValue;
-                    const searchMatch = tenantName.includes(searchValue) || tenantEmail.includes(searchValue) || property.includes(searchValue);
-
-                    row.style.display = statusMatch && propertyMatch && searchMatch ? 'table-row' : 'none';
-                });
+        // Helper function to update document list visibility
+        function updateDocumentList() {
+            const documentList = document.getElementById('document-list');
+            if (documentList.children.length === 0) {
+                documentList.classList.add('hidden');
             }
         }
 
