@@ -1056,47 +1056,8 @@
                                             <th>Actions</th>
                                         </tr>
                                     </thead>
-                                    <tbody>
-                                        <!-- Tenant rows remain the same -->
-                                        <tr data-status="active" data-property="westlands">
-                                            <td>
-                                                <div class="tenant-info">
-                                                    <img src="https://placehold.co/40x40/4285F4/FFFFFF?text=JM" alt="John Mwangi" class="tenant-avatar">
-                                                    <div class="tenant-details">
-                                                        <h4>John Mwangi</h4>
-                                                        <p>ID: TN-001</p>
-                                                    </div>
-                                                </div>
-                                            </td>
-                                            <td>Westlands Apartment</td>
-                                            <td>
-                                                <div>john.mwangi@email.com</div>
-                                                <div>+254 712 345 678</div>
-                                            </td>
-                                            <td>
-                                                <div>Jan 15, 2024 - Jan 14, 2025</div>
-                                                <div style="font-size: 12px; color: var(--text);">12 months</div>
-                                            </td>
-                                            <td>
-                                                <div class="rent-status">
-                                                    <i class="fas fa-check-circle rent-paid"></i>
-                                                    <span>Paid - Mar 2024</span>
-                                                </div>
-                                            </td>
-                                            <td>
-                                                <span class="status-badge status-active">Active</span>
-                                            </td>
-                                            <td>
-                                                <div class="action-buttons">
-                                                    <button class="btn-action btn-view" data-tenant-id="1">
-                                                        <i class="fas fa-eye"></i> View
-                                                    </button>
-                                                    <button class="btn-action btn-message">
-                                                        <i class="fas fa-envelope"></i>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
+                                    <tbody id="tenants-table-body">
+                                        <!-- Tenant rows will be populated by JavaScript -->
                                     </tbody>
                                 </table>
                             </div>
@@ -1264,8 +1225,8 @@
                             <div class="file-upload" id="document-upload-area">
                                 <i class="fas fa-cloud-upload-alt"></i>
                                 <p>Click to upload documents or drag and drop</p>
-                                <p class="form-hint">Supported files: PDF, JPG, PNG, TXT, DOCX (Max 10MB each)</p>
-                                <input type="file" id="document-upload" multiple accept=".pdf,.jpg,.jpeg,.png,.txt,.docx">
+                                <p class="form-hint">Supported files: PDF, JPG, PNG (Max 10MB each)</p>
+                                <input type="file" id="document-upload" multiple accept=".pdf,.jpg,.jpeg,.png">
                             </div>
                             <div class="document-list hidden" id="document-list">
                                 <!-- Documents will be listed here -->
@@ -1297,7 +1258,7 @@
                 this.tenants = {
                     1: {
                         name: 'John Mwangi',
-                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
+                        avatar: 'https://placehold.co/40x40/4285F4/FFFFFF?text=JM',
                         email: 'john.mwangi@email.com',
                         phone: '+254 712 345 678',
                         id: 'TN-001',
@@ -1311,80 +1272,209 @@
                         lastPayment: 'Mar 1, 2024',
                         nextPayment: 'Apr 1, 2024',
                         paymentStatus: 'Paid',
-                        status: 'Active',
+                        status: 'active',
                         emergencyContact: 'Mary Mwangi - +254 700 000 000',
                         requirements: 'Pet friendly - 1 cat'
                     },
                     2: {
-                        name: 'John Mwangi',
-                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
-                        email: 'john.mwangi@email.com',
-                        phone: '+254 712 345 678',
-                        id: 'TN-001',
-                        joinDate: 'January 2024',
-                        property: 'Westlands Apartment',
-                        unit: 'Unit 4B',
-                        rent: 'KES 35,000',
-                        leaseStart: 'Jan 15, 2024',
-                        leaseEnd: 'Jan 14, 2025',
+                        name: 'Sarah Kamau',
+                        avatar: 'https://placehold.co/40x40/00A699/FFFFFF?text=SK',
+                        email: 'sarah.kamau@email.com',
+                        phone: '+254 723 456 789',
+                        id: 'TN-002',
+                        joinDate: 'March 2024',
+                        property: 'Kilimani Studio',
+                        unit: 'Unit 2A',
+                        rent: 'KES 18,000',
+                        leaseStart: 'Mar 1, 2024',
+                        leaseEnd: 'Feb 28, 2025',
                         leaseDuration: '12 months',
-                        lastPayment: 'Mar 1, 2024',
-                        nextPayment: 'Apr 1, 2024',
-                        paymentStatus: 'Paid',
-                        status: 'Active',
-                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
-                        requirements: 'Pet friendly - 1 cat'
+                        lastPayment: 'Feb 28, 2024',
+                        nextPayment: 'Mar 1, 2024',
+                        paymentStatus: 'Overdue',
+                        status: 'active',
+                        emergencyContact: 'James Kamau - +254 711 111 111',
+                        requirements: 'None'
                     },
                     3: {
-                        name: 'John Mwangi',
-                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
-                        email: 'john.mwangi@email.com',
-                        phone: '+254 712 345 678',
-                        id: 'TN-001',
-                        joinDate: 'January 2024',
-                        property: 'Westlands Apartment',
-                        unit: 'Unit 4B',
-                        rent: 'KES 35,000',
-                        leaseStart: 'Jan 15, 2024',
-                        leaseEnd: 'Jan 14, 2025',
+                        name: 'David Njoroge',
+                        avatar: 'https://placehold.co/40x40/FF385C/FFFFFF?text=DN',
+                        email: 'david.njoroge@email.com',
+                        phone: '+254 734 567 890',
+                        id: 'TN-003',
+                        joinDate: 'April 2024',
+                        property: 'Karen House',
+                        unit: 'Main House',
+                        rent: 'KES 65,000',
+                        leaseStart: 'Apr 1, 2024',
+                        leaseEnd: 'Mar 31, 2025',
                         leaseDuration: '12 months',
-                        lastPayment: 'Mar 1, 2024',
+                        lastPayment: 'N/A',
                         nextPayment: 'Apr 1, 2024',
-                        paymentStatus: 'Paid',
-                        status: 'Active',
-                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
-                        requirements: 'Pet friendly - 1 cat'
+                        paymentStatus: 'Pending',
+                        status: 'pending',
+                        emergencyContact: 'Grace Njoroge - +254 722 222 222',
+                        requirements: 'Gardening services required'
                     },
                     4: {
-                        name: 'John Mwangi',
-                        avatar: 'https://placehold.co/120x120/4285F4/FFFFFF?text=JM',
-                        email: 'john.mwangi@email.com',
-                        phone: '+254 712 345 678',
-                        id: 'TN-001',
-                        joinDate: 'January 2024',
+                        name: 'Alice Kariuki',
+                        avatar: 'https://placehold.co/40x40/FFB400/FFFFFF?text=AK',
+                        email: 'alice.kariuki@email.com',
+                        phone: '+254 745 678 901',
+                        id: 'TN-004',
+                        joinDate: 'February 2024',
                         property: 'Westlands Apartment',
-                        unit: 'Unit 4B',
-                        rent: 'KES 35,000',
-                        leaseStart: 'Jan 15, 2024',
-                        leaseEnd: 'Jan 14, 2025',
+                        unit: 'Unit 3C',
+                        rent: 'KES 42,000',
+                        leaseStart: 'Feb 15, 2024',
+                        leaseEnd: 'Feb 14, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Mar 5, 2024',
+                        nextPayment: 'Apr 5, 2024',
+                        paymentStatus: 'Paid',
+                        status: 'active',
+                        emergencyContact: 'Peter Kariuki - +254 733 333 333',
+                        requirements: 'Parking space required'
+                    },
+                    5: {
+                        name: 'Michael Ochieng',
+                        avatar: 'https://placehold.co/40x40/FF385C/FFFFFF?text=MO',
+                        email: 'michael.ochieng@email.com',
+                        phone: '+254 756 789 012',
+                        id: 'TN-005',
+                        joinDate: 'March 2024',
+                        property: 'Kilimani Studio',
+                        unit: 'Unit 1B',
+                        rent: 'KES 22,000',
+                        leaseStart: 'Mar 10, 2024',
+                        leaseEnd: 'Mar 9, 2025',
+                        leaseDuration: '12 months',
+                        lastPayment: 'Feb 28, 2024',
+                        nextPayment: 'Mar 10, 2024',
+                        paymentStatus: 'Overdue',
+                        status: 'active',
+                        emergencyContact: 'Susan Ochieng - +254 744 444 444',
+                        requirements: 'None'
+                    },
+                    6: {
+                        name: 'Grace Wambui',
+                        avatar: 'https://placehold.co/40x40/00A699/FFFFFF?text=GW',
+                        email: 'grace.wambui@email.com',
+                        phone: '+254 767 890 123',
+                        id: 'TN-006',
+                        joinDate: 'January 2024',
+                        property: 'Karen House',
+                        unit: 'Guest House',
+                        rent: 'KES 28,000',
+                        leaseStart: 'Jan 1, 2024',
+                        leaseEnd: 'Dec 31, 2024',
                         leaseDuration: '12 months',
                         lastPayment: 'Mar 1, 2024',
                         nextPayment: 'Apr 1, 2024',
                         paymentStatus: 'Paid',
-                        status: 'Active',
-                        emergencyContact: 'Mary Mwangi - +254 700 000 000',
-                        requirements: 'Pet friendly - 1 cat'
+                        status: 'active',
+                        emergencyContact: 'James Wambui - +254 755 555 555',
+                        requirements: 'Weekly cleaning service'
                     }
                 };
 
                 this.modal = document.getElementById('tenant-modal');
                 this.addTenantModal = document.getElementById('add-tenant-modal');
+                this.tenantsTableBody = document.getElementById('tenants-table-body');
+                this.currentFilter = 'all';
                 this.init();
             }
 
             init() {
+                this.renderTenantsTable();
                 this.bindEvents();
                 console.log('Tenant Manager initialized');
+            }
+
+            renderTenantsTable() {
+                this.tenantsTableBody.innerHTML = '';
+                
+                Object.values(this.tenants).forEach(tenant => {
+                    const row = this.createTenantRow(tenant);
+                    this.tenantsTableBody.appendChild(row);
+                });
+            }
+
+            createTenantRow(tenant) {
+                const row = document.createElement('tr');
+                row.setAttribute('data-status', tenant.status);
+                row.setAttribute('data-property', tenant.property.toLowerCase().replace(' ', '-'));
+                
+                // Determine rent status class and icon
+                let rentStatusClass = '';
+                let rentStatusIcon = '';
+                let rentStatusText = '';
+                
+                if (tenant.paymentStatus === 'Paid') {
+                    rentStatusClass = 'rent-paid';
+                    rentStatusIcon = 'fa-check-circle';
+                    rentStatusText = `Paid - ${tenant.lastPayment}`;
+                } else if (tenant.paymentStatus === 'Overdue') {
+                    rentStatusClass = 'rent-overdue';
+                    rentStatusIcon = 'fa-exclamation-triangle';
+                    rentStatusText = `Overdue - ${tenant.lastPayment}`;
+                } else {
+                    rentStatusClass = 'rent-pending';
+                    rentStatusIcon = 'fa-clock';
+                    rentStatusText = `Pending - ${tenant.nextPayment}`;
+                }
+
+                // Determine status badge class
+                let statusBadgeClass = '';
+                if (tenant.status === 'active') {
+                    statusBadgeClass = 'status-active';
+                } else if (tenant.status === 'pending') {
+                    statusBadgeClass = 'status-pending';
+                } else {
+                    statusBadgeClass = 'status-inactive';
+                }
+
+                row.innerHTML = `
+                    <td>
+                        <div class="tenant-info">
+                            <img src="${tenant.avatar}" alt="${tenant.name}" class="tenant-avatar">
+                            <div class="tenant-details">
+                                <h4>${tenant.name}</h4>
+                                <p>ID: ${tenant.id}</p>
+                            </div>
+                        </div>
+                    </td>
+                    <td>${tenant.property}</td>
+                    <td>
+                        <div>${tenant.email}</div>
+                        <div>${tenant.phone}</div>
+                    </td>
+                    <td>
+                        <div>${tenant.leaseStart} - ${tenant.leaseEnd}</div>
+                        <div style="font-size: 12px; color: var(--text);">${tenant.leaseDuration}</div>
+                    </td>
+                    <td>
+                        <div class="rent-status">
+                            <i class="fas ${rentStatusIcon} ${rentStatusClass}"></i>
+                            <span>${rentStatusText}</span>
+                        </div>
+                    </td>
+                    <td>
+                        <span class="status-badge ${statusBadgeClass}">${tenant.status.charAt(0).toUpperCase() + tenant.status.slice(1)}</span>
+                    </td>
+                    <td>
+                        <div class="action-buttons">
+                            <button class="btn-action btn-view" data-tenant-id="${tenant.id}">
+                                <i class="fas fa-eye"></i> View
+                            </button>
+                            <button class="btn-action btn-message">
+                                <i class="fas fa-envelope"></i>
+                            </button>
+                        </div>
+                    </td>
+                `;
+
+                return row;
             }
 
             bindEvents() {
@@ -1448,27 +1538,95 @@
                     this.handleFileUpload(e.target.files);
                 });
 
-                // Other existing event bindings...
-                document.querySelectorAll('.btn-view').forEach(button => {
-                    button.addEventListener('click', (e) => {
-                        const tenantId = e.currentTarget.getAttribute('data-tenant-id');
-                        this.viewTenant(tenantId);
+                // Tab filtering
+                document.querySelectorAll('.tenants-tab').forEach(tab => {
+                    tab.addEventListener('click', (e) => {
+                        const tabType = e.currentTarget.getAttribute('data-tab');
+                        this.handleTabFilter(tabType);
                     });
                 });
 
-                document.getElementById('close-modal-btn').addEventListener('click', () => this.closeModal());
-                document.getElementById('modal-close-btn').addEventListener('click', () => this.closeModal());
-
-                this.modal.addEventListener('click', (e) => {
-                    if (e.target === this.modal) {
-                        this.closeModal();
-                    }
+                // Search functionality
+                document.getElementById('tenant-search').addEventListener('input', (e) => {
+                    this.handleSearch(e.target.value);
                 });
 
-                document.addEventListener('keydown', (e) => {
-                    if (e.key === 'Escape' && !this.modal.classList.contains('hidden')) {
-                        this.closeModal();
+                // Status filter
+                document.getElementById('status-filter').addEventListener('change', (e) => {
+                    this.applyFilters();
+                });
+
+                // Property filter
+                document.getElementById('property-filter').addEventListener('change', (e) => {
+                    this.applyFilters();
+                });
+
+                // View tenant buttons (delegated event)
+                document.addEventListener('click', (e) => {
+                    if (e.target.closest('.btn-view')) {
+                        const tenantId = e.target.closest('.btn-view').getAttribute('data-tenant-id');
+                        this.viewTenant(tenantId);
                     }
+                });
+            }
+
+            handleTabFilter(tabType) {
+                // Update active tab
+                document.querySelectorAll('.tenants-tab').forEach(tab => {
+                    tab.classList.remove('active');
+                });
+                document.querySelector(`[data-tab="${tabType}"]`).classList.add('active');
+
+                this.currentFilter = tabType;
+                this.applyFilters();
+            }
+
+            handleSearch(searchTerm) {
+                const rows = document.querySelectorAll('#tenants-table-body tr');
+                const term = searchTerm.toLowerCase();
+
+                rows.forEach(row => {
+                    const tenantName = row.querySelector('.tenant-details h4').textContent.toLowerCase();
+                    const tenantEmail = row.querySelector('td:nth-child(3) div:first-child').textContent.toLowerCase();
+                    const property = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+
+                    const matches = tenantName.includes(term) || tenantEmail.includes(term) || property.includes(term);
+                    row.style.display = matches ? '' : 'none';
+                });
+            }
+
+            applyFilters() {
+                const rows = document.querySelectorAll('#tenants-table-body tr');
+                const statusValue = document.getElementById('status-filter').value;
+                const propertyValue = document.getElementById('property-filter').value;
+                const searchValue = document.getElementById('tenant-search').value.toLowerCase();
+
+                rows.forEach(row => {
+                    const rowStatus = row.getAttribute('data-status');
+                    const rowProperty = row.getAttribute('data-property');
+                    const tenantName = row.querySelector('.tenant-details h4').textContent.toLowerCase();
+                    const tenantEmail = row.querySelector('td:nth-child(3) div:first-child').textContent.toLowerCase();
+                    const property = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                    const rentStatus = row.querySelector('.rent-status span').textContent;
+
+                    // Tab filter
+                    let tabMatch = true;
+                    if (this.currentFilter === 'overdue') {
+                        tabMatch = rentStatus.includes('Overdue');
+                    } else if (this.currentFilter !== 'all') {
+                        tabMatch = rowStatus === this.currentFilter;
+                    }
+
+                    // Status filter
+                    const statusMatch = statusValue === 'all' || rowStatus === statusValue;
+                    
+                    // Property filter
+                    const propertyMatch = propertyValue === 'all' || rowProperty === propertyValue;
+                    
+                    // Search filter
+                    const searchMatch = tenantName.includes(searchValue) || tenantEmail.includes(searchValue) || property.includes(searchValue);
+
+                    row.style.display = tabMatch && statusMatch && propertyMatch && searchMatch ? '' : 'none';
                 });
             }
 
@@ -1498,7 +1656,7 @@
                 // Generate tenant ID
                 const tenantId = this.generateTenantId();
                 tenantData.id = tenantId;
-                tenantData.status = 'Active';
+                tenantData.status = 'active';
                 tenantData.joinDate = new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
 
                 // Add to tenants object
@@ -1508,7 +1666,8 @@
                 alert('Tenant added successfully!');
                 this.closeAddTenantModal();
                 
-                // In a real application, you would update the UI here
+                // Update the table
+                this.renderTenantsTable();
                 console.log('New tenant added:', tenantData);
             }
 
@@ -1529,20 +1688,13 @@
                     return false;
                 }
 
-                // Phone validation (basic)
-                const phoneRegex = /^\+?[\d\s-]+$/;
-                if (!phoneRegex.test(data.phone)) {
-                    alert('Please enter a valid phone number.');
-                    return false;
-                }
-
                 return true;
             }
 
             generateTenantId() {
-                const existingIds = Object.keys(this.tenants).map(id => parseInt(id.replace('TN-', '')));
+                const existingIds = Object.keys(this.tenants).map(id => parseInt(id));
                 const maxId = Math.max(...existingIds);
-                return `TN-${String(maxId + 1).padStart(3, '0')}`;
+                return maxId + 1;
             }
 
             handleFileUpload(files) {
@@ -1609,34 +1761,12 @@
                 return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
             }
 
-            // Existing methods for viewing tenants
             viewTenant(tenantId) {
                 const tenant = this.tenants[tenantId];
                 if (!tenant) return;
 
-                // Populate modal with tenant data
-                Object.keys(tenant).forEach(key => {
-                    const element = document.getElementById(`modal-${key}`);
-                    if (element) {
-                        if (key === 'avatar') {
-                            element.src = tenant[key];
-                        } else {
-                            element.textContent = tenant[key];
-                        }
-                    }
-                });
-
-                this.showModal();
-            }
-
-            showModal() {
-                this.modal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            }
-
-            closeModal() {
-                this.modal.classList.add('hidden');
-                document.body.style.overflow = 'auto';
+                alert(`Viewing tenant: ${tenant.name}\nEmail: ${tenant.email}\nPhone: ${tenant.phone}\nProperty: ${tenant.property}`);
+                // In a real application, you would open the tenant details modal here
             }
         }
 
