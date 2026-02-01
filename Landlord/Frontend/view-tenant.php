@@ -1019,9 +1019,9 @@
                             </select>
                             <select class="filter-select" id="property-filter">
                                 <option value="all">All Properties</option>
-                                <option value="westlands">Westlands Apartment</option>
-                                <option value="kilimani">Kilimani Studio</option>
-                                <option value="karen">Karen House</option>
+                                <option value="Jogoo">Jogoo Apartment</option>
+                                <option value="Milimani">Milimani Studio</option>
+                                <option value="Mwembe">Mwembe House</option>
                             </select>
                         </div>
                         
@@ -1120,9 +1120,9 @@
                                 <label class="form-label form-required">Property</label>
                                 <select class="form-select" name="property" required>
                                     <option value="">Select Property</option>
-                                    <option value="westlands">Westlands Apartment</option>
-                                    <option value="kilimani">Kilimani Studio</option>
-                                    <option value="karen">Karen House</option>
+                                    <option value="Jogoo">Jogoo Apartment</option>
+                                    <option value="Milimani">Milimani Studio</option>
+                                    <option value="Mwembe">Mwembe House</option>
                                     <option value="lavington">Lavington Villa</option>
                                 </select>
                             </div>
@@ -1263,7 +1263,7 @@
                         phone: '+254 712 345 678',
                         id: 'TN-001',
                         joinDate: 'January 2024',
-                        property: 'Westlands Apartment',
+                        property: 'Jogoo Apartment',
                         unit: 'Unit 4B',
                         rent: 'KES 35,000',
                         leaseStart: 'Jan 15, 2024',
@@ -1283,7 +1283,7 @@
                         phone: '+254 723 456 789',
                         id: 'TN-002',
                         joinDate: 'March 2024',
-                        property: 'Kilimani Studio',
+                        property: 'Milimani Studio',
                         unit: 'Unit 2A',
                         rent: 'KES 18,000',
                         leaseStart: 'Mar 1, 2024',
@@ -1303,7 +1303,7 @@
                         phone: '+254 734 567 890',
                         id: 'TN-003',
                         joinDate: 'April 2024',
-                        property: 'Karen House',
+                        property: 'Mwembe House',
                         unit: 'Main House',
                         rent: 'KES 65,000',
                         leaseStart: 'Apr 1, 2024',
@@ -1323,7 +1323,7 @@
                         phone: '+254 745 678 901',
                         id: 'TN-004',
                         joinDate: 'February 2024',
-                        property: 'Westlands Apartment',
+                        property: 'Jogoo Apartment',
                         unit: 'Unit 3C',
                         rent: 'KES 42,000',
                         leaseStart: 'Feb 15, 2024',
@@ -1343,7 +1343,7 @@
                         phone: '+254 756 789 012',
                         id: 'TN-005',
                         joinDate: 'March 2024',
-                        property: 'Kilimani Studio',
+                        property: 'Milimani Studio',
                         unit: 'Unit 1B',
                         rent: 'KES 22,000',
                         leaseStart: 'Mar 10, 2024',
@@ -1363,7 +1363,7 @@
                         phone: '+254 767 890 123',
                         id: 'TN-006',
                         joinDate: 'January 2024',
-                        property: 'Karen House',
+                        property: 'Mwembe House',
                         unit: 'Guest House',
                         rent: 'KES 28,000',
                         leaseStart: 'Jan 1, 2024',
