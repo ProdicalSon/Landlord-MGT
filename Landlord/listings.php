@@ -870,9 +870,9 @@
                 <li class="dropdown">
                     <a href="#" class="active" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="#" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="#" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
-                        <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
+                        <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
+                        <a href="editrooms.php" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
+                        <a href="location.php" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
                 <li class="dropdown">
@@ -885,16 +885,16 @@
                 <li class="dropdown">
                     <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge">5</span></a>
                     <div class="dropdown-content">
-                        <a href="#" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="inquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
                         <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>
-                <li><a href="#" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
-                <li><a href="#" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
-                <li><a href="#" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-                <li><a href="#" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                <li><a href="#" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
-                <li><a href="#" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
+                <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
+                <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
+                <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="profilesettings.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
+                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
@@ -955,27 +955,27 @@
                             <!-- Property Card 1 -->
                             <div class="property-card" data-status="available">
                                 <div class="property-image">
-                                    <img src="https://placehold.co/600x400/FF385C/FFFFFF?text=Modern+Apartment" alt="Modern Apartment">
+                                    <img src="assets/icons/bed.jpg" alt="Modern Apartment">
                                     <div class="property-status status-available">Available</div>
                                     <div class="property-favorite">
                                         <i class="far fa-heart"></i>
                                     </div>
                                 </div>
                                 <div class="property-details">
-                                    <div class="property-price">KES 35,000 <span>/month</span></div>
-                                    <h3 class="property-title">Luxury 2-Bedroom Apartment</h3>
+                                    <div class="property-price">KES 6,500 <span>/month</span></div>
+                                    <h3 class="property-title">Luxury Bebsitter Apartment</h3>
                                     <div class="property-location">
                                         <i class="fas fa-map-marker-alt"></i>
-                                        Westlands, Nairobi
+                                        Milimani, Kisii
                                     </div>
                                     <div class="property-features">
                                         <div class="property-feature">
                                             <i class="fas fa-bed"></i>
-                                            <span>2 Beds</span>
+                                            <span>1 Beds</span>
                                         </div>
                                         <div class="property-feature">
                                             <i class="fas fa-bath"></i>
-                                            <span>2 Baths</span>
+                                            <span>1 Bath</span>
                                         </div>
                                         <div class="property-feature">
                                             <i class="fas fa-vector-square"></i>
@@ -999,14 +999,14 @@
                             <!-- Property Card 2 -->
                             <div class="property-card" data-status="occupied">
                                 <div class="property-image">
-                                    <img src="https://placehold.co/600x400/4285F4/FFFFFF?text=Studio+Apartment" alt="Studio Apartment">
+                                    <img src="assets/icons/bed1.jpg" alt="Studio Apartment">
                                     <div class="property-status status-occupied">Occupied</div>
                                     <div class="property-favorite active">
                                         <i class="fas fa-heart"></i>
                                     </div>
                                 </div>
                                 <div class="property-details">
-                                    <div class="property-price">KES 18,000 <span>/month</span></div>
+                                    <div class="property-price">KES 6,000 <span>/month</span></div>
                                     <h3 class="property-title">Cozy Studio Apartment</h3>
                                     <div class="property-location">
                                         <i class="fas fa-map-marker-alt"></i>
@@ -1043,14 +1043,14 @@
                             <!-- Property Card 3 -->
                             <div class="property-card" data-status="maintenance">
                                 <div class="property-image">
-                                    <img src="https://placehold.co/600x400/00A699/FFFFFF?text=Family+House" alt="Family House">
+                                    <img src="assets/icons/4b.jpg" alt="Family House">
                                     <div class="property-status status-maintenance">Maintenance</div>
                                     <div class="property-favorite">
                                         <i class="far fa-heart"></i>
                                     </div>
                                 </div>
                                 <div class="property-details">
-                                    <div class="property-price">KES 65,000 <span>/month</span></div>
+                                    <div class="property-price">KES 50,000 <span>/month</span></div>
                                     <h3 class="property-title">Spacious 4-Bedroom House</h3>
                                     <div class="property-location">
                                         <i class="fas fa-map-marker-alt"></i>
@@ -1087,15 +1087,15 @@
                             <!-- Property Card 4 -->
                             <div class="property-card" data-status="available">
                                 <div class="property-image">
-                                    <img src="https://placehold.co/600x400/FFB400/FFFFFF?text=Executive+Suite" alt="Executive Suite">
+                                    <img src="assets/icons/bed4.jpg" alt="Executive Suite">
                                     <div class="property-status status-available">Available</div>
                                     <div class="property-favorite">
                                         <i class="far fa-heart"></i>
                                     </div>
                                 </div>
                                 <div class="property-details">
-                                    <div class="property-price">KES 42,000 <span>/month</span></div>
-                                    <h3 class="property-title">Executive 3-Bedroom Suite</h3>
+                                    <div class="property-price">KES 7,000 <span>/month</span></div>
+                                    <h3 class="property-title">Executive 1-Bedroom Suite</h3>
                                     <div class="property-location">
                                         <i class="fas fa-map-marker-alt"></i>
                                         Lavington, Nairobi
