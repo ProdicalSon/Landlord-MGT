@@ -518,7 +518,10 @@
             font-size: 14px;
             transition: all 0.3s;
         }
-
+.action-btn a {
+    text-decoration: none;
+    color: inherit;
+}
         .action-btn:hover {
             background-color: var(--primary);
             color: white;
@@ -589,7 +592,7 @@
                     <a href="#" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
                     <div class="dropdown-content">
                         <a href="view-tenant.php" data-content="view-tenants"><i class="fas fa-list"></i> View Tenants</a>
-                        <a href="#" data-content="tenant-bookings"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
+                        <a href="view-tenant.php" data-content="tenant-bookings"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
                     </div>
                 </li>
                 <li class="dropdown">
@@ -646,7 +649,7 @@
                                 <div class="stat-label">Vacant</div>
                             </div>
                         </div>
-                        <button>View Details</button>
+                        <button class="action-btn"><a href="listings.php">View Details</a></button>
                     </div>
 
                     <div class="card">
@@ -656,7 +659,7 @@
                             <button class="action-btn">Respond to All</button>
                             <button class="action-btn">Sort by Priority</button>
                         </div>
-                        <button>Check Now</button> 
+                        <button class="action-btn"><a href="inquiries.php">Check Now</a></button> 
                     </div>
 
                     <div class="card">
@@ -683,7 +686,7 @@
                         </div>
                         <div class="quick-actions">
                             <button onclick="occupyRoom()" class="action-btn">Occupy a Room</button>
-                            <button onclick="vacateRoom()" class="action-btn">Vacate a Room</button>
+                            <button onclick="vacateRoom()" class="action-btn"><a href="editrooms.php">Vacate Rooms</a></button>
                         </div>
                     </div>
 
@@ -695,7 +698,7 @@
                         </div>
                         <div class="quick-actions">
                             <button class="action-btn">Send Reminders</button>
-                            <button class="action-btn">View Payment History</button>
+                            <button class="action-btn"> <a href="payments.php">View Payment History</a></button>
                         </div>
                     </div>
 
@@ -706,7 +709,7 @@
                             <button class="action-btn">Create New</button>
                             <button class="action-btn">Schedule</button>
                         </div>
-                        <button class="announcement">View Announcements</button>
+                        <button class="action-btn"><a href="announcements.php">View Announcements</a></button>
                     </div>
                 </div>
 
