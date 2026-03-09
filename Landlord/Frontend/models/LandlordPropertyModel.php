@@ -1,5 +1,5 @@
 <?php
-// Landlord\Frontend\models\LandlordPropertyModel.php
+// Landlord/Frontend/models/LandlordPropertyModel.php
 require_once __DIR__ . '/../config/database.php';
 
 class LandlordPropertyModel {
@@ -13,85 +13,74 @@ class LandlordPropertyModel {
 
     /**
      * Add a new property to the database
-     * @param array $data Property data
-     * @param int $landlord_id The ID of the landlord adding the property
-     * @return array Success or error message
      */
-  public function addProperty($data, $landlord_id) {
-    if (!$this->conn) {
-        error_log("addProperty: Database connection failed");
-        return ['success' => false, 'message' => 'Database connection failed'];
-    }
-
-    try {
-        // Handle amenities - convert array to JSON
-        $amenities = isset($data['amenities']) ? json_encode($data['amenities']) : null;
-        
-        // Handle featured status
-        $featured = isset($data['featured']) ? (int)$data['featured'] : 0;
-        
-        // Handle year built
-        $year_built = isset($data['year_built']) && !empty($data['year_built']) ? $data['year_built'] : null;
-        
-        // Handle zip code
-        $zip = isset($data['zip']) && !empty($data['zip']) ? $data['zip'] : null;
-        
-        // Log the SQL query for debugging
-        error_log("Preparing to insert property for landlord: $landlord_id");
-        
-        $query = "INSERT INTO " . $this->table_name . " 
-                  (landlord_id, property_name, property_type, address, city, neighborhood, zip_code,
-                   monthly_rent, status, bedrooms, bathrooms, sqft, year_built, featured, description, 
-                   amenities, created_at, updated_at) 
-                  VALUES 
-                  (:landlord_id, :property_name, :property_type, :address, :city, :neighborhood, :zip_code,
-                   :monthly_rent, :status, :bedrooms, :bathrooms, :sqft, :year_built, :featured, :description,
-                   :amenities, NOW(), NOW())";
-
-        $stmt = $this->conn->prepare($query);
-        
-        // Bind parameters
-        $stmt->bindParam(':landlord_id', $landlord_id);
-        $stmt->bindParam(':property_name', $data['title']);
-        $stmt->bindParam(':property_type', $data['type']);
-        $stmt->bindParam(':address', $data['address']);
-        $stmt->bindParam(':city', $data['city']);
-        $stmt->bindParam(':neighborhood', $data['neighborhood']);
-        $stmt->bindParam(':zip_code', $zip);
-        $stmt->bindParam(':monthly_rent', $data['price']);
-        $stmt->bindParam(':status', $data['status']);
-        $stmt->bindParam(':bedrooms', $data['bedrooms']);
-        $stmt->bindParam(':bathrooms', $data['bathrooms']);
-        $stmt->bindParam(':sqft', $data['area']);
-        $stmt->bindParam(':year_built', $year_built);
-        $stmt->bindParam(':featured', $featured);
-        $stmt->bindParam(':description', $data['description']);
-        $stmt->bindParam(':amenities', $amenities);
-
-        if ($stmt->execute()) {
-            $property_id = $this->conn->lastInsertId();
-            error_log("Property added successfully with ID: $property_id");
-            
-            return [
-                'success' => true,
-                'message' => 'Property added successfully!',
-                'property_id' => $property_id
-            ];
-        } else {
-            $errorInfo = $stmt->errorInfo();
-            error_log("SQL Error: " . print_r($errorInfo, true));
-            return ['success' => false, 'message' => 'Database error: ' . $errorInfo[2]];
+    public function addProperty($data, $landlord_id) {
+        if (!$this->conn) {
+            return ['success' => false, 'message' => 'Database connection failed'];
         }
-    } catch (PDOException $e) {
-        error_log("PDO Exception in addProperty: " . $e->getMessage());
-        error_log("Stack trace: " . $e->getTraceAsString());
-        return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+
+        try {
+            // Handle amenities - convert array to JSON
+            $amenities = isset($data['amenities']) ? json_encode($data['amenities']) : null;
+            
+            // Handle featured status
+            $featured = isset($data['featured']) ? (int)$data['featured'] : 0;
+            
+            // Handle year built
+            $year_built = isset($data['year_built']) && !empty($data['year_built']) ? $data['year_built'] : null;
+            
+            // Handle zip code
+            $zip = isset($data['zip']) && !empty($data['zip']) ? $data['zip'] : null;
+            
+            $query = "INSERT INTO " . $this->table_name . " 
+                      (landlord_id, property_name, property_type, address, city, neighborhood, zip_code,
+                       monthly_rent, status, bedrooms, bathrooms, sqft, year_built, featured, description, 
+                       amenities, created_at, updated_at) 
+                      VALUES 
+                      (:landlord_id, :property_name, :property_type, :address, :city, :neighborhood, :zip_code,
+                       :monthly_rent, :status, :bedrooms, :bathrooms, :sqft, :year_built, :featured, :description,
+                       :amenities, NOW(), NOW())";
+
+            $stmt = $this->conn->prepare($query);
+            
+            // Bind parameters
+            $stmt->bindParam(':landlord_id', $landlord_id);
+            $stmt->bindParam(':property_name', $data['title']);
+            $stmt->bindParam(':property_type', $data['type']);
+            $stmt->bindParam(':address', $data['address']);
+            $stmt->bindParam(':city', $data['city']);
+            $stmt->bindParam(':neighborhood', $data['neighborhood']);
+            $stmt->bindParam(':zip_code', $zip);
+            $stmt->bindParam(':monthly_rent', $data['price']);
+            $stmt->bindParam(':status', $data['status']);
+            $stmt->bindParam(':bedrooms', $data['bedrooms']);
+            $stmt->bindParam(':bathrooms', $data['bathrooms']);
+            $stmt->bindParam(':sqft', $data['area']);
+            $stmt->bindParam(':year_built', $year_built);
+            $stmt->bindParam(':featured', $featured);
+            $stmt->bindParam(':description', $data['description']);
+            $stmt->bindParam(':amenities', $amenities);
+
+            if ($stmt->execute()) {
+                $property_id = $this->conn->lastInsertId();
+                
+                return [
+                    'success' => true,
+                    'message' => 'Property added successfully!',
+                    'property_id' => $property_id
+                ];
+            } else {
+                $errorInfo = $stmt->errorInfo();
+                return ['success' => false, 'message' => 'Database error: ' . $errorInfo[2]];
+            }
+        } catch (PDOException $e) {
+            error_log("PDO Exception in addProperty: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
     }
-}
+
     /**
      * Get all properties for a specific landlord
-     * @param int $landlord_id
-     * @return array Properties
      */
     public function getLandlordProperties($landlord_id) {
         if (!$this->conn) {
@@ -116,8 +105,6 @@ class LandlordPropertyModel {
 
     /**
      * Get a single property by ID
-     * @param int $property_id
-     * @return array|null Property data
      */
     public function getPropertyById($property_id) {
         if (!$this->conn) {
@@ -142,9 +129,6 @@ class LandlordPropertyModel {
 
     /**
      * Update an existing property
-     * @param int $property_id
-     * @param array $data
-     * @return array Success or error message
      */
     public function updateProperty($property_id, $data) {
         if (!$this->conn) {
@@ -206,8 +190,6 @@ class LandlordPropertyModel {
 
     /**
      * Delete a property
-     * @param int $property_id
-     * @return array Success or error message
      */
     public function deleteProperty($property_id) {
         if (!$this->conn) {
@@ -215,8 +197,8 @@ class LandlordPropertyModel {
         }
 
         try {
-            // First delete associated images if you have an images table
-            // $this->deletePropertyImages($property_id);
+            // First delete associated images
+            $this->deletePropertyImages($property_id);
             
             $query = "DELETE FROM " . $this->table_name . " WHERE id = :id";
             $stmt = $this->conn->prepare($query);
@@ -235,56 +217,37 @@ class LandlordPropertyModel {
     }
 
     /**
-     * Save property images (if you have an images table)
-     * @param int $property_id
-     * @param array $images
+     * Delete property images
      */
-    private function savePropertyImages($property_id, $images) {
-        // Check if property_images table exists
+    private function deletePropertyImages($property_id) {
         try {
-            // Create property_images table if it doesn't exist
-            $this->createPropertyImagesTable();
+            // Get image paths to delete files
+            $query = "SELECT image_path FROM property_images WHERE property_id = :property_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':property_id', $property_id);
+            $stmt->execute();
+            $images = $stmt->fetchAll(PDO::FETCH_ASSOC);
             
-            foreach ($images as $index => $image) {
-                $is_primary = ($index === 0) ? 1 : 0;
-                
-                $query = "INSERT INTO property_images (property_id, image_path, is_primary, created_at) 
-                          VALUES (:property_id, :image_path, :is_primary, NOW())";
-                $stmt = $this->conn->prepare($query);
-                $stmt->bindParam(':property_id', $property_id);
-                $stmt->bindParam(':image_path', $image);
-                $stmt->bindParam(':is_primary', $is_primary);
-                $stmt->execute();
+            // Delete files from server
+            foreach ($images as $image) {
+                $filePath = __DIR__ . '/../' . $image['image_path'];
+                if (file_exists($filePath)) {
+                    unlink($filePath);
+                }
             }
+            
+            // Delete from database
+            $query = "DELETE FROM property_images WHERE property_id = :property_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':property_id', $property_id);
+            $stmt->execute();
         } catch (PDOException $e) {
-            error_log("Save property images error: " . $e->getMessage());
-        }
-    }
-
-    /**
-     * Create property_images table if it doesn't exist
-     */
-    private function createPropertyImagesTable() {
-        $query = "CREATE TABLE IF NOT EXISTS property_images (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            property_id INT NOT NULL,
-            image_path VARCHAR(255) NOT NULL,
-            is_primary BOOLEAN DEFAULT FALSE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
-        )";
-        
-        try {
-            $this->conn->exec($query);
-        } catch (PDOException $e) {
-            error_log("Create property_images table error: " . $e->getMessage());
+            error_log("Delete property images error: " . $e->getMessage());
         }
     }
 
     /**
      * Get property statistics for dashboard
-     * @param int $landlord_id
-     * @return array Statistics
      */
     public function getPropertyStats($landlord_id) {
         if (!$this->conn) {
@@ -339,8 +302,6 @@ class LandlordPropertyModel {
 
     /**
      * Get monthly revenue for landlord
-     * @param int $landlord_id
-     * @return float Total monthly revenue
      */
     public function getMonthlyRevenue($landlord_id) {
         if (!$this->conn) {
@@ -364,9 +325,6 @@ class LandlordPropertyModel {
 
     /**
      * Get properties by status
-     * @param int $landlord_id
-     * @param string $status
-     * @return array Properties
      */
     public function getPropertiesByStatus($landlord_id, $status) {
         if (!$this->conn) {
@@ -392,9 +350,6 @@ class LandlordPropertyModel {
 
     /**
      * Search properties
-     * @param int $landlord_id
-     * @param string $search_term
-     * @return array Properties
      */
     public function searchProperties($landlord_id, $search_term) {
         if (!$this->conn) {
@@ -426,8 +381,6 @@ class LandlordPropertyModel {
 
     /**
      * Format property data for display
-     * @param array $property
-     * @return array Formatted property
      */
     public function formatPropertyForDisplay($property) {
         if (empty($property)) {
@@ -460,9 +413,6 @@ class LandlordPropertyModel {
 
     /**
      * Check if landlord owns the property
-     * @param int $property_id
-     * @param int $landlord_id
-     * @return bool
      */
     public function verifyOwnership($property_id, $landlord_id) {
         if (!$this->conn) {
@@ -481,6 +431,121 @@ class LandlordPropertyModel {
         } catch (PDOException $e) {
             error_log("Verify ownership error: " . $e->getMessage());
             return false;
+        }
+    }
+
+    /**
+     * Save property image to database
+     */
+    public function savePropertyImage($property_id, $image_path, $is_primary = 0) {
+        if (!$this->conn) {
+            return false;
+        }
+
+        try {
+            // Create property_images table if it doesn't exist
+            $this->createPropertyImagesTable();
+            
+            // If this is primary, remove primary status from other images
+            if ($is_primary) {
+                $updateQuery = "UPDATE property_images SET is_primary = 0 WHERE property_id = :property_id";
+                $updateStmt = $this->conn->prepare($updateQuery);
+                $updateStmt->bindParam(':property_id', $property_id);
+                $updateStmt->execute();
+            }
+            
+            $query = "INSERT INTO property_images (property_id, image_path, is_primary, created_at) 
+                      VALUES (:property_id, :image_path, :is_primary, NOW())";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':property_id', $property_id);
+            $stmt->bindParam(':image_path', $image_path);
+            $stmt->bindParam(':is_primary', $is_primary);
+            
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Save property image error: " . $e->getMessage());
+            return false;
+        }
+    }
+
+    /**
+     * Get property images
+     */
+    public function getPropertyImages($property_id) {
+        if (!$this->conn) {
+            return [];
+        }
+
+        try {
+            $query = "SELECT * FROM property_images WHERE property_id = :property_id ORDER BY is_primary DESC, created_at DESC";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':property_id', $property_id);
+            $stmt->execute();
+            
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (PDOException $e) {
+            error_log("Get property images error: " . $e->getMessage());
+            return [];
+        }
+    }
+
+    /**
+     * Get primary property image
+     */
+    public function getPrimaryPropertyImage($property_id) {
+        if (!$this->conn) {
+            return null;
+        }
+
+        try {
+            $query = "SELECT image_path FROM property_images 
+                      WHERE property_id = :property_id AND is_primary = 1 
+                      LIMIT 1";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':property_id', $property_id);
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                return $result['image_path'];
+            }
+            
+            // Return first image if no primary
+            $query = "SELECT image_path FROM property_images WHERE property_id = :property_id LIMIT 1";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':property_id', $property_id);
+            $stmt->execute();
+            
+            if ($stmt->rowCount() > 0) {
+                $result = $stmt->fetch(PDO::FETCH_ASSOC);
+                return $result['image_path'];
+            }
+            
+            return null;
+        } catch (PDOException $e) {
+            error_log("Get primary image error: " . $e->getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Create property_images table if it doesn't exist
+     */
+    private function createPropertyImagesTable() {
+        $query = "CREATE TABLE IF NOT EXISTS property_images (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            property_id INT NOT NULL,
+            image_path VARCHAR(255) NOT NULL,
+            is_primary BOOLEAN DEFAULT FALSE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (property_id) REFERENCES properties(id) ON DELETE CASCADE
+        )";
+        
+        try {
+            $this->conn->exec($query);
+        } catch (PDOException $e) {
+            error_log("Create property_images table error: " . $e->getMessage());
         }
     }
 }

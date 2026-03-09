@@ -3,36 +3,27 @@
 session_start();
 header('Content-Type: application/json');
 
-// Log everything for debugging
-error_log("=== Add Property Handler Started ===");
-error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
-error_log("POST data: " . print_r($_POST, true));
-error_log("GET data: " . print_r($_GET, true));
-error_log("Session: " . print_r($_SESSION, true));
+// Error reporting for debugging (remove in production)
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 // Check if user is logged in
 if (!isset($_SESSION['landlord_id'])) {
-    error_log("ERROR: No landlord_id in session");
-    echo json_encode([
-        'success' => false, 
-        'message' => 'Please login as a landlord to add properties'
-    ]);
+    echo json_encode(['success' => false, 'message' => 'Please login as a landlord to add properties']);
     exit;
 }
 
 $landlord_id = $_SESSION['landlord_id'];
-error_log("Landlord ID: " . $landlord_id);
 
 // Handle POST request (adding property)
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    error_log("Processing POST request - Adding property");
     
     // Include the model
     require_once __DIR__ . '/models/LandlordPropertyModel.php';
     
     $propertyModel = new LandlordPropertyModel();
     
-    // Get form data (try different possible field names)
+    // Get form data
     $title = trim($_POST['property-name'] ?? $_POST['title'] ?? '');
     $type = $_POST['property-type'] ?? $_POST['type'] ?? '';
     $price = floatval($_POST['price'] ?? 0);
@@ -53,8 +44,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $amenities = $_POST['amenities'];
     }
     
-    error_log("Processed data - Title: $title, Type: $type, Price: $price");
-    
     // Validate required fields
     $errors = [];
     if (empty($title)) $errors[] = 'Property title is required';
@@ -67,7 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if ($area <= 0) $errors[] = 'Valid area is required';
     
     if (!empty($errors)) {
-        error_log("Validation errors: " . implode(', ', $errors));
         echo json_encode(['success' => false, 'message' => implode('<br>', $errors)]);
         exit;
     }
@@ -93,16 +81,152 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     
     // Add property to database
     $result = $propertyModel->addProperty($propertyData, $landlord_id);
-    error_log("addProperty result: " . print_r($result, true));
+    
+    if ($result['success']) {
+        $property_id = $result['property_id'];
+        
+        // Handle image uploads
+        if (!empty($_FILES['property_photos']['name'][0])) {
+            $uploadResult = uploadPropertyImages($property_id, $_FILES['property_photos']);
+            if (!$uploadResult['success']) {
+                // Images failed to upload but property was created
+                $result['message'] .= ' But images failed to upload: ' . $uploadResult['message'];
+            } else {
+                $result['message'] .= ' And ' . $uploadResult['count'] . ' images uploaded.';
+            }
+        }
+        
+        // Handle rules/document uploads
+        if (!empty($_FILES['property_rules']['name'][0])) {
+            $rulesResult = uploadPropertyRules($property_id, $_FILES['property_rules']);
+            // You can store rules in a separate table if needed
+        }
+    }
     
     echo json_encode($result);
     exit;
 }
 
+/**
+ * Upload property images
+ */
+function uploadPropertyImages($property_id, $files) {
+    $uploadDir = __DIR__ . '/uploads/properties/';
+    
+    // Create directory if it doesn't exist
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+    
+    $uploadedFiles = [];
+    $errors = [];
+    $firstImage = true;
+    
+    require_once __DIR__ . '/models/LandlordPropertyModel.php';
+    $propertyModel = new LandlordPropertyModel();
+    
+    // Process each file
+    for ($i = 0; $i < count($files['name']); $i++) {
+        if ($files['error'][$i] === UPLOAD_ERR_OK) {
+            $tmp_name = $files['tmp_name'][$i];
+            $originalName = $files['name'][$i];
+            
+            // Generate unique filename
+            $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+            $filename = 'property_' . $property_id . '_' . time() . '_' . $i . '.' . $extension;
+            $filepath = $uploadDir . $filename;
+            
+            // Validate file type
+            $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg', 'image/gif', 'image/webp'];
+            $fileType = mime_content_type($tmp_name);
+            
+            if (!in_array($fileType, $allowedTypes)) {
+                $errors[] = "$originalName is not an allowed image type";
+                continue;
+            }
+            
+            // Validate file size (max 5MB)
+            if ($files['size'][$i] > 5 * 1024 * 1024) {
+                $errors[] = "$originalName is too large (max 5MB)";
+                continue;
+            }
+            
+            // Move uploaded file
+            if (move_uploaded_file($tmp_name, $filepath)) {
+                // Save to database
+                $dbPath = 'uploads/properties/' . $filename;
+                $isPrimary = $firstImage ? 1 : 0;
+                
+                if ($propertyModel->savePropertyImage($property_id, $dbPath, $isPrimary)) {
+                    $uploadedFiles[] = $dbPath;
+                    $firstImage = false;
+                } else {
+                    $errors[] = "Failed to save $originalName to database";
+                }
+            } else {
+                $errors[] = "Failed to move $originalName";
+            }
+        } else if ($files['error'][$i] !== UPLOAD_ERR_NO_FILE) {
+            $errors[] = "Error uploading file: " . $files['name'][$i];
+        }
+    }
+    
+    return [
+        'success' => empty($errors),
+        'count' => count($uploadedFiles),
+        'files' => $uploadedFiles,
+        'message' => empty($errors) ? 'All images uploaded' : implode(', ', $errors)
+    ];
+}
+
+/**
+ * Upload property rules/documents
+ */
+function uploadPropertyRules($property_id, $files) {
+    $uploadDir = __DIR__ . '/uploads/rules/';
+    
+    if (!file_exists($uploadDir)) {
+        mkdir($uploadDir, 0777, true);
+    }
+    
+    $uploadedFiles = [];
+    $errors = [];
+    
+    for ($i = 0; $i < count($files['name']); $i++) {
+        if ($files['error'][$i] === UPLOAD_ERR_OK) {
+            $tmp_name = $files['tmp_name'][$i];
+            $originalName = $files['name'][$i];
+            
+            $extension = pathinfo($originalName, PATHINFO_EXTENSION);
+            $filename = 'rules_' . $property_id . '_' . time() . '_' . $i . '.' . $extension;
+            $filepath = $uploadDir . $filename;
+            
+            $allowedTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/plain'];
+            $fileType = mime_content_type($tmp_name);
+            
+            if (!in_array($fileType, $allowedTypes)) {
+                $errors[] = "$originalName is not an allowed document type";
+                continue;
+            }
+            
+            if (move_uploaded_file($tmp_name, $filepath)) {
+                $uploadedFiles[] = 'uploads/rules/' . $filename;
+                // You can save to a property_rules table here if needed
+            } else {
+                $errors[] = "Failed to move $originalName";
+            }
+        }
+    }
+    
+    return [
+        'success' => empty($errors),
+        'count' => count($uploadedFiles),
+        'files' => $uploadedFiles
+    ];
+}
+
 // Handle GET request (fetching properties)
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['action'] === 'get_properties') {
-    error_log("Processing GET request - Fetching properties");
-    
     require_once __DIR__ . '/models/LandlordPropertyModel.php';
     $propertyModel = new LandlordPropertyModel();
     
@@ -117,11 +241,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET' && isset($_GET['action']) && $_GET['act
     exit;
 }
 
-// If we get here, it's an invalid request
-error_log("ERROR: Invalid request - No matching condition");
-echo json_encode([
-    'success' => false,
-    'message' => 'Invalid request. Method: ' . $_SERVER['REQUEST_METHOD']
-]);
+echo json_encode(['success' => false, 'message' => 'Invalid request']);
 exit;
 ?>

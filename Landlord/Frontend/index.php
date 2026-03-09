@@ -1111,16 +1111,13 @@ $firstName = explode(' ', $landlordName)[0];
                                 <h2><i class="fas fa-camera"></i> Media</h2>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="photos"><i class="fas fa-images"></i> Upload Photos</label>
-                                        <div class="file-input-container">
-                                            <input type="file" id="photos" name="property_photos[]" accept="image/*" multiple>
-                                        </div>
+                                        <label for="photos">Property Photos (max 5MB each)</label>
+                                        <input type="file" id="photos" name="property_photos[]" multiple accept="image/*">
+                                        <small class="text-muted">You can select multiple images. The first one will be the primary image.</small>
                                     </div>
                                     <div class="form-group">
-                                        <label for="rules"><i class="fas fa-file-alt"></i> Upload Property Rules</label>
-                                        <div class="file-input-container">
-                                            <input type="file" id="rules" name="property_rules[]" accept=".pdf, .doc, .docx, .txt" multiple>
-                                        </div>
+                                        <label for="rules">Property Rules/Documents</label>
+                                        <input type="file" id="rules" name="property_rules[]" multiple accept=".pdf,.doc,.docx,.txt">
                                     </div>
                                 </div>
                             </div>
@@ -1250,6 +1247,15 @@ if (propertyForm) {
     });
     
     console.log('Form event listener reattached successfully');
+}
+// Show upload progress
+const formData = new FormData(this);
+let uploadProgress = 0;
+
+// You can add a progress indicator
+const files = document.getElementById('photos').files;
+if (files.length > 0) {
+    console.log(`Uploading ${files.length} images...`);
 }
         // Add animation styles
         const style = document.createElement('style');

@@ -1,0 +1,26 @@
+# .htaccess that allows POST for your handler
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    
+    # Allow POST requests to add_property_handler.php
+    RewriteCond %{REQUEST_URI} add_property_handler\.php
+    RewriteCond %{REQUEST_METHOD} POST
+    RewriteRule .* - [L]
+    
+    # Your other rewrite rules here
+    # Example: Redirect all other requests to index.php (common in MVC)
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteCond %{REQUEST_URI} !add_property_handler\.php
+    RewriteRule ^(.*)$ index.php [QSA,L]
+</IfModule>
+
+# Ensure POST is allowed
+<Limit POST>
+    Order allow,deny
+    Allow from all
+</Limit>
+
+# Increase POST limits if needed
+php_value post_max_size 20M
+php_value upload_max_filesize 20M
