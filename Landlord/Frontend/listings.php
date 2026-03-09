@@ -1237,47 +1237,48 @@
                             </div>
                             
                             <!-- Amenities -->
+                           <!-- Amenities -->
                             <div class="form-section">
                                 <h2><i class="fas fa-concierge-bell"></i> Amenities</h2>
                                 <div class="amenities-grid">
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="wifi" name="amenities">
+                                        <input type="checkbox" id="wifi" name="amenities[]" value="wifi">
                                         <label for="wifi">Wi-Fi</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="parking" name="amenities">
+                                        <input type="checkbox" id="parking" name="amenities[]" value="parking">
                                         <label for="parking">Parking</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="pool" name="amenities">
+                                        <input type="checkbox" id="pool" name="amenities[]" value="pool">
                                         <label for="pool">Swimming Pool</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="gym" name="amenities">
+                                        <input type="checkbox" id="gym" name="amenities[]" value="gym">
                                         <label for="gym">Gym</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="ac" name="amenities">
+                                        <input type="checkbox" id="ac" name="amenities[]" value="ac">
                                         <label for="ac">Air Conditioning</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="heating" name="amenities">
+                                        <input type="checkbox" id="heating" name="amenities[]" value="heating">
                                         <label for="heating">Heating</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="laundry" name="amenities">
+                                        <input type="checkbox" id="laundry" name="amenities[]" value="laundry">
                                         <label for="laundry">Laundry</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="security" name="amenities">
+                                        <input type="checkbox" id="security" name="amenities[]" value="security">
                                         <label for="security">Security</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="balcony" name="amenities">
+                                        <input type="checkbox" id="balcony" name="amenities[]" value="balcony">
                                         <label for="balcony">Balcony</label>
                                     </div>
                                     <div class="amenity-item">
-                                        <input type="checkbox" id="furnished" name="amenities">
+                                        <input type="checkbox" id="furnished" name="amenities[]" value="furnished">
                                         <label for="furnished">Furnished</label>
                                     </div>
                                 </div>
@@ -1316,203 +1317,266 @@
         <p>Making property management smarter and easier.</p>
     </footer>
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-          
-            const propertyTabs = document.querySelectorAll('.properties-tab');
-            const propertyCards = document.querySelectorAll('.property-card');
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab functionality
+        const propertyTabs = document.querySelectorAll('.properties-tab');
+        const propertyCards = document.querySelectorAll('.property-card');
+        
+        propertyTabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabType = this.getAttribute('data-tab');
+             
+                propertyTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
             
-            propertyTabs.forEach(tab => {
-                tab.addEventListener('click', function() {
-                    const tabType = this.getAttribute('data-tab');
-                 
-                    propertyTabs.forEach(t => t.classList.remove('active'));
-                    this.classList.add('active');
-                
-                    propertyCards.forEach(card => {
-                        if (tabType === 'all') {
+                propertyCards.forEach(card => {
+                    if (tabType === 'all') {
+                        card.style.display = 'block';
+                    } else {
+                        const cardStatus = card.getAttribute('data-status');
+                        if (cardStatus === tabType) {
                             card.style.display = 'block';
                         } else {
-                            const cardStatus = card.getAttribute('data-status');
-                            if (cardStatus === tabType) {
-                                card.style.display = 'block';
-                            } else {
-                                card.style.display = 'none';
-                            }
+                            card.style.display = 'none';
                         }
-                    });
-                });
-            });
-            
-        
-            const addPropertyBtn = document.getElementById('add-property-btn');
-            const addPropertyForm = document.getElementById('add-property-form');
-            const propertiesContainer = document.querySelector('.properties-container');
-            const cancelFormBtn = document.getElementById('cancel-form');
-            
-            if (addPropertyBtn) {
-                addPropertyBtn.addEventListener('click', function() {
-                    propertiesContainer.classList.add('hidden');
-                    addPropertyForm.classList.remove('hidden');
-                });
-            }
-            
-            if (cancelFormBtn) {
-                cancelFormBtn.addEventListener('click', function() {
-                    addPropertyForm.classList.add('hidden');
-                    propertiesContainer.classList.remove('hidden');
-                });
-            }
-            
-           
-            const propertyForm = document.getElementById('property-form');
-            
-            if (propertyForm) {
-                propertyForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                   
-                    const formData = {
-                        title: document.getElementById('property-title').value,
-                        type: document.getElementById('property-type').value,
-                        price: document.getElementById('price').value,
-                        status: document.getElementById('property-status').value,
-                        description: document.getElementById('description').value,
-                        address: document.getElementById('address').value,
-                        city: document.getElementById('city').value,
-                        neighborhood: document.getElementById('neighborhood').value,
-                        bedrooms: document.getElementById('bedrooms').value,
-                        bathrooms: document.getElementById('bathrooms').value,
-                        area: document.getElementById('area').value
-                    };
-                    
-                   
-                    alert('Property added successfully!');
-                    propertyForm.reset();
-                    clearImagePreviews();
-                    
-                  
-                    addPropertyForm.classList.add('hidden');
-                    propertiesContainer.classList.remove('hidden');
-                });
-            }
-            
-       
-            const imageUpload = document.getElementById('image-upload');
-            const fileInput = document.getElementById('file-input');
-            const imagePreview = document.getElementById('image-preview');
-            
-            if (imageUpload) {
-                imageUpload.addEventListener('click', function() {
-                    fileInput.click();
-                });
-                
-               
-                imageUpload.addEventListener('dragover', function(e) {
-                    e.preventDefault();
-                    imageUpload.style.borderColor = 'var(--primary)';
-                    imageUpload.style.background = 'rgba(255, 56, 92, 0.1)';
-                });
-                
-                imageUpload.addEventListener('dragleave', function() {
-                    imageUpload.style.borderColor = 'var(--gray)';
-                    imageUpload.style.background = 'var(--light-gray)';
-                });
-                
-                imageUpload.addEventListener('drop', function(e) {
-                    e.preventDefault();
-                    imageUpload.style.borderColor = 'var(--gray)';
-                    imageUpload.style.background = 'var(--light-gray)';
-                    
-                    const files = e.dataTransfer.files;
-                    handleFiles(files);
-                });
-            }
-            
-            if (fileInput) {
-                fileInput.addEventListener('change', function() {
-                    handleFiles(this.files);
-                });
-            }
-            
-            function handleFiles(files) {
-                for (let i = 0; i < files.length; i++) {
-                    const file = files[i];
-                    if (!file.type.match('image.*')) continue;
-                    
-                    const reader = new FileReader();
-                    
-                    reader.onload = function(e) {
-                        const previewItem = document.createElement('div');
-                        previewItem.className = 'preview-item';
-                        previewItem.innerHTML = `
-                            <img src="${e.target.result}" alt="Preview">
-                            <div class="preview-remove">&times;</div>
-                        `;
-                        
-                        imagePreview.appendChild(previewItem);
-                        
-                       
-                        const removeBtn = previewItem.querySelector('.preview-remove');
-                        removeBtn.addEventListener('click', function() {
-                            imagePreview.removeChild(previewItem);
-                        });
-                    };
-                    
-                    reader.readAsDataURL(file);
-                }
-            }
-            
-            function clearImagePreviews() {
-                imagePreview.innerHTML = '';
-            }
-            
-   
-            const favoriteButtons = document.querySelectorAll('.property-favorite');
-            const editButtons = document.querySelectorAll('.btn-edit');
-            const viewButtons = document.querySelectorAll('.btn-view');
-            const deleteButtons = document.querySelectorAll('.btn-delete');
-  
-            favoriteButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const icon = this.querySelector('i');
-                    
-                    if (icon.classList.contains('far')) {
-                        icon.classList.remove('far');
-                        icon.classList.add('fas');
-                        this.classList.add('active');
-                    } else {
-                        icon.classList.remove('fas');
-                        icon.classList.add('far');
-                        this.classList.remove('active');
                     }
                 });
             });
-            
-       
-            editButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    alert('Edit property functionality would open here');
+        });
+        
+        // Toggle between properties list and add property form
+        const addPropertyBtn = document.getElementById('add-property-btn');
+        const addPropertyForm = document.getElementById('add-property-form');
+        const propertiesContainer = document.querySelector('.properties-container');
+        const cancelFormBtn = document.getElementById('cancel-form');
+        
+        if (addPropertyBtn) {
+            addPropertyBtn.addEventListener('click', function() {
+                propertiesContainer.classList.add('hidden');
+                addPropertyForm.classList.remove('hidden');
+            });
+        }
+        
+        if (cancelFormBtn) {
+            cancelFormBtn.addEventListener('click', function() {
+                addPropertyForm.classList.add('hidden');
+                propertiesContainer.classList.remove('hidden');
+            });
+        }
+        
+        // Property Form Submission with AJAX
+        const propertyForm = document.getElementById('property-form');
+        
+        if (propertyForm) {
+            propertyForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Collect amenities
+                const amenities = [];
+                document.querySelectorAll('input[name="amenities"]:checked').forEach(checkbox => {
+                    amenities.push(checkbox.id);
+                });
+                
+                // Collect form data
+                const formData = new FormData();
+                formData.append('title', document.getElementById('property-title').value);
+                formData.append('type', document.getElementById('property-type').value);
+                formData.append('price', document.getElementById('price').value);
+                formData.append('status', document.getElementById('property-status').value);
+                formData.append('description', document.getElementById('description').value);
+                formData.append('address', document.getElementById('address').value);
+                formData.append('city', document.getElementById('city').value);
+                formData.append('neighborhood', document.getElementById('neighborhood').value);
+                formData.append('zip', document.getElementById('zip-code').value);
+                formData.append('bedrooms', document.getElementById('bedrooms').value);
+                formData.append('bathrooms', document.getElementById('bathrooms').value);
+                formData.append('area', document.getElementById('area').value);
+                
+                const yearBuilt = document.getElementById('year-built').value;
+                if (yearBuilt) {
+                    formData.append('year_built', yearBuilt);
+                }
+                
+                // Add amenities
+                amenities.forEach(amenity => {
+                    formData.append('amenities[]', amenity);
+                });
+                
+                // Disable submit button and show loading state
+                const submitBtn = propertyForm.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding Property...';
+                submitBtn.disabled = true;
+                
+                // Send AJAX request
+                fetch('add_property_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // Show success message
+                        showNotification('Property added successfully!', 'success');
+                        
+                        // Reset form
+                        propertyForm.reset();
+                        clearImagePreviews();
+                        
+                        // Hide form and show properties list
+                        addPropertyForm.classList.add('hidden');
+                        propertiesContainer.classList.remove('hidden');
+                        
+                        // Refresh properties list
+                        loadProperties();
+                    } else {
+                        // Show error message
+                        showNotification(data.message || 'Error adding property', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showNotification('An error occurred. Please try again.', 'error');
+                })
+                .finally(() => {
+                    // Re-enable submit button
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
                 });
             });
-            
-  
-            viewButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    alert('View property details functionality would open here');
-                });
+        }
+        
+        // Image upload functionality
+        const imageUpload = document.getElementById('image-upload');
+        const fileInput = document.getElementById('file-input');
+        const imagePreview = document.getElementById('image-preview');
+        
+        if (imageUpload) {
+            imageUpload.addEventListener('click', function() {
+                fileInput.click();
             });
             
-       
-            deleteButtons.forEach(button => {
-                button.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const propertyCard = this.closest('.property-card');
-                    const propertyTitle = propertyCard.querySelector('.property-title').textContent;
+            imageUpload.addEventListener('dragover', function(e) {
+                e.preventDefault();
+                imageUpload.style.borderColor = 'var(--primary)';
+                imageUpload.style.background = 'rgba(255, 56, 92, 0.1)';
+            });
+            
+            imageUpload.addEventListener('dragleave', function() {
+                imageUpload.style.borderColor = 'var(--gray)';
+                imageUpload.style.background = 'var(--light-gray)';
+            });
+            
+            imageUpload.addEventListener('drop', function(e) {
+                e.preventDefault();
+                imageUpload.style.borderColor = 'var(--gray)';
+                imageUpload.style.background = 'var(--light-gray)';
+                
+                const files = e.dataTransfer.files;
+                handleFiles(files);
+            });
+        }
+        
+        if (fileInput) {
+            fileInput.addEventListener('change', function() {
+                handleFiles(this.files);
+            });
+        }
+        
+        function handleFiles(files) {
+            for (let i = 0; i < files.length; i++) {
+                const file = files[i];
+                if (!file.type.match('image.*')) continue;
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'preview-item';
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview">
+                        <div class="preview-remove">&times;</div>
+                    `;
                     
+                    imagePreview.appendChild(previewItem);
+                    
+                    const removeBtn = previewItem.querySelector('.preview-remove');
+                    removeBtn.addEventListener('click', function() {
+                        imagePreview.removeChild(previewItem);
+                    });
+                };
+                
+                reader.readAsDataURL(file);
+            }
+        }
+        
+        function clearImagePreviews() {
+            imagePreview.innerHTML = '';
+        }
+        
+        // Favorite button functionality
+        const favoriteButtons = document.querySelectorAll('.property-favorite');
+        favoriteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const icon = this.querySelector('i');
+                
+                if (icon.classList.contains('far')) {
+                    icon.classList.remove('far');
+                    icon.classList.add('fas');
+                    this.classList.add('active');
+                    showNotification('Added to favorites', 'success');
+                } else {
+                    icon.classList.remove('fas');
+                    icon.classList.add('far');
+                    this.classList.remove('active');
+                    showNotification('Removed from favorites', 'info');
+                }
+            });
+        });
+        
+        // Edit button functionality
+        const editButtons = document.querySelectorAll('.btn-edit');
+        editButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const propertyCard = this.closest('.property-card');
+                const propertyId = propertyCard.dataset.id;
+                if (propertyId) {
+                    window.location.href = `edit-property.php?id=${propertyId}`;
+                } else {
+                    showNotification('Edit feature coming soon!', 'info');
+                }
+            });
+        });
+        
+        // View button functionality
+        const viewButtons = document.querySelectorAll('.btn-view');
+        viewButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const propertyCard = this.closest('.property-card');
+                const propertyId = propertyCard.dataset.id;
+                if (propertyId) {
+                    window.location.href = `property.php?id=${propertyId}`;
+                } else {
+                    showNotification('View property details', 'info');
+                }
+            });
+        });
+        
+        // Delete button functionality
+        const deleteButtons = document.querySelectorAll('.btn-delete');
+        deleteButtons.forEach(button => {
+            button.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const propertyCard = this.closest('.property-card');
+                const propertyId = propertyCard.dataset.id;
+                const propertyTitle = propertyCard.querySelector('.property-title').textContent;
+                
+                if (!propertyId) {
+                    // For static demo cards
                     if (confirm(`Are you sure you want to delete "${propertyTitle}"? This action cannot be undone.`)) {
                         propertyCard.style.opacity = '0';
                         propertyCard.style.transform = 'scale(0.8)';
@@ -1520,38 +1584,291 @@
                         setTimeout(() => {
                             propertyCard.remove();
                             updatePropertyCounts();
+                            showNotification('Property deleted successfully!', 'success');
                         }, 300);
                     }
-                });
+                    return;
+                }
+                
+                // For database properties
+                if (confirm(`Are you sure you want to delete "${propertyTitle}"? This action cannot be undone.`)) {
+                    fetch(`add_property_handler.php?id=${propertyId}`, {
+                        method: 'DELETE'
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            propertyCard.style.opacity = '0';
+                            propertyCard.style.transform = 'scale(0.8)';
+                            
+                            setTimeout(() => {
+                                propertyCard.remove();
+                                updatePropertyCounts();
+                                showNotification('Property deleted successfully!', 'success');
+                            }, 300);
+                        } else {
+                            showNotification(data.message || 'Error deleting property', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('An error occurred. Please try again.', 'error');
+                    });
+                }
+            });
+        });
+        
+        // Import button functionality
+        const importBtn = document.getElementById('import-properties');
+        if (importBtn) {
+            importBtn.addEventListener('click', function() {
+                showNotification('Import properties feature coming soon!', 'info');
+            });
+        }
+        
+        // Function to show notifications
+        function showNotification(message, type = 'info') {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            // Set icon based on type
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            notification.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            // Style the notification
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.padding = '15px 20px';
+            notification.style.borderRadius = '8px';
+            notification.style.backgroundColor = type === 'success' ? '#00A699' : 
+                                              type === 'error' ? '#FF5A5F' : 
+                                              type === 'warning' ? '#FFB400' : '#4285F4';
+            notification.style.color = 'white';
+            notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            notification.style.zIndex = '9999';
+            notification.style.display = 'flex';
+            notification.style.alignItems = 'center';
+            notification.style.gap = '10px';
+            notification.style.animation = 'slideIn 0.3s ease';
+            notification.style.fontWeight = '500';
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
+        
+        // Function to load properties from database
+        function loadProperties() {
+            fetch('add_property_handler.php?action=get_properties')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        updatePropertiesGrid(data.properties);
+                        updatePropertyStats(data.stats);
+                    }
+                })
+                .catch(error => console.error('Error loading properties:', error));
+        }
+        
+        // Function to update properties grid with database data
+        function updatePropertiesGrid(properties) {
+            const propertiesGrid = document.querySelector('.properties-grid');
+            if (!propertiesGrid) return;
+            
+            if (properties.length === 0) {
+                propertiesGrid.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-home"></i>
+                        <h3>No Properties Yet</h3>
+                        <p>Click the "Add New Property" button to list your first property.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            properties.forEach(property => {
+                const statusClass = property.status === 'available' ? 'status-available' : 
+                                   property.status === 'occupied' ? 'status-occupied' : 'status-maintenance';
+                
+                // Get first image or use default
+                const imageUrl = property.images && property.images.length > 0 
+                    ? property.images[0] 
+                    : 'assets/icons/bed.jpg';
+                
+                html += `
+                    <div class="property-card" data-status="${property.status}" data-id="${property.id}">
+                        <div class="property-image">
+                            <img src="${imageUrl}" alt="${property.property_name}">
+                            <div class="property-status ${statusClass}">${property.status}</div>
+                            <div class="property-favorite">
+                                <i class="far fa-heart"></i>
+                            </div>
+                        </div>
+                        <div class="property-details">
+                            <div class="property-price">KES ${Number(property.monthly_rent).toLocaleString()} <span>/month</span></div>
+                            <h3 class="property-title">${property.property_name}</h3>
+                            <div class="property-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${property.neighborhood || ''}, ${property.city || ''}
+                            </div>
+                            <div class="property-features">
+                                <div class="property-feature">
+                                    <i class="fas fa-bed"></i>
+                                    <span>${property.bedrooms || 0} Beds</span>
+                                </div>
+                                <div class="property-feature">
+                                    <i class="fas fa-bath"></i>
+                                    <span>${property.bathrooms || 0} Baths</span>
+                                </div>
+                                <div class="property-feature">
+                                    <i class="fas fa-vector-square"></i>
+                                    <span>${property.sqft || 0} sqft</span>
+                                </div>
+                            </div>
+                            <div class="property-actions">
+                                <button class="btn-edit" onclick="event.stopPropagation(); editProperty(${property.id})">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-view" onclick="event.stopPropagation(); viewProperty(${property.id})">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-delete" onclick="event.stopPropagation(); deleteProperty(${property.id})">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
             });
             
+            propertiesGrid.innerHTML = html;
+        }
         
-            function updatePropertyCounts() {
-                const totalProperties = document.querySelectorAll('.property-card').length;
-                const availableProperties = document.querySelectorAll('.property-card[data-status="available"]').length;
-                const occupiedProperties = document.querySelectorAll('.property-card[data-status="occupied"]').length;
-                const maintenanceProperties = document.querySelectorAll('.property-card[data-status="maintenance"]').length;
-                
-           
-                const allBadge = document.querySelector('.properties-tab[data-tab="all"] .properties-tab-badge');
-                const availableBadge = document.querySelector('.properties-tab[data-tab="available"] .properties-tab-badge');
-                const occupiedBadge = document.querySelector('.properties-tab[data-tab="occupied"] .properties-tab-badge');
-                const maintenanceBadge = document.querySelector('.properties-tab[data-tab="maintenance"] .properties-tab-badge');
-                
-                if (allBadge) allBadge.textContent = totalProperties;
-                if (availableBadge) availableBadge.textContent = availableProperties;
-                if (occupiedBadge) occupiedBadge.textContent = occupiedProperties;
-                if (maintenanceBadge) maintenanceBadge.textContent = maintenanceProperties;
+        // Function to update property statistics
+        function updatePropertyStats(stats) {
+            const allBadge = document.querySelector('.properties-tab[data-tab="all"] .properties-tab-badge');
+            const availableBadge = document.querySelector('.properties-tab[data-tab="available"] .properties-tab-badge');
+            const occupiedBadge = document.querySelector('.properties-tab[data-tab="occupied"] .properties-tab-badge');
+            const maintenanceBadge = document.querySelector('.properties-tab[data-tab="maintenance"] .properties-tab-badge');
+            
+            if (allBadge) allBadge.textContent = stats.total;
+            if (availableBadge) availableBadge.textContent = stats.available;
+            if (occupiedBadge) occupiedBadge.textContent = stats.occupied;
+            if (maintenanceBadge) maintenanceBadge.textContent = stats.maintenance;
+        }
+        
+        // Function to update property counts (for static demo cards)
+        function updatePropertyCounts() {
+            const totalProperties = document.querySelectorAll('.property-card').length;
+            const availableProperties = document.querySelectorAll('.property-card[data-status="available"]').length;
+            const occupiedProperties = document.querySelectorAll('.property-card[data-status="occupied"]').length;
+            const maintenanceProperties = document.querySelectorAll('.property-card[data-status="maintenance"]').length;
+            
+            const allBadge = document.querySelector('.properties-tab[data-tab="all"] .properties-tab-badge');
+            const availableBadge = document.querySelector('.properties-tab[data-tab="available"] .properties-tab-badge');
+            const occupiedBadge = document.querySelector('.properties-tab[data-tab="occupied"] .properties-tab-badge');
+            const maintenanceBadge = document.querySelector('.properties-tab[data-tab="maintenance"] .properties-tab-badge');
+            
+            if (allBadge) allBadge.textContent = totalProperties;
+            if (availableBadge) availableBadge.textContent = availableProperties;
+            if (occupiedBadge) occupiedBadge.textContent = occupiedProperties;
+            if (maintenanceBadge) maintenanceBadge.textContent = maintenanceProperties;
+        }
+        
+        // Global functions for property actions
+        window.editProperty = function(propertyId) {
+            window.location.href = `edit-property.php?id=${propertyId}`;
+        };
+        
+        window.viewProperty = function(propertyId) {
+            window.location.href = `property.php?id=${propertyId}`;
+        };
+        
+        window.deleteProperty = function(propertyId) {
+            if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+                return;
             }
             
-           
-            const importBtn = document.getElementById('import-properties');
-            if (importBtn) {
-                importBtn.addEventListener('click', function() {
-                    alert('Import properties functionality would open here. This would allow bulk uploading of properties via CSV or connecting to external platforms.');
-                });
+            fetch(`add_property_handler.php?id=${propertyId}`, {
+                method: 'DELETE'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    // Find and remove the property card
+                    const propertyCard = document.querySelector(`.property-card[data-id="${propertyId}"]`);
+                    if (propertyCard) {
+                        propertyCard.style.opacity = '0';
+                        propertyCard.style.transform = 'scale(0.8)';
+                        
+                        setTimeout(() => {
+                            propertyCard.remove();
+                            updatePropertyCounts();
+                            showNotification('Property deleted successfully!', 'success');
+                        }, 300);
+                    }
+                } else {
+                    showNotification(data.message || 'Error deleting property', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'error');
+            });
+        };
+        
+        // Load properties when page loads
+        loadProperties();
+        
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
             }
-        });
-    </script>
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+            
+            .notification {
+                font-family: 'Poppins', sans-serif;
+            }
+        `;
+        document.head.appendChild(style);
+    });
+</script>
 </body>
 </html>

@@ -1,3 +1,43 @@
+<?php
+// Landlord/Frontend/index.php
+session_start();
+
+// Check if landlord is logged in
+if (!isset($_SESSION['landlord_id'])) {
+    $_SESSION['redirect_after_login'] = 'index.php';
+    header('Location: login.php');
+    exit;
+}
+
+require_once __DIR__ . '/models/LandlordUserModel.php';
+require_once __DIR__ . '/models/LandlordPropertyModel.php';
+
+$userModel = new LandlordUserModel();
+$propertyModel = new LandlordPropertyModel();
+
+$landlord_id = $_SESSION['landlord_id'];
+$landlord = $userModel->getLandlordById($landlord_id);
+
+// If landlord not found in database, logout
+if (!$landlord) {
+    header('Location: logout.php');
+    exit;
+}
+
+// Get property statistics
+$stats = $propertyModel->getPropertyStats($landlord_id);
+$recentProperties = $propertyModel->getLandlordProperties($landlord_id);
+$monthlyRevenue = $propertyModel->getMonthlyRevenue($landlord_id);
+
+// Get unread notifications count (you'll need to implement this)
+$unreadNotifications = 7; // Placeholder
+$unreadInquiries = 5; // Placeholder
+$pendingPayments = 2; // Placeholder
+
+// Format landlord name for display
+$landlordName = $userModel->getFullName($landlord) ?: $landlord['username'];
+$firstName = explode(' ', $landlordName)[0];
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -10,6 +50,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
+        /* All your existing CSS styles remain exactly the same */
         * {
             margin: 0;
             padding: 0;
@@ -155,16 +196,85 @@
             color: var(--primary);
         }
 
-        .login-image {
+        .user-menu {
             display: flex;
             align-items: center;
+            gap: 20px;
         }
 
-        .login-image img {
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-avatar {
             width: 40px;
             height: 40px;
+            background: var(--primary);
             border-radius: 50%;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+        }
+
+        .user-details {
+            text-align: right;
+        }
+
+        .user-name {
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .user-role {
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-info:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: var(--text);
+            transition: background 0.3s;
+        }
+
+        .dropdown-menu a:hover {
+            background: var(--light-gray);
+        }
+
+        .dropdown-menu hr {
+            margin: 5px 0;
+            border: none;
+            border-top: 1px solid var(--gray);
+        }
+
+        .logout-btn {
+            color: var(--danger) !important;
         }
 
         /* Content Section */
@@ -210,7 +320,7 @@
             font-size: 15px;
         }
 
-        .card button {
+        .card button, .card .action-btn {
             background-color: var(--primary);
             color: white;
             border: none;
@@ -223,8 +333,13 @@
             transition: background-color 0.3s;
         }
 
-        .card button:hover {
+        .card button:hover, .card .action-btn:hover {
             background-color: #e61e4d;
+        }
+
+        .card .action-btn a {
+            color: white;
+            text-decoration: none;
         }
 
         /* Progress Bar */
@@ -436,50 +551,7 @@
             margin-top: 5px;
         }
 
-        /* Responsive Design */
-        @media (max-width: 992px) {
-            .sidebar {
-                width: 220px;
-            }
-            .main-content {
-                margin-left: 220px;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-container {
-                flex-direction: column;
-            }
-            .sidebar {
-                width: 100%;
-                height: auto;
-                position: relative;
-            }
-            .main-content {
-                margin-left: 0;
-            }
-            .cards, .form-grid {
-                grid-template-columns: 1fr;
-            }
-            .form-group.full-width {
-                grid-column: span 1;
-            }
-            .amenities-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-        }
-
-        @media (max-width: 480px) {
-            .amenities-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .property-form {
-                padding: 20px;
-            }
-        }
-
-        /* Additional UI Improvements */
+        /* Stats and quick actions */
         .stats-container {
             display: flex;
             justify-content: space-between;
@@ -507,24 +579,6 @@
             flex-wrap: wrap;
             gap: 10px;
             margin-top: 15px;
-        }
-
-        .action-btn {
-            background-color: var(--light-gray);
-            border: 1px solid var(--gray);
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-.action-btn a {
-    text-decoration: none;
-    color: inherit;
-}
-        .action-btn:hover {
-            background-color: var(--primary);
-            color: white;
         }
 
         .notification-badge {
@@ -562,9 +616,117 @@
             gap: 20px;
         }
 
+        /* Welcome section */
+        .welcome-section {
+            margin-bottom: 20px;
+        }
+
+        .welcome-section h1 {
+            font-size: 28px;
+            margin-bottom: 5px;
+        }
+
+        .welcome-section .date {
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        /* Recent properties list */
+        .recent-properties {
+            margin-top: 15px;
+        }
+
+        .property-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .property-item:last-child {
+            border-bottom: none;
+        }
+
+        .property-info h4 {
+            font-size: 16px;
+            margin-bottom: 3px;
+        }
+
+        .property-info p {
+            font-size: 13px;
+            color: var(--text);
+            margin: 0;
+        }
+
+        .property-status {
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .status-available {
+            background: #d4edda;
+            color: #155724;
+        }
+
+        .status-occupied {
+            background: #fff3cd;
+            color: #856404;
+        }
+
+        .status-maintenance {
+            background: #f8d7da;
+            color: #721c24;
+        }
+
+        /* Responsive Design */
+        @media (max-width: 992px) {
+            .sidebar {
+                width: 220px;
+            }
+            .main-content {
+                margin-left: 220px;
+            }
+        }
+
         @media (max-width: 768px) {
+            .dashboard-container {
+                flex-direction: column;
+            }
+            .sidebar {
+                width: 100%;
+                height: auto;
+                position: relative;
+            }
+            .main-content {
+                margin-left: 0;
+            }
+            .cards, .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            .amenities-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
             .chart-grid {
                 grid-template-columns: 1fr;
+            }
+            .user-details {
+                display: none;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .amenities-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .property-form {
+                padding: 20px;
             }
         }
     </style>
@@ -584,30 +746,30 @@
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
                         <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
-                        
+                        <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i> Listings</a>
+                        <a href="location.php" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
+                    <a href="#" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge"><?php echo $stats['occupied']; ?></span></a> 
                     <div class="dropdown-content">
                         <a href="view-tenant.php" data-content="view-tenants"><i class="fas fa-list"></i> View Tenants</a>
                         <a href="view-tenant.php" data-content="tenant-bookings"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge">5</span></a>
+                    <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge"><?php echo $unreadInquiries; ?></span></a>
                     <div class="dropdown-content">
                         <a href="inquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
                         <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>
-                <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
+                <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge"><?php echo $pendingPayments; ?></span></a></li>
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="profilesettings.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
-                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
+                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
@@ -617,36 +779,51 @@
             <nav class="navbar">
                 <div class="navbar-brand">Landlord Dashboard</div>
                 
-                <div class="login-image">
-                    <div class="dropdown">
-                        <a href="tenantbookings.php"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=U" alt="User Icon"></a>
-                        <div class="dropdown-content">
-                            <a href="login.php"><i class="fas fa-sign-in-alt"></i> Login</a>
-                            <a href="register.php"><i class="fas fa-user-plus"></i> Sign Up</a> 
-                            <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
-                            <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-details">
+                            <div class="user-name"><?php echo htmlspecialchars($landlordName); ?></div>
+                            <div class="user-role">Landlord</div>
                         </div>
-                    </div>    
+                        <div class="user-avatar">
+                            <?php echo strtoupper(substr($firstName, 0, 1)); ?>
+                        </div>
+                        
+                        <!-- Dropdown Menu -->
+                        <div class="dropdown-menu">
+                            <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
+                            <hr>
+                            <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
                 </div>
             </nav>
 
-
+            <!-- Dashboard Content -->
             <section class="content" id="dashboard-content">
-                <h1 id="greeting">Welcome Back, Landlord!</h1>
+                <div class="welcome-section">
+                    <h1 id="greeting">Welcome Back, <?php echo htmlspecialchars($firstName); ?>!</h1>
+                    <p class="date"><?php echo date('l, F j, Y'); ?></p>
+                </div>
                 <p>Manage your properties and track performance</p>
 
                 <div class="cards">
                     <div class="card" id="active-properties-card">
                         <h3><i class="fas fa-building"></i> Active Properties</h3>
-                        <p id="active-properties-count">5 Properties</p>
+                        <p id="active-properties-count"><?php echo $stats['total']; ?> Properties</p>
                         <div class="stats-container">
                             <div class="stat-item">
-                                <div class="stat-value">3</div>
+                                <div class="stat-value"><?php echo $stats['occupied']; ?></div>
                                 <div class="stat-label">Occupied</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-value">2</div>
+                                <div class="stat-value"><?php echo $stats['available']; ?></div>
                                 <div class="stat-label">Vacant</div>
+                            </div>
+                            <div class="stat-item">
+                                <div class="stat-value"><?php echo $stats['maintenance']; ?></div>
+                                <div class="stat-label">Maintenance</div>
                             </div>
                         </div>
                         <button class="action-btn"><a href="listings.php">View Details</a></button>
@@ -654,7 +831,7 @@
 
                     <div class="card">
                         <h3><i class="fas fa-question-circle"></i> Inquiries</h3>
-                        <p>12 New Inquiries</p>
+                        <p><?php echo $unreadInquiries; ?> New Inquiries</p>
                         <div class="quick-actions">
                             <button class="action-btn">Respond to All</button>
                             <button class="action-btn">Sort by Priority</button>
@@ -664,25 +841,29 @@
 
                     <div class="card">
                         <h3><i class="fas fa-users"></i> Current Tenants</h3>
-                        <p>8 Tenants</p>
+                        <p><?php echo $stats['occupied']; ?> Tenants</p>
                         <div class="stats-container">
                             <div class="stat-item">
-                                <div class="stat-value">5</div>
+                                <div class="stat-value"><?php echo min(5, $stats['occupied']); ?></div>
                                 <div class="stat-label">Active</div>
                             </div>
                             <div class="stat-item">
-                                <div class="stat-value">3</div>
+                                <div class="stat-value"><?php echo max(0, $stats['occupied'] - 5); ?></div>
                                 <div class="stat-label">Pending</div>
                             </div>
                         </div>
-                        <button>Manage Tenants</button> 
+                        <button class="action-btn"><a href="view-tenant.php">Manage Tenants</a></button> 
                     </div>
 
                     <div class="card">
                         <h3><i class="fas fa-chart-pie"></i> Occupancy Rate</h3>
-                        <p>Occupancy: <span id="occupancyPercentage">0%</span></p>
+                        <p>Occupancy: <span id="occupancyPercentage">
+                            <?php 
+                            $occupancyRate = $stats['total'] > 0 ? round(($stats['occupied'] / $stats['total']) * 100) : 0;
+                            echo $occupancyRate; ?>%
+                        </span></p>
                         <div class="progress-bar">
-                            <div id="progress" class="progress" style="width: 0%;"></div>
+                            <div id="progress" class="progress" style="width: <?php echo $occupancyRate; ?>%;"></div>
                         </div>
                         <div class="quick-actions">
                             <button onclick="occupyRoom()" class="action-btn">Occupy a Room</button>
@@ -692,13 +873,13 @@
 
                     <div class="card">
                         <h3><i class="fas fa-credit-card"></i> Payments</h3>
-                        <p>2 Pending Payments</p>
+                        <p><?php echo $pendingPayments; ?> Pending Payments</p>
                         <div class="alert">
-                            <p><strong>Alert:</strong> 2 tenants have not paid their rent.</p>
+                            <p><strong>Alert:</strong> <?php echo $pendingPayments; ?> tenant<?php echo $pendingPayments != 1 ? 's' : ''; ?> ha<?php echo $pendingPayments != 1 ? 've' : 's'; ?> not paid rent.</p>
                         </div>
                         <div class="quick-actions">
                             <button class="action-btn">Send Reminders</button>
-                            <button class="action-btn"> <a href="payments.php">View Payment History</a></button>
+                            <button class="action-btn"><a href="payments.php">View Payment History</a></button>
                         </div>
                     </div>
 
@@ -712,6 +893,31 @@
                         <button class="action-btn"><a href="announcements.php">View Announcements</a></button>
                     </div>
                 </div>
+
+                <!-- Recent Properties -->
+                <?php if (!empty($recentProperties)): ?>
+                <div class="card" style="margin-top: 20px;">
+                    <h3><i class="fas fa-clock"></i> Recent Properties</h3>
+                    <div class="recent-properties">
+                        <?php foreach (array_slice($recentProperties, 0, 5) as $property): ?>
+                        <div class="property-item">
+                            <div class="property-info">
+                                <h4><?php echo htmlspecialchars($property['property_name']); ?></h4>
+                                <p><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars($property['neighborhood'] . ', ' . $property['city']); ?></p>
+                            </div>
+                            <div>
+                                <span class="property-status status-<?php echo $property['status']; ?>">
+                                    <?php echo ucfirst($property['status']); ?>
+                                </span>
+                                <strong style="margin-left: 15px; color: var(--primary);">
+                                    KES <?php echo number_format($property['monthly_rent']); ?>
+                                </strong>
+                            </div>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Additional Dashboard Sections -->
                 <h2 style="margin: 30px 0 20px;">Recent Activity</h2>
@@ -742,7 +948,6 @@
                 </div>
             </section>
 
-
             <!-- Add Property Form (Hidden by default) -->
             <section class="content hidden" id="add-property-content">
                 <div class="property-form-container">
@@ -752,59 +957,99 @@
                     </div>
                     
                     <div class="property-form">
-                        <form action="submit_property.php" method="post" enctype="multipart/form-data">
+                        <form action="add_property_handler.php" method="post" enctype="multipart/form-data" id="propertyForm">
                             <div class="form-section">
                                 <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="property-name"><i class="fas fa-building"></i> Property Name</label>
+                                        <label for="property-name"><i class="fas fa-building"></i> Property Name *</label>
                                         <input type="text" id="property-name" name="property_name" placeholder="e.g., Tripple A Apartments" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="property-type"><i class="fas fa-home"></i> Property Type</label>
+                                        <label for="property-type"><i class="fas fa-home"></i> Property Type *</label>
                                         <select id="property-type" name="property_type" required>
                                             <option value="" disabled selected>Select property type</option>
-                                            <option value="Single Rooms">Single Rooms</option>
-                                            <option value="Bedsitters">Bedsitters</option>
-                                            <option value="Single Rooms & Bedsitters">Single Rooms & Bedsitters</option>
-                                            <option value="1B">1 Bedroom</option>
-                                            <option value="2B">2 Bedrooms</option>
+                                            <option value="apartment">Apartment</option>
+                                            <option value="house">House</option>
+                                            <option value="studio">Studio</option>
+                                            <option value="condo">Condo</option>
+                                            <option value="townhouse">Townhouse</option>
                                         </select>
                                     </div>
                                     <div class="form-group">
-                                        <label for="location"><i class="fas fa-map-marker-alt"></i> Location</label>
-                                        <input type="text" id="location" name="location" placeholder="e.g., 123 Main Gate, Campus" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="rooms"><i class="fas fa-door-open"></i> Number of Rooms</label>
-                                        <input type="number" id="rooms" name="number_of_rooms" min="1" placeholder="How many rooms?" required>
-                                    </div>
-                                    <div class="form-group">
-                                        <label for="price"><i class="fas fa-tag"></i> Price (in Ksh)</label>
+                                        <label for="price"><i class="fas fa-tag"></i> Monthly Rent (KES) *</label>
                                         <input type="number" id="price" name="price" placeholder="e.g., 5000" min="0" required>
                                     </div>
+                                    <div class="form-group">
+                                        <label for="property-status"><i class="fas fa-info-circle"></i> Status *</label>
+                                        <select id="property-status" name="status" required>
+                                            <option value="available">Available</option>
+                                            <option value="occupied">Occupied</option>
+                                            <option value="maintenance">Under Maintenance</option>
+                                        </select>
+                                    </div>
                                     <div class="form-group full-width">
-                                        <label for="description"><i class="fas fa-align-left"></i> Property Description</label>
-                                        <textarea id="description" name="property_description" rows="4" placeholder="Describe your property, nearby amenities, and what makes it special"></textarea>
+                                        <label for="description"><i class="fas fa-align-left"></i> Property Description *</label>
+                                        <textarea id="description" name="description" rows="4" placeholder="Describe your property, nearby amenities, and what makes it special" required></textarea>
                                         <div class="character-count">0/500 characters</div>
                                     </div>
                                 </div>
                             </div>
                             
                             <div class="form-section">
-                                <h2><i class="fas fa-camera"></i> Media</h2>
+                                <h2><i class="fas fa-map-marker-alt"></i> Location Details</h2>
                                 <div class="form-grid">
                                     <div class="form-group">
-                                        <label for="photos"><i class="fas fa-images"></i> Upload Photos</label>
-                                        <div class="file-input-container">
-                                            <input type="file" id="photos" name="property_photos[]" accept="image/*" multiple required>
-                                        </div>
+                                        <label for="address">Street Address *</label>
+                                        <input type="text" id="address" name="address" placeholder="123 Main Street" required>
                                     </div>
                                     <div class="form-group">
-                                        <label for="rules"><i class="fas fa-file-alt"></i> Upload Property Rules</label>
-                                        <div class="file-input-container">
-                                            <input type="file" id="rules" name="property_rules[]" accept=".pdf, .doc, .docx, .txt, .ppt" multiple required>
-                                        </div>
+                                        <label for="city">City *</label>
+                                        <input type="text" id="city" name="city" placeholder="Nairobi" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="neighborhood">Neighborhood/Area *</label>
+                                        <input type="text" id="neighborhood" name="neighborhood" placeholder="Westlands" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="zip-code">ZIP Code</label>
+                                        <input type="text" id="zip-code" name="zip" placeholder="00100">
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h2><i class="fas fa-home"></i> Property Details</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="bedrooms">Bedrooms *</label>
+                                        <select id="bedrooms" name="bedrooms" required>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5+</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="bathrooms">Bathrooms *</label>
+                                        <select id="bathrooms" name="bathrooms" required>
+                                            <option value="1">1</option>
+                                            <option value="1.5">1.5</option>
+                                            <option value="2">2</option>
+                                            <option value="2.5">2.5</option>
+                                            <option value="3">3</option>
+                                            <option value="3.5">3.5</option>
+                                            <option value="4">4</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="area">Area (sq ft) *</label>
+                                        <input type="number" id="area" name="area" placeholder="1200" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="year-built">Year Built</label>
+                                        <input type="number" id="year-built" name="year_built" placeholder="2020" min="1900" max="<?php echo date('Y'); ?>">
                                     </div>
                                 </div>
                             </div>
@@ -819,6 +1064,14 @@
                                     <div class="amenity-checkbox">
                                         <input type="checkbox" id="parking" name="amenities[]" value="parking">
                                         <label for="parking">Parking</label>
+                                    </div>
+                                    <div class="amenity-checkbox">
+                                        <input type="checkbox" id="pool" name="amenities[]" value="pool">
+                                        <label for="pool">Swimming Pool</label>
+                                    </div>
+                                    <div class="amenity-checkbox">
+                                        <input type="checkbox" id="gym" name="amenities[]" value="gym">
+                                        <label for="gym">Gym</label>
                                     </div>
                                     <div class="amenity-checkbox">
                                         <input type="checkbox" id="security" name="amenities[]" value="security">
@@ -836,6 +1089,40 @@
                                         <input type="checkbox" id="laundry" name="amenities[]" value="laundry">
                                         <label for="laundry">Laundry</label>
                                     </div>
+                                    <div class="amenity-checkbox">
+                                        <input type="checkbox" id="ac" name="amenities[]" value="ac">
+                                        <label for="ac">Air Conditioning</label>
+                                    </div>
+                                    <div class="amenity-checkbox">
+                                        <input type="checkbox" id="heating" name="amenities[]" value="heating">
+                                        <label for="heating">Heating</label>
+                                    </div>
+                                    <div class="amenity-checkbox">
+                                        <input type="checkbox" id="balcony" name="amenities[]" value="balcony">
+                                        <label for="balcony">Balcony</label>
+                                    </div>
+                                    <div class="amenity-checkbox">
+                                        <input type="checkbox" id="furnished" name="amenities[]" value="furnished">
+                                        <label for="furnished">Furnished</label>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="form-section">
+                                <h2><i class="fas fa-camera"></i> Media</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="photos"><i class="fas fa-images"></i> Upload Photos</label>
+                                        <div class="file-input-container">
+                                            <input type="file" id="photos" name="property_photos[]" accept="image/*" multiple>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="rules"><i class="fas fa-file-alt"></i> Upload Property Rules</label>
+                                        <div class="file-input-container">
+                                            <input type="file" id="rules" name="property_rules[]" accept=".pdf, .doc, .docx, .txt" multiple>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                             
@@ -847,8 +1134,7 @@
                 </div>
             </section>
 
-           
-            
+            <!-- Other content sections -->
             <section class="content hidden" id="edit-listings-content">
                 <h1>Edit Listings</h1>
                 <p>This is where you would edit your property listings</p>
@@ -863,29 +1149,30 @@
 
     <!-- Footer -->
     <footer class="footer">
-        <img src="https://placehold.co/100x30/FFFFFF/FF385C?text=SmartHunt" alt="SmartHunt Logo"> 
-        <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
+        <img src="assets/icons/smartlogo.png" alt="SmartHunt Logo" style="height: 40px;"> 
+        <h6>&copy; <?php echo date('Y'); ?> Algorithm-X Softwares. <br>All rights reserved</h6>
     </footer>
 
     <script>
-       
+        // Update greeting based on time of day
         function updateGreeting() {
             const now = new Date();
             const hour = now.getHours();
             const greetingElement = document.getElementById('greeting');
+            const firstName = "<?php echo htmlspecialchars($firstName); ?>";
             
             if (hour >= 5 && hour < 12) {
-                greetingElement.textContent = 'Good Morning, Landlord!';
+                greetingElement.textContent = 'Good Morning, ' + firstName + '!';
             } else if (hour >= 12 && hour < 18) {
-                greetingElement.textContent = 'Good Afternoon, Landlord!';
+                greetingElement.textContent = 'Good Afternoon, ' + firstName + '!';
             } else {
-                greetingElement.textContent = 'Good Evening, Landlord!';
+                greetingElement.textContent = 'Good Evening, ' + firstName + '!';
             }
         }
 
- 
-        let occupiedRooms = 3;
-        let totalRooms = 8;
+        // Occupancy management
+        let occupiedRooms = <?php echo $stats['occupied']; ?>;
+        let totalRooms = <?php echo $stats['total'] ?: 1; ?>;
         
         function updateOccupancy() {
             const percentage = Math.round((occupiedRooms / totalRooms) * 100);
@@ -897,8 +1184,9 @@
             if (occupiedRooms < totalRooms) {
                 occupiedRooms++;
                 updateOccupancy();
+                showNotification('Room marked as occupied', 'success');
             } else {
-                alert('All rooms are already occupied!');
+                showNotification('All rooms are already occupied!', 'warning');
             }
         }
         
@@ -906,70 +1194,154 @@
             if (occupiedRooms > 0) {
                 occupiedRooms--;
                 updateOccupancy();
+                showNotification('Room marked as vacant', 'info');
             } else {
-                alert('No rooms are currently occupied!');
+                showNotification('No rooms are currently occupied!', 'warning');
             }
         }
 
-      
+        // Navigation between content sections
         document.addEventListener('DOMContentLoaded', function() {
             updateGreeting();
             updateOccupancy();
             
-            
+            // Sidebar navigation
             const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
             sidebarLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
                     e.preventDefault();
                     
-                   
-                    const contentId = this.getAttribute('data-content') + '-content';
+                    const contentId = this.getAttribute('data-content');
+                    if (!contentId) return;
                     
-                    
+                    // Show corresponding content section
                     document.querySelectorAll('.content').forEach(section => {
                         section.classList.add('hidden');
                     });
                     
-               
-                    const targetSection = document.getElementById(contentId);
+                    const targetSection = document.getElementById(contentId + '-content');
                     if (targetSection) {
                         targetSection.classList.remove('hidden');
                     }
                     
-                 
+                    // Update active state
                     sidebarLinks.forEach(l => l.classList.remove('active'));
                     this.classList.add('active');
                 });
             });
             
+            // Character counter for description
+            const descriptionTextarea = document.getElementById('description');
+            const characterCount = document.querySelector('.character-count');
             
-            setTimeout(() => {
-                document.getElementById('active-properties-count').textContent = '5 Properties';
-            }, 500);
+            if (descriptionTextarea && characterCount) {
+                descriptionTextarea.addEventListener('input', function() {
+                    const length = this.value.length;
+                    characterCount.textContent = `${length}/500 characters`;
+                    
+                    if (length > 500) {
+                        characterCount.style.color = 'var(--danger)';
+                        this.setCustomValidity('Description cannot exceed 500 characters');
+                    } else {
+                        characterCount.style.color = 'var(--text)';
+                        this.setCustomValidity('');
+                    }
+                });
+            }
 
+            // Property form submission
+            const propertyForm = document.getElementById('propertyForm');
+            if (propertyForm) {
+                propertyForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // Collect form data
+                    const formData = new FormData(this);
+                    
+                    // Disable submit button
+                    const submitBtn = this.querySelector('button[type="submit"]');
+                    const originalText = submitBtn.innerHTML;
+                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+                    submitBtn.disabled = true;
+                    
+                    // Send AJAX request
+                    fetch('add_property_handler.php', {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            showNotification('Property added successfully!', 'success');
+                            this.reset();
+                            // Switch back to dashboard
+                            document.querySelectorAll('.content').forEach(s => s.classList.add('hidden'));
+                            document.getElementById('dashboard-content').classList.remove('hidden');
+                        } else {
+                            showNotification(data.message || 'Error adding property', 'error');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        showNotification('An error occurred. Please try again.', 'error');
+                    })
+                    .finally(() => {
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    });
+                });
+            }
+            
+            // Initialize charts
             initializeCharts();
             
-            
+            // Time range change handler
             document.getElementById('timeRange').addEventListener('change', function() {
                 updateCharts(this.value);
             });
         });
 
-       
-        const descriptionTextarea = document.getElementById('description');
-        const characterCount = document.querySelector('.character-count');
-        
-        if (descriptionTextarea && characterCount) {
-            descriptionTextarea.addEventListener('input', function() {
-                const length = this.value.length;
-                characterCount.textContent = `${length}/500 characters`;
-                
-                if (length > 500) {
-                    characterCount.style.color = 'var(--danger)';
-                } else {
-                    characterCount.style.color = 'var(--text)';
-                }
-            });
+        // Notification function
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            
+            let icon = 'info-circle';
+            if (type === 'success') icon = 'check-circle';
+            if (type === 'error') icon = 'exclamation-circle';
+            if (type === 'warning') icon = 'exclamation-triangle';
+            
+            notification.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+            `;
+            
+            notification.style.position = 'fixed';
+            notification.style.top = '20px';
+            notification.style.right = '20px';
+            notification.style.padding = '15px 20px';
+            notification.style.borderRadius = '8px';
+            notification.style.backgroundColor = type === 'success' ? '#00A699' : 
+                                              type === 'error' ? '#FF5A5F' : 
+                                              type === 'warning' ? '#FFB400' : '#4285F4';
+            notification.style.color = 'white';
+            notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+            notification.style.zIndex = '9999';
+            notification.style.display = 'flex';
+            notification.style.alignItems = 'center';
+            notification.style.gap = '10px';
+            notification.style.animation = 'slideIn 0.3s ease';
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
         }
 
         // Chart initialization and data
@@ -1033,13 +1405,13 @@
                 }
             });
             
-            // Creating Earning chart
+            // Create Earnings chart
             earningsChart = new Chart(ctx2, {
                 type: 'bar',
                 data: {
                     labels: days,
                     datasets: [{
-                        label: 'Earnings (Ksh)',
+                        label: 'Earnings (KES)',
                         data: earningsData,
                         backgroundColor: 'rgba(0, 166, 153, 0.7)',
                         borderColor: 'rgba(0, 166, 153, 1)',
@@ -1106,6 +1478,33 @@
             }
             return data;
         }
+
+        // Add animation styles
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes slideIn {
+                from {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+                to {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+            }
+            
+            @keyframes slideOut {
+                from {
+                    transform: translateX(0);
+                    opacity: 1;
+                }
+                to {
+                    transform: translateX(100%);
+                    opacity: 0;
+                }
+            }
+        `;
+        document.head.appendChild(style);
     </script>
 </body>
 </html>
