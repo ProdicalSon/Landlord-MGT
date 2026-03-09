@@ -17,76 +17,77 @@ class LandlordPropertyModel {
      * @param int $landlord_id The ID of the landlord adding the property
      * @return array Success or error message
      */
-    public function addProperty($data, $landlord_id) {
-        if (!$this->conn) {
-            return ['success' => false, 'message' => 'Database connection failed'];
-        }
-
-        try {
-            // Handle amenities - convert array to JSON or comma-separated string
-            $amenities = isset($data['amenities']) ? json_encode($data['amenities']) : null;
-            
-            // Handle featured status (default to false)
-            $featured = isset($data['featured']) ? (int)$data['featured'] : 0;
-            
-            // Handle year built (can be null)
-            $year_built = isset($data['year_built']) && !empty($data['year_built']) ? $data['year_built'] : null;
-            
-            // Handle zip code
-            $zip = isset($data['zip']) && !empty($data['zip']) ? $data['zip'] : null;
-            
-            $query = "INSERT INTO " . $this->table_name . " 
-                      (landlord_id, property_name, property_type, address, city, neighborhood, zip_code,
-                       monthly_rent, status, bedrooms, bathrooms, sqft, year_built, featured, description, 
-                       amenities, created_at, updated_at) 
-                      VALUES 
-                      (:landlord_id, :property_name, :property_type, :address, :city, :neighborhood, :zip_code,
-                       :monthly_rent, :status, :bedrooms, :bathrooms, :sqft, :year_built, :featured, :description,
-                       :amenities, NOW(), NOW())";
-
-            $stmt = $this->conn->prepare($query);
-            
-            // Bind parameters
-            $stmt->bindParam(':landlord_id', $landlord_id);
-            $stmt->bindParam(':property_name', $data['title']);
-            $stmt->bindParam(':property_type', $data['type']);
-            $stmt->bindParam(':address', $data['address']);
-            $stmt->bindParam(':city', $data['city']);
-            $stmt->bindParam(':neighborhood', $data['neighborhood']);
-            $stmt->bindParam(':zip_code', $zip);
-            $stmt->bindParam(':monthly_rent', $data['price']);
-            $stmt->bindParam(':status', $data['status']);
-            $stmt->bindParam(':bedrooms', $data['bedrooms']);
-            $stmt->bindParam(':bathrooms', $data['bathrooms']);
-            $stmt->bindParam(':sqft', $data['area']);
-            $stmt->bindParam(':year_built', $year_built);
-            $stmt->bindParam(':featured', $featured);
-            $stmt->bindParam(':description', $data['description']);
-            $stmt->bindParam(':amenities', $amenities);
-
-            if ($stmt->execute()) {
-                $property_id = $this->conn->lastInsertId();
-                
-                // Handle image uploads if any
-                if (!empty($data['images']) && is_array($data['images'])) {
-                    $this->savePropertyImages($property_id, $data['images']);
-                }
-                
-                return [
-                    'success' => true,
-                    'message' => 'Property added successfully!',
-                    'property_id' => $property_id
-                ];
-            } else {
-                $errorInfo = $stmt->errorInfo();
-                return ['success' => false, 'message' => 'Failed to add property: ' . $errorInfo[2]];
-            }
-        } catch (PDOException $e) {
-            error_log("Add property error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
-        }
+  public function addProperty($data, $landlord_id) {
+    if (!$this->conn) {
+        error_log("addProperty: Database connection failed");
+        return ['success' => false, 'message' => 'Database connection failed'];
     }
 
+    try {
+        // Handle amenities - convert array to JSON
+        $amenities = isset($data['amenities']) ? json_encode($data['amenities']) : null;
+        
+        // Handle featured status
+        $featured = isset($data['featured']) ? (int)$data['featured'] : 0;
+        
+        // Handle year built
+        $year_built = isset($data['year_built']) && !empty($data['year_built']) ? $data['year_built'] : null;
+        
+        // Handle zip code
+        $zip = isset($data['zip']) && !empty($data['zip']) ? $data['zip'] : null;
+        
+        // Log the SQL query for debugging
+        error_log("Preparing to insert property for landlord: $landlord_id");
+        
+        $query = "INSERT INTO " . $this->table_name . " 
+                  (landlord_id, property_name, property_type, address, city, neighborhood, zip_code,
+                   monthly_rent, status, bedrooms, bathrooms, sqft, year_built, featured, description, 
+                   amenities, created_at, updated_at) 
+                  VALUES 
+                  (:landlord_id, :property_name, :property_type, :address, :city, :neighborhood, :zip_code,
+                   :monthly_rent, :status, :bedrooms, :bathrooms, :sqft, :year_built, :featured, :description,
+                   :amenities, NOW(), NOW())";
+
+        $stmt = $this->conn->prepare($query);
+        
+        // Bind parameters
+        $stmt->bindParam(':landlord_id', $landlord_id);
+        $stmt->bindParam(':property_name', $data['title']);
+        $stmt->bindParam(':property_type', $data['type']);
+        $stmt->bindParam(':address', $data['address']);
+        $stmt->bindParam(':city', $data['city']);
+        $stmt->bindParam(':neighborhood', $data['neighborhood']);
+        $stmt->bindParam(':zip_code', $zip);
+        $stmt->bindParam(':monthly_rent', $data['price']);
+        $stmt->bindParam(':status', $data['status']);
+        $stmt->bindParam(':bedrooms', $data['bedrooms']);
+        $stmt->bindParam(':bathrooms', $data['bathrooms']);
+        $stmt->bindParam(':sqft', $data['area']);
+        $stmt->bindParam(':year_built', $year_built);
+        $stmt->bindParam(':featured', $featured);
+        $stmt->bindParam(':description', $data['description']);
+        $stmt->bindParam(':amenities', $amenities);
+
+        if ($stmt->execute()) {
+            $property_id = $this->conn->lastInsertId();
+            error_log("Property added successfully with ID: $property_id");
+            
+            return [
+                'success' => true,
+                'message' => 'Property added successfully!',
+                'property_id' => $property_id
+            ];
+        } else {
+            $errorInfo = $stmt->errorInfo();
+            error_log("SQL Error: " . print_r($errorInfo, true));
+            return ['success' => false, 'message' => 'Database error: ' . $errorInfo[2]];
+        }
+    } catch (PDOException $e) {
+        error_log("PDO Exception in addProperty: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+    }
+}
     /**
      * Get all properties for a specific landlord
      * @param int $landlord_id

@@ -745,7 +745,6 @@ $firstName = explode(' ', $landlordName)[0];
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
                         <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i> Listings</a>
                         <a href="location.php" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
@@ -768,7 +767,6 @@ $firstName = explode(' ', $landlordName)[0];
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                <li><a href="profilesettings.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
                 <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
@@ -1154,330 +1152,86 @@ $firstName = explode(' ', $landlordName)[0];
     </footer>
 
     <script>
-        // Update greeting based on time of day
-        function updateGreeting() {
-            const now = new Date();
-            const hour = now.getHours();
-            const greetingElement = document.getElementById('greeting');
-            const firstName = "<?php echo htmlspecialchars($firstName); ?>";
+     // Property form submission
+const propertyForm = document.getElementById('propertyForm');
+if (propertyForm) {
+    propertyForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        console.log('=== FORM SUBMISSION STARTED ===');
+        console.log('Form method should be: POST');
+        
+        // Collect form data
+        const formData = new FormData(this);
+        
+        // Log all form data
+        console.log('Form data being sent:');
+        for (let pair of formData.entries()) {
+            console.log(pair[0] + ': ' + pair[1]);
+        }
+        
+        // Disable submit button
+        const submitBtn = this.querySelector('button[type="submit"]');
+        const originalText = submitBtn.innerHTML;
+        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+        submitBtn.disabled = true;
+        
+        // Send AJAX request with explicit POST method
+        fetch('add_property_handler.php', {
+            method: 'POST',  // Force POST method
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'  // Add this header
+            }
+        })
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response method used:', response.type);
+            return response.text();  // Get as text first
+        })
+        .then(text => {
+            console.log('Raw response:', text);
             
-            if (hour >= 5 && hour < 12) {
-                greetingElement.textContent = 'Good Morning, ' + firstName + '!';
-            } else if (hour >= 12 && hour < 18) {
-                greetingElement.textContent = 'Good Afternoon, ' + firstName + '!';
-            } else {
-                greetingElement.textContent = 'Good Evening, ' + firstName + '!';
-            }
-        }
-
-        // Occupancy management
-        let occupiedRooms = <?php echo $stats['occupied']; ?>;
-        let totalRooms = <?php echo $stats['total'] ?: 1; ?>;
-        
-        function updateOccupancy() {
-            const percentage = Math.round((occupiedRooms / totalRooms) * 100);
-            document.getElementById('occupancyPercentage').textContent = `${percentage}%`;
-            document.getElementById('progress').style.width = `${percentage}%`;
-        }
-        
-        function occupyRoom() {
-            if (occupiedRooms < totalRooms) {
-                occupiedRooms++;
-                updateOccupancy();
-                showNotification('Room marked as occupied', 'success');
-            } else {
-                showNotification('All rooms are already occupied!', 'warning');
-            }
-        }
-        
-        function vacateRoom() {
-            if (occupiedRooms > 0) {
-                occupiedRooms--;
-                updateOccupancy();
-                showNotification('Room marked as vacant', 'info');
-            } else {
-                showNotification('No rooms are currently occupied!', 'warning');
-            }
-        }
-
-        // Navigation between content sections
-        document.addEventListener('DOMContentLoaded', function() {
-            updateGreeting();
-            updateOccupancy();
-            
-            // Sidebar navigation
-            const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
-            sidebarLinks.forEach(link => {
-                link.addEventListener('click', function(e) {
-                    e.preventDefault();
+            try {
+                const data = JSON.parse(text);
+                console.log('Parsed data:', data);
+                
+                if (data.success) {
+                    showNotification('Property added successfully!', 'success');
+                    this.reset();
                     
-                    const contentId = this.getAttribute('data-content');
-                    if (!contentId) return;
-                    
-                    // Show corresponding content section
-                    document.querySelectorAll('.content').forEach(section => {
-                        section.classList.add('hidden');
-                    });
-                    
-                    const targetSection = document.getElementById(contentId + '-content');
-                    if (targetSection) {
-                        targetSection.classList.remove('hidden');
+                    // Clear image previews
+                    const imagePreview = document.getElementById('image-preview');
+                    if (imagePreview) {
+                        imagePreview.innerHTML = '';
                     }
                     
-                    // Update active state
-                    sidebarLinks.forEach(l => l.classList.remove('active'));
-                    this.classList.add('active');
-                });
-            });
-            
-            // Character counter for description
-            const descriptionTextarea = document.getElementById('description');
-            const characterCount = document.querySelector('.character-count');
-            
-            if (descriptionTextarea && characterCount) {
-                descriptionTextarea.addEventListener('input', function() {
-                    const length = this.value.length;
-                    characterCount.textContent = `${length}/500 characters`;
-                    
-                    if (length > 500) {
-                        characterCount.style.color = 'var(--danger)';
-                        this.setCustomValidity('Description cannot exceed 500 characters');
-                    } else {
-                        characterCount.style.color = 'var(--text)';
-                        this.setCustomValidity('');
+                    // Switch back to dashboard
+                    document.querySelectorAll('.content').forEach(s => s.classList.add('hidden'));
+                    const dashboard = document.getElementById('dashboard-content');
+                    if (dashboard) {
+                        dashboard.classList.remove('hidden');
                     }
-                });
+                } else {
+                    showNotification(data.message || 'Error adding property', 'error');
+                }
+            } catch (e) {
+                console.error('JSON parse error:', e);
+                showNotification('Server error: Invalid response format', 'error');
             }
-
-            // Property form submission
-            const propertyForm = document.getElementById('propertyForm');
-            if (propertyForm) {
-                propertyForm.addEventListener('submit', function(e) {
-                    e.preventDefault();
-                    
-                    // Collect form data
-                    const formData = new FormData(this);
-                    
-                    // Disable submit button
-                    const submitBtn = this.querySelector('button[type="submit"]');
-                    const originalText = submitBtn.innerHTML;
-                    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-                    submitBtn.disabled = true;
-                    
-                    // Send AJAX request
-                    fetch('add_property_handler.php', {
-                        method: 'POST',
-                        body: formData
-                    })
-                    .then(response => response.json())
-                    .then(data => {
-                        if (data.success) {
-                            showNotification('Property added successfully!', 'success');
-                            this.reset();
-                            // Switch back to dashboard
-                            document.querySelectorAll('.content').forEach(s => s.classList.add('hidden'));
-                            document.getElementById('dashboard-content').classList.remove('hidden');
-                        } else {
-                            showNotification(data.message || 'Error adding property', 'error');
-                        }
-                    })
-                    .catch(error => {
-                        console.error('Error:', error);
-                        showNotification('An error occurred. Please try again.', 'error');
-                    })
-                    .finally(() => {
-                        submitBtn.innerHTML = originalText;
-                        submitBtn.disabled = false;
-                    });
-                });
-            }
-            
-            // Initialize charts
-            initializeCharts();
-            
-            // Time range change handler
-            document.getElementById('timeRange').addEventListener('change', function() {
-                updateCharts(this.value);
-            });
+        })
+        .catch(error => {
+            console.error('Fetch Error:', error);
+            showNotification('Connection error: ' + error.message, 'error');
+        })
+        .finally(() => {
+            console.log('=== FORM SUBMISSION COMPLETED ===');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
         });
+    });
+}
 
-        // Notification function
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = `notification ${type}`;
-            
-            let icon = 'info-circle';
-            if (type === 'success') icon = 'check-circle';
-            if (type === 'error') icon = 'exclamation-circle';
-            if (type === 'warning') icon = 'exclamation-triangle';
-            
-            notification.innerHTML = `
-                <i class="fas fa-${icon}"></i>
-                <span>${message}</span>
-            `;
-            
-            notification.style.position = 'fixed';
-            notification.style.top = '20px';
-            notification.style.right = '20px';
-            notification.style.padding = '15px 20px';
-            notification.style.borderRadius = '8px';
-            notification.style.backgroundColor = type === 'success' ? '#00A699' : 
-                                              type === 'error' ? '#FF5A5F' : 
-                                              type === 'warning' ? '#FFB400' : '#4285F4';
-            notification.style.color = 'white';
-            notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
-            notification.style.zIndex = '9999';
-            notification.style.display = 'flex';
-            notification.style.alignItems = 'center';
-            notification.style.gap = '10px';
-            notification.style.animation = 'slideIn 0.3s ease';
-            
-            document.body.appendChild(notification);
-            
-            setTimeout(() => {
-                notification.style.animation = 'slideOut 0.3s ease';
-                setTimeout(() => {
-                    if (document.body.contains(notification)) {
-                        document.body.removeChild(notification);
-                    }
-                }, 300);
-            }, 3000);
-        }
-
-        // Chart initialization and data
-        let viewsInquiriesChart, earningsChart;
-
-        function initializeCharts() {
-            const ctx1 = document.getElementById('viewsInquiriesChart').getContext('2d');
-            const ctx2 = document.getElementById('earningsChart').getContext('2d');
-            
-            // Generate data for the last 30 days by default
-            const days = generateDays(30);
-            const viewsData = generateRandomData(30, 50, 200);
-            const inquiriesData = generateRandomData(30, 5, 40);
-            const earningsData = generateRandomData(30, 5000, 25000);
-            
-            // Create Views vs Inquiries chart
-            viewsInquiriesChart = new Chart(ctx1, {
-                type: 'line',
-                data: {
-                    labels: days,
-                    datasets: [
-                        {
-                            label: 'Views',
-                            data: viewsData,
-                            borderColor: '#4285F4',
-                            backgroundColor: 'rgba(66, 133, 244, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        },
-                        {
-                            label: 'Inquiries',
-                            data: inquiriesData,
-                            borderColor: '#FF385C',
-                            backgroundColor: 'rgba(255, 56, 92, 0.1)',
-                            tension: 0.3,
-                            fill: true
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // Create Earnings chart
-            earningsChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: days,
-                    datasets: [{
-                        label: 'Earnings (KES)',
-                        data: earningsData,
-                        backgroundColor: 'rgba(0, 166, 153, 0.7)',
-                        borderColor: 'rgba(0, 166, 153, 1)',
-                        borderWidth: 1
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                        }
-                    },
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                drawBorder: false
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    }
-                }
-            });
-        }
-
-        function updateCharts(daysCount) {
-            const days = generateDays(daysCount);
-            const viewsData = generateRandomData(daysCount, 50, 200);
-            const inquiriesData = generateRandomData(daysCount, 5, 40);
-            const earningsData = generateRandomData(daysCount, 5000, 25000);
-            
-            // Update Views vs Inquiries chart
-            viewsInquiriesChart.data.labels = days;
-            viewsInquiriesChart.data.datasets[0].data = viewsData;
-            viewsInquiriesChart.data.datasets[1].data = inquiriesData;
-            viewsInquiriesChart.update();
-            
-            // Update Earnings chart
-            earningsChart.data.labels = days;
-            earningsChart.data.datasets[0].data = earningsData;
-            earningsChart.update();
-        }
-
-        function generateDays(count) {
-            const days = [];
-            for (let i = count - 1; i >= 0; i--) {
-                const date = new Date();
-                date.setDate(date.getDate() - i);
-                days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
-            }
-            return days;
-        }
-
-        function generateRandomData(count, min, max) {
-            const data = [];
-            for (let i = 0; i < count; i++) {
-                data.push(Math.floor(Math.random() * (max - min + 1)) + min);
-            }
-            return data;
-        }
 
         // Add animation styles
         const style = document.createElement('style');
