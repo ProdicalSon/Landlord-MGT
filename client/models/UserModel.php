@@ -72,64 +72,104 @@ class UserModel {
     }
 
     // Login user
-    public function login($username_or_email, $password, $remember = false) {
-        if (!$this->conn) {
-            return ['success' => false, 'message' => 'Database connection failed'];
-        }
-
-        try {
-            // Check if input is email or username
-            $field = filter_var($username_or_email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-            
-            $query = "SELECT * FROM " . $this->table_name . " 
-                      WHERE ($field = :credential)";
-            
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':credential', $username_or_email);
-            $stmt->execute();
-
-            if ($stmt->rowCount() > 0) {
-                $user = $stmt->fetch(PDO::FETCH_ASSOC);
-                
-                // Check if account is verified
-                if (!$user['is_verified']) {
-                    return ['success' => false, 'message' => 'Please verify your email before logging in'];
-                }
-                
-                // Verify password
-                if (password_verify($password, $user['password_hash'])) {
-                    // Update last login (using updated_at as last login)
-                    $this->updateLastLogin($user['id']);
-                    
-                    // Create session token for remember me
-                    $session_token = null;
-                    if ($remember) {
-                        $session_token = $this->createRememberMeToken($user['id']);
-                    }
-                    
-                    // Remove sensitive data
-                    unset($user['password_hash']);
-                    unset($user['verification_token']);
-                    unset($user['reset_token']);
-                    
-                    return [
-                        'success' => true,
-                        'message' => 'Login successful',
-                        'user' => $user,
-                        'session_token' => $session_token
-                    ];
-                } else {
-                    return ['success' => false, 'message' => 'Invalid password'];
-                }
-            } else {
-                return ['success' => false, 'message' => 'User not found'];
-            }
-        } catch (PDOException $e) {
-            error_log("Login error: " . $e->getMessage());
-            return ['success' => false, 'message' => 'Database error occurred'];
-        }
+public function login($username_or_email, $password, $remember = false) {
+    if (!$this->conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
     }
 
+    try {
+        // Get client IP address
+        $ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+        
+        // Check if input is email or username
+        $field = filter_var($username_or_email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+        
+        $query = "SELECT * FROM " . $this->table_name . " 
+                  WHERE ($field = :credential)";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':credential', $username_or_email);
+        $stmt->execute();
+
+        if ($stmt->rowCount() > 0) {
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            // Verify password
+            $password_valid = password_verify($password, $user['password_hash']);
+            
+            // =============================================
+            // RECORD LOGIN ATTEMPT - MOVED BEFORE VERIFICATION CHECK
+            // =============================================
+            try {
+                $attemptQuery = "INSERT INTO login_attempts 
+                                (user_id, username, ip_address, success, created_at) 
+                                VALUES (:user_id, :username, :ip, :success, NOW())";
+                $attemptStmt = $this->conn->prepare($attemptQuery);
+                $attemptStmt->execute([
+                    ':user_id' => $user['id'],
+                    ':username' => $username_or_email,
+                    ':ip' => $ip_address,
+                    ':success' => $password_valid ? 1 : 0
+                ]);
+            } catch (PDOException $e) {
+                // Log but don't stop login if logging fails
+                error_log("Failed to record login attempt: " . $e->getMessage());
+            }
+            
+            // Check if account is verified
+            if (!$user['is_verified']) {
+                return ['success' => false, 'message' => 'Please verify your email before logging in'];
+            }
+            
+            // Check password
+            if ($password_valid) {
+                // Update last login
+                $this->updateLastLogin($user['id']);
+                
+                // Create session token for remember me
+                $session_token = null;
+                if ($remember) {
+                    $session_token = $this->createRememberMeToken($user['id']);
+                }
+                
+                // Remove sensitive data
+                unset($user['password_hash']);
+                unset($user['verification_token']);
+                unset($user['reset_token']);
+                
+                return [
+                    'success' => true,
+                    'message' => 'Login successful',
+                    'user' => $user,
+                    'session_token' => $session_token
+                ];
+            } else {
+                return ['success' => false, 'message' => 'Invalid password'];
+            }
+        } else {
+            // User not found - record attempt with null user_id
+            try {
+                $attemptQuery = "INSERT INTO login_attempts 
+                                (user_id, username, ip_address, success, created_at) 
+                                VALUES (:user_id, :username, :ip, :success, NOW())";
+                $attemptStmt = $this->conn->prepare($attemptQuery);
+                $attemptStmt->execute([
+                    ':user_id' => null,
+                    ':username' => $username_or_email,
+                    ':ip' => $ip_address,
+                    ':success' => 0
+                ]);
+            } catch (PDOException $e) {
+                error_log("Failed to record login attempt: " . $e->getMessage());
+            }
+            
+            return ['success' => false, 'message' => 'User not found'];
+        }
+    } catch (PDOException $e) {
+        error_log("Login error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Database error occurred'];
+    }
+}
     // Get user by ID
     public function getUserById($user_id) {
         if (!$this->conn) {
@@ -480,5 +520,22 @@ class UserModel {
         
         return implode(' ', $parts);
     }
+
+    public function logout($user_id) {
+    if (!$this->conn) {
+        return false;
+    }
+
+    try {
+        // If you have a user_sessions table, clear sessions
+        $query = "DELETE FROM user_sessions WHERE user_id = :user_id";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':user_id', $user_id);
+        return $stmt->execute();
+    } catch (PDOException $e) {
+        error_log("Logout error: " . $e->getMessage());
+        return false;
+    }
+}
 }
 ?>

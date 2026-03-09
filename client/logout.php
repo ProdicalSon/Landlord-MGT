@@ -4,14 +4,17 @@ session_start();
 
 require_once __DIR__ . '/models/UserModel.php';
 
+// Initialize UserModel
+$userModel = new UserModel();
+
+
 // Clear remember me cookie
 if (isset($_COOKIE['remember_token'])) {
-    setcookie('remember_token', '', time() - 3600, '/');
+    setcookie('remember_token', '', time() - 3600, '/', '', false, true);
 }
 
 // If user is logged in, clear their sessions from database
 if (isset($_SESSION['user_id'])) {
-    $userModel = new UserModel();
     $userModel->logout($_SESSION['user_id']);
 }
 
@@ -30,7 +33,7 @@ if (ini_get("session.use_cookies")) {
 // Destroy the session
 session_destroy();
 
-// Redirect to login page
+// Redirect to login page with success message
 header('Location: login.php?logged_out=1');
 exit;
 ?>
