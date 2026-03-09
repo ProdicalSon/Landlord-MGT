@@ -168,7 +168,7 @@ if (isset($_GET['get_saved_count'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SmartHunt - Find Your Perfect Home</title>
+    <title>SmartHunt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
         /* All your existing CSS styles here */
