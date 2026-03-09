@@ -18,8 +18,7 @@ $savedPropertyModel = new SavedPropertyModel();
 
 // Get current user ID (in real app, this would come from login session)
 // For demo purposes, we'll use user_id = 1
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
-
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
 // Handle search and filters
 $filters = [];
 $search_location = isset($_GET['location']) ? trim($_GET['location']) : '';
@@ -1094,22 +1093,26 @@ if (isset($_GET['get_saved_count'])) {
             </div>
             
             <div class="nav-menu">
-                <button class="nav-link active" onclick="window.location.href='index.php'">
+                <a href="index.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
                     <i class="fas fa-search"></i> <span>Browse</span>
-                </button>
-                <button class="nav-link" onclick="showSavedProperties()">
-                    <i class="fas fa-heart"></i> <span>Saved <span id="saved-count" class="saved-count">(<?php echo count($savedPropertyIds); ?>)</span></span>
-                </button>
-                <button class="nav-link" id="notificationBtn" onclick="toggleNotifications()">
-                    <i class="fas fa-bell"></i> <span>Alerts</span>
-                    <span id="notificationBadge" class="notification-badge" style="<?php echo $unreadCount > 0 ? 'display: flex;' : 'display: none;'; ?>"><?php echo $unreadCount; ?></span>
-                </button>
-                <button class="nav-link" onclick="showToast('Account feature coming soon!')">
-                    <i class="fas fa-user"></i> <span>Account</span>
-                </button>
-                <button class="nav-button" onclick="showToast('List your property feature coming soon!')">List Your Property</button>
+                </a>
+                
+                <?php if (isset($_SESSION['user_id'])): ?>
+                    <a href="profile.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-user"></i> 
+                        <span><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
+                    </a>
+                    <a href="logout.php" class="nav-link" onclick="return confirm('Are you sure you want to logout?')">
+                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
+                    </a>
+                <?php else: ?>
+                    <a href="login.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'login.php' ? 'active' : ''; ?>">
+                        <i class="fas fa-sign-in-alt"></i> <span>Login</span>
+                    </a>
+                    <a href="register.php" class="nav-button">Sign Up</a>
+                <?php endif; ?>
             </div>
-            
+                        
             <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
                 <i class="fas fa-bars"></i>
             </button>
