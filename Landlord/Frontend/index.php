@@ -767,6 +767,7 @@ $firstName = explode(' ', $landlordName)[0];
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="profile.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
                 <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
@@ -955,7 +956,7 @@ $firstName = explode(' ', $landlordName)[0];
                     </div>
                     
                     <div class="property-form">
-                        <form action="add_property_handler.php" method="post" enctype="multipart/form-data" id="propertyForm">
+                        <form id="propertyForm" method="POST" action="add_property_handler.php" enctype="multipart/form-data">
                             <div class="form-section">
                                 <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
                                 <div class="form-grid">
@@ -1043,7 +1044,7 @@ $firstName = explode(' ', $landlordName)[0];
                                     </div>
                                     <div class="form-group">
                                         <label for="area">Area (sq ft) *</label>
-                                        <input type="number" id="area" name="area" placeholder="1200" required>
+                                        <input type="number" id="area" name="area" placeholder="0000" required>
                                     </div>
                                     <div class="form-group">
                                         <label for="year-built">Year Built</label>
@@ -1153,13 +1154,21 @@ $firstName = explode(' ', $landlordName)[0];
 
     <script>
      // Property form submission
+// Property form submission - DEFINITIVE FIX
 const propertyForm = document.getElementById('propertyForm');
 if (propertyForm) {
-    propertyForm.addEventListener('submit', function(e) {
+    // Remove any existing event listeners (by cloning and replacing)
+    const newForm = propertyForm.cloneNode(true);
+    propertyForm.parentNode.replaceChild(newForm, propertyForm);
+    
+    // Add new event listener to the cloned form
+    newForm.addEventListener('submit', function(e) {
         e.preventDefault();
+        e.stopPropagation(); // Stop event propagation
         
         console.log('=== FORM SUBMISSION STARTED ===');
-        console.log('Form method should be: POST');
+        console.log('Form method attribute:', this.method);
+        console.log('Form action attribute:', this.action);
         
         // Collect form data
         const formData = new FormData(this);
@@ -1176,63 +1185,56 @@ if (propertyForm) {
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
         submitBtn.disabled = true;
         
-        // Send AJAX request with explicit POST method
-        fetch('add_property_handler.php', {
-            method: 'POST',  // Force POST method
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'  // Add this header
-            }
-        })
-        .then(response => {
-            console.log('Response status:', response.status);
-            console.log('Response method used:', response.type);
-            return response.text();  // Get as text first
-        })
-        .then(text => {
-            console.log('Raw response:', text);
+        // Create and send request with explicit POST
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', 'add_property_handler.php', true);
+        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+        
+        xhr.onload = function() {
+            console.log('Response status:', xhr.status);
+            console.log('Response text:', xhr.responseText);
             
             try {
-                const data = JSON.parse(text);
+                const data = JSON.parse(xhr.responseText);
                 console.log('Parsed data:', data);
                 
                 if (data.success) {
                     showNotification('Property added successfully!', 'success');
-                    this.reset();
+                    newForm.reset();
                     
-                    // Clear image previews
+                    // Clear image previews if they exist
                     const imagePreview = document.getElementById('image-preview');
-                    if (imagePreview) {
-                        imagePreview.innerHTML = '';
-                    }
+                    if (imagePreview) imagePreview.innerHTML = '';
                     
                     // Switch back to dashboard
                     document.querySelectorAll('.content').forEach(s => s.classList.add('hidden'));
                     const dashboard = document.getElementById('dashboard-content');
-                    if (dashboard) {
-                        dashboard.classList.remove('hidden');
-                    }
+                    if (dashboard) dashboard.classList.remove('hidden');
                 } else {
                     showNotification(data.message || 'Error adding property', 'error');
                 }
             } catch (e) {
-                console.error('JSON parse error:', e);
-                showNotification('Server error: Invalid response format', 'error');
+                console.error('Parse error:', e);
+                showNotification('Server error: Invalid response', 'error');
             }
-        })
-        .catch(error => {
-            console.error('Fetch Error:', error);
-            showNotification('Connection error: ' + error.message, 'error');
-        })
-        .finally(() => {
-            console.log('=== FORM SUBMISSION COMPLETED ===');
+            
             submitBtn.innerHTML = originalText;
             submitBtn.disabled = false;
-        });
+        };
+        
+        xhr.onerror = function() {
+            console.error('Network error occurred');
+            showNotification('Network error occurred', 'error');
+            submitBtn.innerHTML = originalText;
+            submitBtn.disabled = false;
+        };
+        
+        xhr.send(formData);
+        console.log('Request sent via XMLHttpRequest with POST method');
     });
+    
+    console.log('Form event listener reattached successfully');
 }
-
-
         // Add animation styles
         const style = document.createElement('style');
         style.textContent = `

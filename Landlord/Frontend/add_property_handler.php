@@ -33,8 +33,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $propertyModel = new LandlordPropertyModel();
     
     // Get form data (try different possible field names)
-    $title = trim($_POST['property_name'] ?? $_POST['title'] ?? '');
-    $type = $_POST['property_type'] ?? $_POST['type'] ?? '';
+    $title = trim($_POST['property-name'] ?? $_POST['title'] ?? '');
+    $type = $_POST['property-type'] ?? $_POST['type'] ?? '';
     $price = floatval($_POST['price'] ?? 0);
     $status = $_POST['status'] ?? 'available';
     $description = trim($_POST['description'] ?? '');
@@ -45,7 +45,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $bedrooms = $_POST['bedrooms'] ?? '1';
     $bathrooms = $_POST['bathrooms'] ?? '1';
     $area = floatval($_POST['area'] ?? 0);
-    $year_built = isset($_POST['year_built']) && !empty($_POST['year_built']) ? intval($_POST['year_built']) : null;
+    $year_built = isset($_POST['year-built']) && !empty($_POST['year-built']) ? intval($_POST['year-built']) : null;
     
     // Get amenities
     $amenities = [];

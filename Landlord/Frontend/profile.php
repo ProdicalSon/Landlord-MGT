@@ -845,7 +845,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     </div>
                                     <div class="info-content">
                                         <div class="info-label">Last Updated</div>
-                                        <div class="info-value"><?php echo date('F j, Y', strtotime($landlord['updated_at'])); ?></div>
+                                        <div class="info-value">
+                                        <?php 
+                                        if (isset($landlord['updated_at']) && !empty($landlord['updated_at'])) {
+                                            echo date('F j, Y', strtotime($landlord['updated_at']));
+                                        } else {
+                                            echo date('F j, Y', strtotime($landlord['created_at'])); // Fallback to created_at
+                                        }
+                                        ?>
+                                    </div>
                                     </div>
                                 </div>
                             </div>

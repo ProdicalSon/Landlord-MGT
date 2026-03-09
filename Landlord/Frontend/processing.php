@@ -2,6 +2,15 @@
 session_start();
 require_once 'includes/config.php';
 
+function getDBConnection() {
+    $host = 'localhost';
+    $dbname = 'landlord_mgt';
+    $username = 'root';
+    $password = '';
+    
+    return new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $username, $password);
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // Get form data safely
     $username = trim($_POST['username']);
