@@ -1,219 +1,61 @@
 <?php
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 session_start();
 
-// Sample properties data - in real app, this would come from database
-$properties = [
-    [
-        'id' => 1,
-        'title' => 'Modern Studio Near Campus',
-        'price' => 850,
-        'address' => '123 University Ave, Boston, MA',
-        'beds' => 1,
-        'baths' => 1,
-        'sqft' => 550,
-        'type' => 'Apartment',
-        'image' => 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop',
-        'featured' => true,
-        'city' => 'Boston',
-        'state' => 'MA',
-        'zip' => '02115'
-    ],
-    [
-        'id' => 2,
-        'title' => 'Spacious 2BR House',
-        'price' => 1200,
-        'address' => '456 Maple St, Chicago, IL',
-        'beds' => 2,
-        'baths' => 1,
-        'sqft' => 950,
-        'type' => 'House',
-        'image' => 'https://images.unsplash.com/photo-1518780664697-55e3ad937233?w=400&h=300&fit=crop',
-        'featured' => false,
-        'city' => 'Chicago',
-        'state' => 'IL',
-        'zip' => '60614'
-    ],
-    [
-        'id' => 3,
-        'title' => 'Downtown Luxury Loft',
-        'price' => 1600,
-        'address' => '789 Downtown Blvd, NYC',
-        'beds' => 1,
-        'baths' => 1,
-        'sqft' => 750,
-        'type' => 'Loft',
-        'image' => 'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=400&h=300&fit=crop',
-        'featured' => true,
-        'city' => 'New York',
-        'state' => 'NY',
-        'zip' => '10001'
-    ],
-    [
-        'id' => 4,
-        'title' => 'Family Home with Garden',
-        'price' => 2200,
-        'address' => '101 Oak Lane, Austin, TX',
-        'beds' => 3,
-        'baths' => 2,
-        'sqft' => 1450,
-        'type' => 'House',
-        'image' => 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=400&h=300&fit=crop',
-        'featured' => false,
-        'city' => 'Austin',
-        'state' => 'TX',
-        'zip' => '78701'
-    ],
-    [
-        'id' => 5,
-        'title' => 'Student Apartment Complex',
-        'price' => 750,
-        'address' => '202 College Rd, Berkeley, CA',
-        'beds' => 1,
-        'baths' => 1,
-        'sqft' => 500,
-        'type' => 'Apartment',
-        'image' => 'https://images.unsplash.com/photo-1558036117-15e82a2c9a9a?w=400&h=300&fit=crop',
-        'featured' => false,
-        'city' => 'Berkeley',
-        'state' => 'CA',
-        'zip' => '94704'
-    ],
-    [
-        'id' => 6,
-        'title' => 'Modern Townhouse',
-        'price' => 1800,
-        'address' => '303 Modern Ave, Seattle, WA',
-        'beds' => 2,
-        'baths' => 2.5,
-        'sqft' => 1200,
-        'type' => 'Townhouse',
-        'image' => 'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=400&h=300&fit=crop',
-        'featured' => true,
-        'city' => 'Seattle',
-        'state' => 'WA',
-        'zip' => '98101'
-    ],
-    [
-        'id' => 7,
-        'title' => 'Cozy Studio Apartment',
-        'price' => 650,
-        'address' => '404 Pine St, Portland, OR',
-        'beds' => 1,
-        'baths' => 1,
-        'sqft' => 450,
-        'type' => 'Apartment',
-        'image' => 'https://images.unsplash.com/photo-1499916078039-922301b0eb9b?w=400&h=300&fit=crop',
-        'featured' => false,
-        'city' => 'Portland',
-        'state' => 'OR',
-        'zip' => '97205'
-    ],
-    [
-        'id' => 8,
-        'title' => 'Luxury City View Condo',
-        'price' => 2800,
-        'address' => '505 Skyline Blvd, Miami, FL',
-        'beds' => 2,
-        'baths' => 2,
-        'sqft' => 1100,
-        'type' => 'Condo',
-        'image' => 'https://images.unsplash.com/photo-1448630360428-65456885c650?w=400&h=300&fit=crop',
-        'featured' => true,
-        'city' => 'Miami',
-        'state' => 'FL',
-        'zip' => '33101'
-    ]
-];
+// Include models
+require_once __DIR__ . '/config/database.php';
+require_once __DIR__ . '/models/PropertyModel.php';
+require_once __DIR__ . '/models/NotificationModel.php';
+require_once __DIR__ . '/models/SavedPropertyModel.php';
 
-// Initialize session data
-if (!isset($_SESSION['saved_properties'])) {
-    $_SESSION['saved_properties'] = [];
-}
+// Initialize models
 
-if (!isset($_SESSION['notifications'])) {
-    $_SESSION['notifications'] = [
-        [
-            'id' => 1,
-            'type' => 'price_drop',
-            'property_id' => 1,
-            'property_title' => 'Modern Studio Near Campus',
-            'message' => 'Price dropped on Modern Studio Near Campus! Now $850/month',
-            'time' => '2 hours ago',
-            'read' => false,
-            'replies' => []
-        ],
-        [
-            'id' => 2,
-            'type' => 'new_listing',
-            'property_id' => 6,
-            'property_title' => 'Modern Townhouse',
-            'message' => 'New property listed in your saved search: Modern Townhouse in Seattle',
-            'time' => '1 day ago',
-            'read' => false,
-            'replies' => []
-        ],
-        [
-            'id' => 3,
-            'type' => 'viewing_request',
-            'property_id' => 3,
-            'property_title' => 'Downtown Luxury Loft',
-            'message' => 'Viewing request approved for Downtown Luxury Loft on March 15th at 2:00 PM',
-            'time' => '2 days ago',
-            'read' => true,
-            'replies' => [
-                [
-                    'user' => 'Agent Smith',
-                    'message' => 'Looking forward to showing you this beautiful loft! Please arrive 5 minutes early.',
-                    'time' => '1 day ago'
-                ]
-            ]
-        ],
-        [
-            'id' => 4,
-            'type' => 'application_update',
-            'property_id' => 2,
-            'property_title' => 'Spacious 2BR House',
-            'message' => 'Your application for Spacious 2BR House has been received and is under review',
-            'time' => '3 days ago',
-            'read' => true,
-            'replies' => []
-        ]
-    ];
-}
+$propertyModel = new PropertyModel();        
+$notificationModel = new NotificationModel(); 
+$savedPropertyModel = new SavedPropertyModel();
+
+// Get current user ID (in real app, this would come from login session)
+// For demo purposes, we'll use user_id = 1
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 1;
 
 // Handle search and filters
-$filtered_properties = $properties;
-$search_location = isset($_GET['location']) ? strtolower(trim($_GET['location'])) : '';
+$filters = [];
+$search_location = isset($_GET['location']) ? trim($_GET['location']) : '';
 $min_price = isset($_GET['min_price']) ? (int)$_GET['min_price'] : 0;
+$max_price = isset($_GET['max_price']) ? (int)$_GET['max_price'] : 0;
 $min_beds = isset($_GET['min_beds']) ? (int)$_GET['min_beds'] : 0;
-$property_type = isset($_GET['property_type']) ? strtolower(trim($_GET['property_type'])) : '';
+$property_type = isset($_GET['property_type']) ? trim($_GET['property_type']) : '';
 
-if ($search_location || $min_price > 0 || $min_beds > 0 || $property_type) {
-    $filtered_properties = array_filter($properties, function($property) use ($search_location, $min_price, $min_beds, $property_type) {
-        $matches = true;
-        
-        if ($search_location) {
-            $location_string = strtolower($property['address'] . ' ' . $property['city'] . ' ' . $property['state'] . ' ' . $property['zip']);
-            if (strpos($location_string, $search_location) === false) {
-                $matches = false;
-            }
-        }
-        
-        if ($min_price > 0 && $property['price'] < $min_price) {
-            $matches = false;
-        }
-        
-        if ($min_beds > 0 && $property['beds'] < $min_beds) {
-            $matches = false;
-        }
-        
-        if ($property_type && strtolower($property['type']) !== $property_type) {
-            $matches = false;
-        }
-        
-        return $matches;
-    });
+if ($search_location) {
+    $filters['location'] = $search_location;
 }
+if ($min_price > 0) {
+    $filters['min_price'] = $min_price;
+}
+if ($max_price > 0) {
+    $filters['max_price'] = $max_price;
+}
+if ($min_beds > 0) {
+    $filters['min_beds'] = $min_beds;
+}
+if ($property_type) {
+    $filters['property_type'] = $property_type;
+}
+
+// Get properties from database
+$properties = $propertyModel->getAllProperties($filters); 
+$propertyTypes = $propertyModel->getPropertyTypes();
+$priceRange = $propertyModel->getPriceRange();
+$cities = $propertyModel->getCities();
+
+// Get user's saved properties
+$savedPropertyIds = $savedPropertyModel->getSavedPropertyIds($user_id);
+
+// Get user notifications
+$notifications = $notificationModel->getUserNotifications($user_id);
+$unreadCount = $notificationModel->getUnreadCount($user_id);
 
 // Handle AJAX requests
 if (isset($_POST['action'])) {
@@ -221,19 +63,20 @@ if (isset($_POST['action'])) {
     
     if ($_POST['action'] === 'save_property') {
         $property_id = (int)$_POST['property_id'];
-        if (!in_array($property_id, $_SESSION['saved_properties'])) {
-            $_SESSION['saved_properties'][] = $property_id;
-            echo json_encode(['success' => true, 'saved' => true]);
-        } else {
-            $_SESSION['saved_properties'] = array_diff($_SESSION['saved_properties'], [$property_id]);
-            echo json_encode(['success' => true, 'saved' => false]);
-        }
+        $result = $savedPropertyModel->saveProperty($user_id, $property_id);
+        $isSaved = $savedPropertyModel->isSaved($user_id, $property_id);
+        
+        echo json_encode([
+            'success' => $result,
+            'saved' => $isSaved
+        ]);
         exit;
     }
     
     if ($_POST['action'] === 'newsletter_subscribe') {
         $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
         if ($email) {
+            // Save to newsletter table
             echo json_encode(['success' => true, 'message' => 'Successfully subscribed to newsletter!']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid email address']);
@@ -243,43 +86,29 @@ if (isset($_POST['action'])) {
     
     if ($_POST['action'] === 'mark_notification_read') {
         $notification_id = (int)$_POST['notification_id'];
-        foreach ($_SESSION['notifications'] as &$notification) {
-            if ($notification['id'] === $notification_id) {
-                $notification['read'] = true;
-                break;
-            }
-        }
-        echo json_encode(['success' => true]);
+        $result = $notificationModel->markAsRead($notification_id, $user_id);
+        echo json_encode(['success' => $result]);
         exit;
     }
     
     if ($_POST['action'] === 'mark_all_read') {
-        foreach ($_SESSION['notifications'] as &$notification) {
-            $notification['read'] = true;
-        }
-        echo json_encode(['success' => true]);
+        $result = $notificationModel->markAllAsRead($user_id);
+        echo json_encode(['success' => $result]);
         exit;
     }
     
     if ($_POST['action'] === 'add_reply') {
         $notification_id = (int)$_POST['notification_id'];
-        $reply_message = trim($_POST['message']);
+        $message = trim($_POST['message']);
         
-        if (!empty($reply_message)) {
-            foreach ($_SESSION['notifications'] as &$notification) {
-                if ($notification['id'] === $notification_id) {
-                    if (!isset($notification['replies'])) {
-                        $notification['replies'] = [];
-                    }
-                    $notification['replies'][] = [
-                        'user' => 'You',
-                        'message' => $reply_message,
-                        'time' => 'Just now'
-                    ];
-                    break;
-                }
+        if (!empty($message)) {
+            $result = $notificationModel->addReply($notification_id, $user_id, $message);
+            if ($result) {
+                $replies = $notificationModel->getReplies($notification_id);
+                echo json_encode(['success' => true, 'replies' => $replies]);
+            } else {
+                echo json_encode(['success' => false, 'message' => 'Failed to add reply']);
             }
-            echo json_encode(['success' => true]);
         } else {
             echo json_encode(['success' => false, 'message' => 'Reply cannot be empty']);
         }
@@ -287,25 +116,50 @@ if (isset($_POST['action'])) {
     }
     
     if ($_POST['action'] === 'get_notifications') {
-        $unread_count = 0;
-        foreach ($_SESSION['notifications'] as $notification) {
-            if (!$notification['read']) {
-                $unread_count++;
-            }
+        $notifications = $notificationModel->getUserNotifications($user_id);
+        $unreadCount = $notificationModel->getUnreadCount($user_id);
+        
+        // Format notifications for display
+        foreach ($notifications as &$notif) {
+            $notif['replies'] = $notificationModel->getReplies($notif['id']);
+            $notif['time_ago'] = timeAgo($notif['created_at']);
         }
+        
         echo json_encode([
             'success' => true,
-            'notifications' => $_SESSION['notifications'],
-            'unread_count' => $unread_count
+            'notifications' => $notifications,
+            'unread_count' => $unreadCount
         ]);
         exit;
+    }
+}
+
+// Helper function for time ago
+function timeAgo($datetime) {
+    $time = strtotime($datetime);
+    $now = time();
+    $diff = $now - $time;
+    
+    if ($diff < 60) {
+        return 'Just now';
+    } elseif ($diff < 3600) {
+        $mins = floor($diff / 60);
+        return $mins . ' minute' . ($mins > 1 ? 's' : '') . ' ago';
+    } elseif ($diff < 86400) {
+        $hours = floor($diff / 3600);
+        return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
+    } elseif ($diff < 2592000) {
+        $days = floor($diff / 86400);
+        return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
+    } else {
+        return date('M j, Y', $time);
     }
 }
 
 // Get saved count for AJAX
 if (isset($_GET['get_saved_count'])) {
     header('Content-Type: application/json');
-    echo json_encode(['count' => count($_SESSION['saved_properties'])]);
+    echo json_encode(['count' => count($savedPropertyIds)]);
     exit;
 }
 ?>
@@ -756,6 +610,7 @@ if (isset($_GET['get_saved_count'])) {
             display: flex;
             gap: 10px;
             align-items: center;
+            flex-wrap: wrap;
         }
 
         .search-filters select {
@@ -765,6 +620,7 @@ if (isset($_GET['get_saved_count'])) {
             font-size: 14px;
             background-color: white;
             cursor: pointer;
+            min-width: 120px;
         }
 
         .search-button {
@@ -779,12 +635,18 @@ if (isset($_GET['get_saved_count'])) {
             white-space: nowrap;
         }
 
+        .clear-button {
+            background-color: #666;
+        }
+
         /* Properties Grid */
         .page-header {
             margin-bottom: 30px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .results-count {
@@ -880,6 +742,7 @@ if (isset($_GET['get_saved_count'])) {
 
         .property-details {
             padding: 16px;
+            flex: 1;
         }
 
         .property-price {
@@ -918,6 +781,7 @@ if (isset($_GET['get_saved_count'])) {
             margin-bottom: 12px;
             font-size: 12px;
             color: #666;
+            flex-wrap: wrap;
         }
 
         .property-features i {
@@ -932,6 +796,16 @@ if (isset($_GET['get_saved_count'])) {
             border-radius: 4px;
             font-size: 11px;
             font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .landlord-name {
+            font-size: 11px;
+            color: #999;
+            margin-top: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
 
         /* Footer */
@@ -1151,6 +1025,24 @@ if (isset($_GET['get_saved_count'])) {
             color: #666;
         }
 
+        /* Loading Spinner */
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            grid-column: 1 / -1;
+        }
+
+        .loading-spinner i {
+            font-size: 40px;
+            color: #0077b6;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
         /* Responsive Design */
         @media (max-width: 768px) {
             .nav-menu {
@@ -1168,6 +1060,10 @@ if (isset($_GET['get_saved_count'])) {
             }
             .search-filters {
                 flex-wrap: wrap;
+            }
+            .search-filters select {
+                flex: 1;
+                min-width: calc(50% - 5px);
             }
             .properties-grid {
                 grid-template-columns: 1fr;
@@ -1202,15 +1098,11 @@ if (isset($_GET['get_saved_count'])) {
                     <i class="fas fa-search"></i> <span>Browse</span>
                 </button>
                 <button class="nav-link" onclick="showSavedProperties()">
-                    <i class="fas fa-heart"></i> <span>Saved <span id="saved-count" class="saved-count">(<?php echo count($_SESSION['saved_properties']); ?>)</span></span>
+                    <i class="fas fa-heart"></i> <span>Saved <span id="saved-count" class="saved-count">(<?php echo count($savedPropertyIds); ?>)</span></span>
                 </button>
                 <button class="nav-link" id="notificationBtn" onclick="toggleNotifications()">
                     <i class="fas fa-bell"></i> <span>Alerts</span>
-                    <span id="notificationBadge" class="notification-badge" style="<?php 
-                        $unread_count = 0;
-                        foreach ($_SESSION['notifications'] as $n) { if (!$n['read']) $unread_count++; }
-                        echo $unread_count > 0 ? 'display: flex;' : 'display: none;';
-                    ?>"><?php echo $unread_count; ?></span>
+                    <span id="notificationBadge" class="notification-badge" style="<?php echo $unreadCount > 0 ? 'display: flex;' : 'display: none;'; ?>"><?php echo $unreadCount; ?></span>
                 </button>
                 <button class="nav-link" onclick="showToast('Account feature coming soon!')">
                     <i class="fas fa-user"></i> <span>Account</span>
@@ -1233,20 +1125,18 @@ if (isset($_GET['get_saved_count'])) {
             <button class="mark-all-read" onclick="markAllRead()">Mark all as read</button>
         </div>
         <div class="notification-list" id="notificationList">
-            <?php if (empty($_SESSION['notifications'])): ?>
+            <?php if (empty($notifications)): ?>
                 <div class="no-notifications">
                     <i class="fas fa-bell-slash"></i>
                     <p>No notifications yet</p>
                 </div>
             <?php else: ?>
-                <?php foreach ($_SESSION['notifications'] as $notification): ?>
-                <div class="notification-item <?php echo $notification['read'] ? '' : 'unread'; ?>" 
+                <?php foreach ($notifications as $notification): ?>
+                <div class="notification-item <?php echo $notification['is_read'] ? '' : 'unread'; ?>" 
                      data-id="<?php echo $notification['id']; ?>"
                      onclick="markAsRead(<?php echo $notification['id']; ?>)">
                     <div class="notification-type <?php echo $notification['type']; ?>">
-                        <?php 
-                        echo ucwords(str_replace('_', ' ', $notification['type']));
-                        ?>
+                        <?php echo ucwords(str_replace('_', ' ', $notification['type'])); ?>
                     </div>
                     <div class="notification-message">
                         <?php echo htmlspecialchars($notification['message']); ?>
@@ -1256,25 +1146,27 @@ if (isset($_GET['get_saved_count'])) {
                     <div class="replies-list">
                         <?php foreach ($notification['replies'] as $reply): ?>
                         <div class="reply-item">
-                            <span class="reply-user"><?php echo htmlspecialchars($reply['user']); ?>:</span>
+                            <span class="reply-user"><?php echo htmlspecialchars($reply['user_name'] ?? 'You'); ?>:</span>
                             <?php echo htmlspecialchars($reply['message']); ?>
-                            <span class="reply-time"><?php echo $reply['time']; ?></span>
+                            <span class="reply-time"><?php echo timeAgo($reply['created_at']); ?></span>
                         </div>
                         <?php endforeach; ?>
                     </div>
                     <?php endif; ?>
                     
                     <div class="notification-time">
-                        <i class="far fa-clock"></i> <?php echo $notification['time']; ?>
+                        <i class="far fa-clock"></i> <?php echo timeAgo($notification['created_at']); ?>
                     </div>
                     
                     <div class="notification-actions">
                         <button class="reply-btn" onclick="event.stopPropagation(); showReplyForm(<?php echo $notification['id']; ?>)">
                             <i class="fas fa-reply"></i> Reply
                         </button>
+                        <?php if (!empty($notification['property_id'])): ?>
                         <button class="view-property-btn" onclick="event.stopPropagation(); viewProperty(<?php echo $notification['property_id']; ?>)">
                             <i class="fas fa-eye"></i> View Property
                         </button>
+                        <?php endif; ?>
                     </div>
                     
                     <div class="reply-form" id="replyForm-<?php echo $notification['id']; ?>">
@@ -1300,11 +1192,24 @@ if (isset($_GET['get_saved_count'])) {
             </div>
             <div class="search-filters">
                 <select name="min_price">
-                    <option value="">Any Price</option>
-                    <option value="500" <?php echo $min_price == 500 ? 'selected' : ''; ?>>$500+</option>
-                    <option value="1000" <?php echo $min_price == 1000 ? 'selected' : ''; ?>>$1000+</option>
-                    <option value="1500" <?php echo $min_price == 1500 ? 'selected' : ''; ?>>$1500+</option>
-                    <option value="2000" <?php echo $min_price == 2000 ? 'selected' : ''; ?>>$2000+</option>
+                    <option value="">Min Price</option>
+                    <?php
+                    $priceSteps = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000];
+                    foreach ($priceSteps as $price) {
+                        $selected = ($min_price == $price) ? 'selected' : '';
+                        echo "<option value=\"$price\" $selected>$$price+</option>";
+                    }
+                    ?>
+                </select>
+                <select name="max_price">
+                    <option value="">Max Price</option>
+                    <?php
+                    $priceSteps = [1000, 2000, 3000, 4000, 5000, 7500, 10000, 15000];
+                    foreach ($priceSteps as $price) {
+                        $selected = ($max_price == $price) ? 'selected' : '';
+                        echo "<option value=\"$price\" $selected>Up to $$price</option>";
+                    }
+                    ?>
                 </select>
                 <select name="min_beds">
                     <option value="">Any Beds</option>
@@ -1314,15 +1219,17 @@ if (isset($_GET['get_saved_count'])) {
                 </select>
                 <select name="property_type">
                     <option value="">Any Type</option>
-                    <option value="apartment" <?php echo $property_type == 'apartment' ? 'selected' : ''; ?>>Apartment</option>
-                    <option value="house" <?php echo $property_type == 'house' ? 'selected' : ''; ?>>House</option>
-                    <option value="condo" <?php echo $property_type == 'condo' ? 'selected' : ''; ?>>Condo</option>
-                    <option value="loft" <?php echo $property_type == 'loft' ? 'selected' : ''; ?>>Loft</option>
-                    <option value="townhouse" <?php echo $property_type == 'townhouse' ? 'selected' : ''; ?>>Townhouse</option>
+                    <?php foreach ($propertyTypes as $type): ?>
+                        <?php if (!empty($type)): ?>
+                        <option value="<?php echo strtolower($type); ?>" <?php echo $property_type == strtolower($type) ? 'selected' : ''; ?>>
+                            <?php echo ucfirst($type); ?>
+                        </option>
+                        <?php endif; ?>
+                    <?php endforeach; ?>
                 </select>
                 <button type="submit" class="search-button">Search</button>
-                <?php if ($search_location || $min_price || $min_beds || $property_type): ?>
-                    <button type="button" class="search-button" onclick="clearFilters()" style="background-color: #666;">Clear</button>
+                <?php if ($search_location || $min_price || $max_price || $min_beds || $property_type): ?>
+                    <button type="button" class="search-button clear-button" onclick="clearFilters()">Clear</button>
                 <?php endif; ?>
             </div>
         </form>
@@ -1332,58 +1239,72 @@ if (isset($_GET['get_saved_count'])) {
     <main class="container">
         <div class="page-header">
             <h1>
-                <?php if ($search_location || $min_price || $min_beds || $property_type): ?>
+                <?php if ($search_location || $min_price || $max_price || $min_beds || $property_type): ?>
                     Search Results
                 <?php else: ?>
                     Available Rentals Near You
                 <?php endif; ?>
             </h1>
-            <p class="results-count">Showing <?php echo count($filtered_properties); ?> properties</p>
+            <p class="results-count">Showing <?php echo count($properties); ?> properties</p>
         </div>
 
         <div class="properties-grid" id="propertiesGrid">
-            <?php if (count($filtered_properties) > 0): ?>
-                <?php foreach ($filtered_properties as $property): ?>
-                <div class="property-card <?php echo $property['featured'] ? 'featured' : ''; ?>" 
-                     onclick="viewProperty(<?php echo $property['id']; ?>)">
-                    <?php if ($property['featured']): ?>
+            <?php if (count($properties) > 0): ?>
+                <?php foreach ($properties as $property): ?>
+                <div class="property-card" onclick="viewProperty(<?php echo $property['id']; ?>)">
+                    <?php if (isset($property['featured']) && $property['featured']): ?>
                     <div class="featured-badge">FEATURED</div>
                     <?php endif; ?>
                     
                     <div class="property-image">
-                        <img src="<?php echo $property['image']; ?>" 
-                             alt="<?php echo htmlspecialchars($property['title']); ?>"
+                        <img src="<?php echo $propertyModel->getPropertyImage($property); ?>" 
+                             alt="<?php echo htmlspecialchars($property['property_name']); ?>"
                              onerror="this.src='https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=400&h=300&fit=crop'">
-                        <button class="save-btn <?php echo in_array($property['id'], $_SESSION['saved_properties']) ? 'saved' : ''; ?>" 
+                        <button class="save-btn <?php echo in_array($property['id'], $savedPropertyIds) ? 'saved' : ''; ?>" 
                                 onclick="event.stopPropagation(); toggleSave(this, <?php echo $property['id']; ?>)">
-                            <i class="<?php echo in_array($property['id'], $_SESSION['saved_properties']) ? 'fas' : 'far'; ?> fa-heart"></i>
+                            <i class="<?php echo in_array($property['id'], $savedPropertyIds) ? 'fas' : 'far'; ?> fa-heart"></i>
                         </button>
                     </div>
                     
                     <div class="property-details">
                         <div class="property-price">
-                            <span class="price">$<?php echo number_format($property['price']); ?></span>
+                            <span class="price">$<?php echo number_format($property['monthly_rent'], 2); ?></span>
                             <span class="period">/month</span>
                         </div>
                         
                         <h3 class="property-title">
-                            <?php echo htmlspecialchars($property['title']); ?>
+                            <?php echo htmlspecialchars($property['property_name']); ?>
                         </h3>
                         
                         <p class="property-address">
                             <i class="fas fa-map-marker-alt"></i>
-                            <?php echo htmlspecialchars($property['address']); ?>
+                            <?php 
+                            $address = $propertyModel->formatAddress($property);
+                            echo htmlspecialchars($address ?: 'Location available');
+                            ?>
                         </p>
                         
                         <div class="property-features">
-                            <span><i class="fas fa-bed"></i> <?php echo $property['beds']; ?> bed</span>
-                            <span><i class="fas fa-bath"></i> <?php echo $property['baths']; ?> bath</span>
+                            <?php if (isset($property['bedrooms'])): ?>
+                            <span><i class="fas fa-bed"></i> <?php echo $property['bedrooms']; ?> bed</span>
+                            <?php endif; ?>
+                            <?php if (isset($property['bathrooms'])): ?>
+                            <span><i class="fas fa-bath"></i> <?php echo $property['bathrooms']; ?> bath</span>
+                            <?php endif; ?>
+                            <?php if (isset($property['sqft'])): ?>
                             <span><i class="fas fa-ruler-combined"></i> <?php echo number_format($property['sqft']); ?> sqft</span>
+                            <?php endif; ?>
                         </div>
                         
                         <div class="property-type">
-                            <?php echo $property['type']; ?>
+                            <?php echo ucfirst($property['property_type'] ?? 'Property'); ?>
                         </div>
+                        
+                        <?php if (!empty($property['landlord_id'])): ?>
+                        <div class="landlord-name">
+                            <i class="fas fa-building"></i> <?php echo htmlspecialchars($property['landlord_id']); ?>
+                        </div>
+                        <?php endif; ?>
                     </div>
                 </div>
                 <?php endforeach; ?>
@@ -1451,14 +1372,10 @@ if (isset($_GET['get_saved_count'])) {
         <div class="mobile-menu-content">
             <button class="close-menu" onclick="toggleMobileMenu()"><i class="fas fa-times"></i></button>
             <button class="mobile-nav-link active" onclick="window.location.href='index.php'">Browse</button>
-            <button class="mobile-nav-link" onclick="showSavedProperties()">Saved Properties <span id="mobile-saved-count">(<?php echo count($_SESSION['saved_properties']); ?>)</span></button>
+            <button class="mobile-nav-link" onclick="showSavedProperties()">Saved Properties <span id="mobile-saved-count">(<?php echo count($savedPropertyIds); ?>)</span></button>
             <button class="mobile-nav-link" onclick="toggleNotifications()">
                 Alerts
-                <span id="mobileNotificationBadge" class="mobile-notification-badge" style="<?php 
-                    $unread_count = 0;
-                    foreach ($_SESSION['notifications'] as $n) { if (!$n['read']) $unread_count++; }
-                    echo $unread_count > 0 ? 'display: inline-flex;' : 'display: none;';
-                ?>"><?php echo $unread_count; ?></span>
+                <span id="mobileNotificationBadge" class="mobile-notification-badge" style="<?php echo $unreadCount > 0 ? 'display: inline-flex;' : 'display: none;'; ?>"><?php echo $unreadCount; ?></span>
             </button>
             <button class="mobile-nav-link" onclick="showToast('Account feature coming soon!')">My Account</button>
             <button class="mobile-nav-link" onclick="showToast('List property feature coming soon!')">List Property</button>
@@ -1549,8 +1466,8 @@ if (isset($_GET['get_saved_count'])) {
 
         // Show saved properties
         function showSavedProperties() {
-            const savedIds = <?php echo json_encode($_SESSION['saved_properties']); ?>;
-            if (savedIds.length === 0) {
+            const savedCount = <?php echo count($savedPropertyIds); ?>;
+            if (savedCount === 0) {
                 showToast('No saved properties yet');
                 return;
             }
@@ -1613,8 +1530,10 @@ if (isset($_GET['get_saved_count'])) {
             const panel = document.getElementById('notificationPanel');
             panel.classList.toggle('active');
             
-            // Close when clicking outside
+            // Refresh notifications when opening
             if (panel.classList.contains('active')) {
+                refreshNotifications();
+                
                 setTimeout(() => {
                     document.addEventListener('click', closeNotificationsOutside);
                 }, 100);
@@ -1746,7 +1665,7 @@ if (isset($_GET['get_saved_count'])) {
             let html = '';
             notifications.forEach(notification => {
                 html += `
-                <div class="notification-item ${notification.read ? '' : 'unread'}" 
+                <div class="notification-item ${notification.is_read ? '' : 'unread'}" 
                      data-id="${notification.id}"
                      onclick="markAsRead(${notification.id})">
                     <div class="notification-type ${notification.type}">
@@ -1761,9 +1680,9 @@ if (isset($_GET['get_saved_count'])) {
                     notification.replies.forEach(reply => {
                         html += `
                         <div class="reply-item">
-                            <span class="reply-user">${escapeHtml(reply.user)}:</span>
+                            <span class="reply-user">${escapeHtml(reply.user_name || 'You')}:</span>
                             ${escapeHtml(reply.message)}
-                            <span class="reply-time">${reply.time}</span>
+                            <span class="reply-time">${reply.time_ago || 'Just now'}</span>
                         </div>`;
                     });
                     html += '</div>';
@@ -1771,16 +1690,22 @@ if (isset($_GET['get_saved_count'])) {
                 
                 html += `
                     <div class="notification-time">
-                        <i class="far fa-clock"></i> ${notification.time}
+                        <i class="far fa-clock"></i> ${notification.time_ago || 'Just now'}
                     </div>
                     
                     <div class="notification-actions">
                         <button class="reply-btn" onclick="event.stopPropagation(); showReplyForm(${notification.id})">
                             <i class="fas fa-reply"></i> Reply
-                        </button>
+                        </button>`;
+                
+                if (notification.property_id) {
+                    html += `
                         <button class="view-property-btn" onclick="event.stopPropagation(); viewProperty(${notification.property_id})">
                             <i class="fas fa-eye"></i> View Property
-                        </button>
+                        </button>`;
+                }
+                
+                html += `
                     </div>
                     
                     <div class="reply-form" id="replyForm-${notification.id}">
