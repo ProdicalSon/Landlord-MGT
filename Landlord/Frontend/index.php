@@ -1153,8 +1153,24 @@ $firstName = explode(' ', $landlordName)[0];
     </footer>
 
     <script>
+        // Check for any global AJAX setup
+console.log('Checking for jQuery AJAX setup:', typeof $ !== 'undefined' ? $.ajaxSettings : 'No jQuery');
+
+// Monitor all fetch requests
+const originalFetch = window.fetch;
+window.fetch = function() {
+    console.log('Fetch called with:', arguments);
+    return originalFetch.apply(this, arguments);
+};
+
+// Monitor all XHR requests
+const originalXHROpen = XMLHttpRequest.prototype.open;
+XMLHttpRequest.prototype.open = function() {
+    console.log('XHR open called with:', arguments);
+    return originalXHROpen.apply(this, arguments);
+};
      // Property form submission
-// Property form submission - DEFINITIVE FIX
+
 const propertyForm = document.getElementById('propertyForm');
 if (propertyForm) {
     // Remove any existing event listeners (by cloning and replacing)

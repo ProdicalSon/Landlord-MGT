@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Test Form</title>
+</head>
+
+<body>
+    <h2>Test Form Submission</h2>
+    <form id="testForm" method="POST" action="test_handler.php">
+        <input type="text" name="test_field" value="test value">
+        <button type="submit">Submit Test</button>
+    </form>
+
+    <div id="result"></div>
+
+    <script>
+        document.getElementById('testForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            console.log('Test form submitted');
+
+            const formData = new FormData(this);
+
+            fetch('test_handler.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Test response:', data);
+                    document.getElementById('result').innerHTML =
+                        '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                })
+                .catch(error => {
+                    console.error('Test error:', error);
+                    document.getElementById('result').innerHTML = 'Error: ' + error.message;
+                });
+        });
+    </script>
+</body>
+
+</html>

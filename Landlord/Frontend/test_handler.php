@@ -3,10 +3,17 @@
 session_start();
 header('Content-Type: application/json');
 
-echo json_encode([
+// Log everything
+error_log("=== TEST HANDLER ===");
+error_log("Request Method: " . $_SERVER['REQUEST_METHOD']);
+
+$response = [
     'success' => true,
     'message' => 'Test handler working',
-    'session' => $_SESSION ?? [],
-    'post' => $_POST ?? [],
-    'files' => $_FILES ?? []
-]);
+    'method' => $_SERVER['REQUEST_METHOD'],
+    'post_data' => $_POST,
+    'session' => isset($_SESSION['landlord_id']) ? 'logged in' : 'not logged in'
+];
+
+echo json_encode($response);
+?>
