@@ -125,9 +125,60 @@ $properties = [
     ]
 ];
 
-// Initialize saved properties in session if not exists
+// Initialize session data
 if (!isset($_SESSION['saved_properties'])) {
     $_SESSION['saved_properties'] = [];
+}
+
+if (!isset($_SESSION['notifications'])) {
+    $_SESSION['notifications'] = [
+        [
+            'id' => 1,
+            'type' => 'price_drop',
+            'property_id' => 1,
+            'property_title' => 'Modern Studio Near Campus',
+            'message' => 'Price dropped on Modern Studio Near Campus! Now $850/month',
+            'time' => '2 hours ago',
+            'read' => false,
+            'replies' => []
+        ],
+        [
+            'id' => 2,
+            'type' => 'new_listing',
+            'property_id' => 6,
+            'property_title' => 'Modern Townhouse',
+            'message' => 'New property listed in your saved search: Modern Townhouse in Seattle',
+            'time' => '1 day ago',
+            'read' => false,
+            'replies' => []
+        ],
+        [
+            'id' => 3,
+            'type' => 'viewing_request',
+            'property_id' => 3,
+            'property_title' => 'Downtown Luxury Loft',
+            'message' => 'Viewing request approved for Downtown Luxury Loft on March 15th at 2:00 PM',
+            'time' => '2 days ago',
+            'read' => true,
+            'replies' => [
+                [
+                    'user' => 'Agent Smith',
+                    'message' => 'Looking forward to showing you this beautiful loft! Please arrive 5 minutes early.',
+                    'time' => '1 day ago'
+                ]
+            ]
+        ],
+        [
+            'id' => 4,
+            'type' => 'application_update',
+            'property_id' => 2,
+            'property_title' => 'Spacious 2BR House',
+            'message' => 'Your application for Spacious 2BR House has been received and is under review',
+            'time' => '3 days ago',
+            'read' => true,
+            'replies' => []
+        ]
+    ];
 }
 
 // Handle search and filters
@@ -183,13 +234,79 @@ if (isset($_POST['action'])) {
     if ($_POST['action'] === 'newsletter_subscribe') {
         $email = filter_var($_POST['email'], FILTER_VALIDATE_EMAIL);
         if ($email) {
-            // In real app, save to database
             echo json_encode(['success' => true, 'message' => 'Successfully subscribed to newsletter!']);
         } else {
             echo json_encode(['success' => false, 'message' => 'Invalid email address']);
         }
         exit;
     }
+    
+    if ($_POST['action'] === 'mark_notification_read') {
+        $notification_id = (int)$_POST['notification_id'];
+        foreach ($_SESSION['notifications'] as &$notification) {
+            if ($notification['id'] === $notification_id) {
+                $notification['read'] = true;
+                break;
+            }
+        }
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'mark_all_read') {
+        foreach ($_SESSION['notifications'] as &$notification) {
+            $notification['read'] = true;
+        }
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'add_reply') {
+        $notification_id = (int)$_POST['notification_id'];
+        $reply_message = trim($_POST['message']);
+        
+        if (!empty($reply_message)) {
+            foreach ($_SESSION['notifications'] as &$notification) {
+                if ($notification['id'] === $notification_id) {
+                    if (!isset($notification['replies'])) {
+                        $notification['replies'] = [];
+                    }
+                    $notification['replies'][] = [
+                        'user' => 'You',
+                        'message' => $reply_message,
+                        'time' => 'Just now'
+                    ];
+                    break;
+                }
+            }
+            echo json_encode(['success' => true]);
+        } else {
+            echo json_encode(['success' => false, 'message' => 'Reply cannot be empty']);
+        }
+        exit;
+    }
+    
+    if ($_POST['action'] === 'get_notifications') {
+        $unread_count = 0;
+        foreach ($_SESSION['notifications'] as $notification) {
+            if (!$notification['read']) {
+                $unread_count++;
+            }
+        }
+        echo json_encode([
+            'success' => true,
+            'notifications' => $_SESSION['notifications'],
+            'unread_count' => $unread_count
+        ]);
+        exit;
+    }
+}
+
+// Get saved count for AJAX
+if (isset($_GET['get_saved_count'])) {
+    header('Content-Type: application/json');
+    echo json_encode(['count' => count($_SESSION['saved_properties'])]);
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -293,6 +410,7 @@ if (isset($_POST['action'])) {
             background: none;
             border: none;
             cursor: pointer;
+            position: relative;
         }
 
         .nav-link i {
@@ -307,6 +425,23 @@ if (isset($_POST['action'])) {
 
         .nav-link:hover {
             background-color: #f5f5f5;
+        }
+
+        .notification-badge {
+            position: absolute;
+            top: 0;
+            right: 0;
+            background-color: #e74c3c;
+            color: white;
+            font-size: 10px;
+            font-weight: bold;
+            min-width: 18px;
+            height: 18px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 5px;
         }
 
         .nav-button {
@@ -332,6 +467,253 @@ if (isset($_POST['action'])) {
             font-size: 20px;
             color: #333;
             cursor: pointer;
+        }
+
+        /* Notification Panel */
+        .notification-panel {
+            position: fixed;
+            top: 70px;
+            right: 20px;
+            width: 400px;
+            max-width: calc(100vw - 40px);
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+            z-index: 1500;
+            display: none;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .notification-panel.active {
+            display: block;
+        }
+
+        .notification-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: sticky;
+            top: 0;
+            background-color: white;
+            border-radius: 8px 8px 0 0;
+        }
+
+        .notification-header h3 {
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mark-all-read {
+            background: none;
+            border: none;
+            color: #0077b6;
+            font-size: 12px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .mark-all-read:hover {
+            background-color: #e6f2ff;
+        }
+
+        .notification-list {
+            padding: 10px 0;
+        }
+
+        .notification-item {
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            position: relative;
+        }
+
+        .notification-item:hover {
+            background-color: #f9f9f9;
+        }
+
+        .notification-item.unread {
+            background-color: #e6f2ff;
+        }
+
+        .notification-item.unread::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background-color: #0077b6;
+        }
+
+        .notification-type {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .notification-type.price_drop { background-color: #ffeaa7; color: #d63031; }
+        .notification-type.new_listing { background-color: #a8e6cf; color: #27ae60; }
+        .notification-type.viewing_request { background-color: #d4b8e0; color: #8e44ad; }
+        .notification-type.application_update { background-color: #fdcb6e; color: #e17055; }
+
+        .notification-message {
+            font-size: 14px;
+            margin-bottom: 8px;
+            padding-right: 20px;
+        }
+
+        .notification-time {
+            font-size: 11px;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .reply-indicator {
+            background-color: #f0f0f0;
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-top: 10px;
+            font-size: 12px;
+            border-left: 3px solid #0077b6;
+        }
+
+        .reply-indicator i {
+            margin-right: 6px;
+            color: #0077b6;
+        }
+
+        .notification-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .reply-btn {
+            background: none;
+            border: 1px solid #0077b6;
+            color: #0077b6;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .reply-btn:hover {
+            background-color: #0077b6;
+            color: white;
+        }
+
+        .view-property-btn {
+            background: none;
+            border: 1px solid #ddd;
+            color: #666;
+            padding: 4px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .view-property-btn:hover {
+            background-color: #f0f0f0;
+        }
+
+        .reply-form {
+            margin-top: 10px;
+            display: none;
+        }
+
+        .reply-form.active {
+            display: block;
+        }
+
+        .reply-form textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 12px;
+            resize: vertical;
+            min-height: 60px;
+            margin-bottom: 8px;
+        }
+
+        .reply-form-actions {
+            display: flex;
+            gap: 8px;
+            justify-content: flex-end;
+        }
+
+        .reply-form-actions button {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 11px;
+            cursor: pointer;
+        }
+
+        .reply-submit {
+            background-color: #0077b6;
+            color: white;
+            border: none;
+        }
+
+        .reply-cancel {
+            background-color: #f0f0f0;
+            color: #666;
+            border: 1px solid #ddd;
+        }
+
+        .replies-list {
+            margin-top: 10px;
+            padding-left: 15px;
+            border-left: 2px solid #eee;
+        }
+
+        .reply-item {
+            font-size: 12px;
+            margin-bottom: 8px;
+            padding: 6px;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+        }
+
+        .reply-user {
+            font-weight: 600;
+            color: #0077b6;
+            margin-right: 6px;
+        }
+
+        .reply-time {
+            font-size: 10px;
+            color: #999;
+            margin-left: 8px;
+        }
+
+        .no-notifications {
+            padding: 40px 20px;
+            text-align: center;
+            color: #999;
+        }
+
+        .no-notifications i {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ddd;
         }
 
         /* Search Container */
@@ -586,6 +968,7 @@ if (isset($_POST['action'])) {
             text-decoration: none;
             font-size: 12px;
             transition: color 0.2s;
+            cursor: pointer;
         }
 
         .footer-section ul li a:hover {
@@ -609,6 +992,7 @@ if (isset($_POST['action'])) {
             justify-content: center;
             text-decoration: none;
             transition: background-color 0.2s;
+            cursor: pointer;
         }
 
         .social-links a:hover {
@@ -695,11 +1079,30 @@ if (isset($_POST['action'])) {
             width: 100%;
             text-align: left;
             cursor: pointer;
+            position: relative;
         }
 
         .mobile-nav-link.active {
             color: #0077b6;
             font-weight: 600;
+        }
+
+        .mobile-notification-badge {
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #e74c3c;
+            color: white;
+            font-size: 11px;
+            font-weight: bold;
+            min-width: 20px;
+            height: 20px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0 6px;
         }
 
         /* Toast Notification */
@@ -773,6 +1176,13 @@ if (isset($_POST['action'])) {
                 grid-template-columns: 1fr;
                 gap: 30px;
             }
+            .notification-panel {
+                top: 60px;
+                right: 10px;
+                left: 10px;
+                width: auto;
+                max-width: none;
+            }
         }
     </style>
 </head>
@@ -794,8 +1204,13 @@ if (isset($_POST['action'])) {
                 <button class="nav-link" onclick="showSavedProperties()">
                     <i class="fas fa-heart"></i> <span>Saved <span id="saved-count" class="saved-count">(<?php echo count($_SESSION['saved_properties']); ?>)</span></span>
                 </button>
-                <button class="nav-link" onclick="showToast('Alerts feature coming soon!')">
+                <button class="nav-link" id="notificationBtn" onclick="toggleNotifications()">
                     <i class="fas fa-bell"></i> <span>Alerts</span>
+                    <span id="notificationBadge" class="notification-badge" style="<?php 
+                        $unread_count = 0;
+                        foreach ($_SESSION['notifications'] as $n) { if (!$n['read']) $unread_count++; }
+                        echo $unread_count > 0 ? 'display: flex;' : 'display: none;';
+                    ?>"><?php echo $unread_count; ?></span>
                 </button>
                 <button class="nav-link" onclick="showToast('Account feature coming soon!')">
                     <i class="fas fa-user"></i> <span>Account</span>
@@ -808,6 +1223,72 @@ if (isset($_POST['action'])) {
             </button>
         </div>
     </nav>
+
+    <!-- Notification Panel -->
+    <div class="notification-panel" id="notificationPanel">
+        <div class="notification-header">
+            <h3>
+                <i class="fas fa-bell"></i> Notifications
+            </h3>
+            <button class="mark-all-read" onclick="markAllRead()">Mark all as read</button>
+        </div>
+        <div class="notification-list" id="notificationList">
+            <?php if (empty($_SESSION['notifications'])): ?>
+                <div class="no-notifications">
+                    <i class="fas fa-bell-slash"></i>
+                    <p>No notifications yet</p>
+                </div>
+            <?php else: ?>
+                <?php foreach ($_SESSION['notifications'] as $notification): ?>
+                <div class="notification-item <?php echo $notification['read'] ? '' : 'unread'; ?>" 
+                     data-id="<?php echo $notification['id']; ?>"
+                     onclick="markAsRead(<?php echo $notification['id']; ?>)">
+                    <div class="notification-type <?php echo $notification['type']; ?>">
+                        <?php 
+                        echo ucwords(str_replace('_', ' ', $notification['type']));
+                        ?>
+                    </div>
+                    <div class="notification-message">
+                        <?php echo htmlspecialchars($notification['message']); ?>
+                    </div>
+                    
+                    <?php if (!empty($notification['replies'])): ?>
+                    <div class="replies-list">
+                        <?php foreach ($notification['replies'] as $reply): ?>
+                        <div class="reply-item">
+                            <span class="reply-user"><?php echo htmlspecialchars($reply['user']); ?>:</span>
+                            <?php echo htmlspecialchars($reply['message']); ?>
+                            <span class="reply-time"><?php echo $reply['time']; ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                    <?php endif; ?>
+                    
+                    <div class="notification-time">
+                        <i class="far fa-clock"></i> <?php echo $notification['time']; ?>
+                    </div>
+                    
+                    <div class="notification-actions">
+                        <button class="reply-btn" onclick="event.stopPropagation(); showReplyForm(<?php echo $notification['id']; ?>)">
+                            <i class="fas fa-reply"></i> Reply
+                        </button>
+                        <button class="view-property-btn" onclick="event.stopPropagation(); viewProperty(<?php echo $notification['property_id']; ?>)">
+                            <i class="fas fa-eye"></i> View Property
+                        </button>
+                    </div>
+                    
+                    <div class="reply-form" id="replyForm-<?php echo $notification['id']; ?>">
+                        <textarea placeholder="Type your reply..." id="replyText-<?php echo $notification['id']; ?>"></textarea>
+                        <div class="reply-form-actions">
+                            <button class="reply-cancel" onclick="event.stopPropagation(); hideReplyForm(<?php echo $notification['id']; ?>)">Cancel</button>
+                            <button class="reply-submit" onclick="event.stopPropagation(); submitReply(<?php echo $notification['id']; ?>)">Send Reply</button>
+                        </div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            <?php endif; ?>
+        </div>
+    </div>
 
     <!-- Search Bar -->
     <div class="search-container">
@@ -933,20 +1414,20 @@ if (isset($_POST['action'])) {
             <div class="footer-section">
                 <h4>Quick Links</h4>
                 <ul>
-                    <li><a href="#" onclick="showToast('Browse rentals feature coming soon!')">Browse Rentals</a></li>
-                    <li><a href="#" onclick="showToast('How it works feature coming soon!')">How it Works</a></li>
-                    <li><a href="#" onclick="showToast('For landlords feature coming soon!')">For Landlords</a></li>
-                    <li><a href="#" onclick="showToast('Safety tips feature coming soon!')">Safety Tips</a></li>
+                    <li><a onclick="showToast('Browse rentals feature coming soon!')">Browse Rentals</a></li>
+                    <li><a onclick="showToast('How it works feature coming soon!')">How it Works</a></li>
+                    <li><a onclick="showToast('For landlords feature coming soon!')">For Landlords</a></li>
+                    <li><a onclick="showToast('Safety tips feature coming soon!')">Safety Tips</a></li>
                 </ul>
             </div>
             
             <div class="footer-section">
                 <h4>Support</h4>
                 <ul>
-                    <li><a href="#" onclick="showToast('Help center feature coming soon!')">Help Center</a></li>
-                    <li><a href="#" onclick="showToast('Contact us feature coming soon!')">Contact Us</a></li>
-                    <li><a href="#" onclick="showToast('Privacy policy feature coming soon!')">Privacy Policy</a></li>
-                    <li><a href="#" onclick="showToast('Terms of service feature coming soon!')">Terms of Service</a></li>
+                    <li><a onclick="showToast('Help center feature coming soon!')">Help Center</a></li>
+                    <li><a onclick="showToast('Contact us feature coming soon!')">Contact Us</a></li>
+                    <li><a onclick="showToast('Privacy policy feature coming soon!')">Privacy Policy</a></li>
+                    <li><a onclick="showToast('Terms of service feature coming soon!')">Terms of Service</a></li>
                 </ul>
             </div>
             
@@ -971,7 +1452,14 @@ if (isset($_POST['action'])) {
             <button class="close-menu" onclick="toggleMobileMenu()"><i class="fas fa-times"></i></button>
             <button class="mobile-nav-link active" onclick="window.location.href='index.php'">Browse</button>
             <button class="mobile-nav-link" onclick="showSavedProperties()">Saved Properties <span id="mobile-saved-count">(<?php echo count($_SESSION['saved_properties']); ?>)</span></button>
-            <button class="mobile-nav-link" onclick="showToast('Alerts feature coming soon!')">Alerts</button>
+            <button class="mobile-nav-link" onclick="toggleNotifications()">
+                Alerts
+                <span id="mobileNotificationBadge" class="mobile-notification-badge" style="<?php 
+                    $unread_count = 0;
+                    foreach ($_SESSION['notifications'] as $n) { if (!$n['read']) $unread_count++; }
+                    echo $unread_count > 0 ? 'display: inline-flex;' : 'display: none;';
+                ?>"><?php echo $unread_count; ?></span>
+            </button>
             <button class="mobile-nav-link" onclick="showToast('Account feature coming soon!')">My Account</button>
             <button class="mobile-nav-link" onclick="showToast('List property feature coming soon!')">List Property</button>
             <button class="mobile-nav-link" onclick="showToast('Help center feature coming soon!')">Help Center</button>
@@ -1066,8 +1554,6 @@ if (isset($_POST['action'])) {
                 showToast('No saved properties yet');
                 return;
             }
-            
-            // In a real app, you'd redirect to a saved properties page
             showToast('Viewing saved properties (feature coming soon)');
         }
 
@@ -1122,6 +1608,224 @@ if (isset($_POST['action'])) {
             return re.test(email);
         }
 
+        // Notification functions
+        function toggleNotifications() {
+            const panel = document.getElementById('notificationPanel');
+            panel.classList.toggle('active');
+            
+            // Close when clicking outside
+            if (panel.classList.contains('active')) {
+                setTimeout(() => {
+                    document.addEventListener('click', closeNotificationsOutside);
+                }, 100);
+            }
+        }
+
+        function closeNotificationsOutside(e) {
+            const panel = document.getElementById('notificationPanel');
+            const btn = document.getElementById('notificationBtn');
+            
+            if (!panel.contains(e.target) && !btn.contains(e.target)) {
+                panel.classList.remove('active');
+                document.removeEventListener('click', closeNotificationsOutside);
+            }
+        }
+
+        function markAsRead(notificationId) {
+            fetch('index.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=mark_notification_read&notification_id=' + notificationId
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    const item = document.querySelector(`.notification-item[data-id="${notificationId}"]`);
+                    if (item) {
+                        item.classList.remove('unread');
+                    }
+                    updateNotificationBadge();
+                }
+            });
+        }
+
+        function markAllRead() {
+            fetch('index.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=mark_all_read'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    document.querySelectorAll('.notification-item').forEach(item => {
+                        item.classList.remove('unread');
+                    });
+                    updateNotificationBadge();
+                    showToast('All notifications marked as read');
+                }
+            });
+        }
+
+        function showReplyForm(notificationId) {
+            event.stopPropagation();
+            // Hide all other reply forms
+            document.querySelectorAll('.reply-form').forEach(form => {
+                form.classList.remove('active');
+            });
+            // Show this reply form
+            document.getElementById(`replyForm-${notificationId}`).classList.add('active');
+        }
+
+        function hideReplyForm(notificationId) {
+            event.stopPropagation();
+            document.getElementById(`replyForm-${notificationId}`).classList.remove('active');
+        }
+
+        function submitReply(notificationId) {
+            event.stopPropagation();
+            const replyText = document.getElementById(`replyText-${notificationId}`).value.trim();
+            
+            if (!replyText) {
+                showToast('Please enter a reply', true);
+                return;
+            }
+            
+            fetch('index.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=add_reply&notification_id=' + notificationId + '&message=' + encodeURIComponent(replyText)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showToast('Reply sent');
+                    hideReplyForm(notificationId);
+                    // Refresh notifications after a short delay
+                    setTimeout(() => {
+                        refreshNotifications();
+                    }, 500);
+                } else {
+                    showToast(data.message, true);
+                }
+            });
+        }
+
+        function refreshNotifications() {
+            fetch('index.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                },
+                body: 'action=get_notifications'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    updateNotificationList(data.notifications);
+                    updateNotificationBadge(data.unread_count);
+                }
+            });
+        }
+
+        function updateNotificationList(notifications) {
+            const list = document.getElementById('notificationList');
+            if (!list) return;
+            
+            if (notifications.length === 0) {
+                list.innerHTML = '<div class="no-notifications"><i class="fas fa-bell-slash"></i><p>No notifications yet</p></div>';
+                return;
+            }
+            
+            let html = '';
+            notifications.forEach(notification => {
+                html += `
+                <div class="notification-item ${notification.read ? '' : 'unread'}" 
+                     data-id="${notification.id}"
+                     onclick="markAsRead(${notification.id})">
+                    <div class="notification-type ${notification.type}">
+                        ${notification.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                    </div>
+                    <div class="notification-message">
+                        ${escapeHtml(notification.message)}
+                    </div>`;
+                
+                if (notification.replies && notification.replies.length > 0) {
+                    html += '<div class="replies-list">';
+                    notification.replies.forEach(reply => {
+                        html += `
+                        <div class="reply-item">
+                            <span class="reply-user">${escapeHtml(reply.user)}:</span>
+                            ${escapeHtml(reply.message)}
+                            <span class="reply-time">${reply.time}</span>
+                        </div>`;
+                    });
+                    html += '</div>';
+                }
+                
+                html += `
+                    <div class="notification-time">
+                        <i class="far fa-clock"></i> ${notification.time}
+                    </div>
+                    
+                    <div class="notification-actions">
+                        <button class="reply-btn" onclick="event.stopPropagation(); showReplyForm(${notification.id})">
+                            <i class="fas fa-reply"></i> Reply
+                        </button>
+                        <button class="view-property-btn" onclick="event.stopPropagation(); viewProperty(${notification.property_id})">
+                            <i class="fas fa-eye"></i> View Property
+                        </button>
+                    </div>
+                    
+                    <div class="reply-form" id="replyForm-${notification.id}">
+                        <textarea placeholder="Type your reply..." id="replyText-${notification.id}"></textarea>
+                        <div class="reply-form-actions">
+                            <button class="reply-cancel" onclick="event.stopPropagation(); hideReplyForm(${notification.id})">Cancel</button>
+                            <button class="reply-submit" onclick="event.stopPropagation(); submitReply(${notification.id})">Send Reply</button>
+                        </div>
+                    </div>
+                </div>`;
+            });
+            
+            list.innerHTML = html;
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updateNotificationBadge(unreadCount = null) {
+            if (unreadCount === null) {
+                // Calculate from DOM
+                unreadCount = document.querySelectorAll('.notification-item.unread').length;
+            }
+            
+            const badge = document.getElementById('notificationBadge');
+            const mobileBadge = document.getElementById('mobileNotificationBadge');
+            
+            if (unreadCount > 0) {
+                if (badge) {
+                    badge.style.display = 'flex';
+                    badge.textContent = unreadCount;
+                }
+                if (mobileBadge) {
+                    mobileBadge.style.display = 'inline-flex';
+                    mobileBadge.textContent = unreadCount;
+                }
+            } else {
+                if (badge) badge.style.display = 'none';
+                if (mobileBadge) mobileBadge.style.display = 'none';
+            }
+        }
+
         // Handle search form submission
         document.getElementById('searchForm').addEventListener('submit', function(e) {
             const location = this.location.value.trim();
@@ -1150,6 +1854,17 @@ if (isset($_POST['action'])) {
                     });
                 }
             });
+            
+            // Close notification panel when clicking outside
+            document.addEventListener('click', function(e) {
+                const panel = document.getElementById('notificationPanel');
+                const btn = document.getElementById('notificationBtn');
+                
+                if (panel && btn && panel.classList.contains('active') && 
+                    !panel.contains(e.target) && !btn.contains(e.target)) {
+                    panel.classList.remove('active');
+                }
+            });
         });
 
         // Keyboard shortcuts
@@ -1160,9 +1875,16 @@ if (isset($_POST['action'])) {
                 document.querySelector('.search-input input').focus();
             }
             
-            // Press 'Escape' to close mobile menu
+            // Press 'Escape' to close mobile menu or notifications
             if (e.key === 'Escape') {
                 document.getElementById('mobileMenu').classList.remove('active');
+                document.getElementById('notificationPanel').classList.remove('active');
+            }
+            
+            // Press 'N' to toggle notifications
+            if (e.key === 'n' && !e.ctrlKey && !e.metaKey) {
+                e.preventDefault();
+                toggleNotifications();
             }
         });
     </script>
