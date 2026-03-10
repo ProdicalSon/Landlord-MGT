@@ -745,7 +745,7 @@ $firstName = explode(' ', $landlordName)[0];
                 <li class="dropdown">
                     <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="listings.php" data-content="edit-listings"><i class="fas fa-edit"></i> Listings</a>
+                        <a href="propertylistings.php" data-content="edit-listings"><i class="fas fa-edit"></i> Listings</a>
                         <a href="location.php" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
@@ -766,7 +766,7 @@ $firstName = explode(' ', $landlordName)[0];
                 <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge"><?php echo $pendingPayments; ?></span></a></li>
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-                <li><a href="reports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="landlordreports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="profile.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
                 <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
@@ -825,7 +825,7 @@ $firstName = explode(' ', $landlordName)[0];
                                 <div class="stat-label">Maintenance</div>
                             </div>
                         </div>
-                        <button class="action-btn"><a href="listings.php">View Details</a></button>
+                        <button class="action-btn"><a href="propertylistings.php">View Details</a></button>
                     </div>
 
                     <div class="card">
@@ -1150,139 +1150,447 @@ $firstName = explode(' ', $landlordName)[0];
     </footer>
 
     <script>
-        // Check for any global AJAX setup
-console.log('Checking for jQuery AJAX setup:', typeof $ !== 'undefined' ? $.ajaxSettings : 'No jQuery');
+    // Check for any global AJAX setup
+    console.log('Checking for jQuery AJAX setup:', typeof $ !== 'undefined' ? $.ajaxSettings : 'No jQuery');
 
-// Monitor all fetch requests
-const originalFetch = window.fetch;
-window.fetch = function() {
-    console.log('Fetch called with:', arguments);
-    return originalFetch.apply(this, arguments);
-};
+    // Monitor all fetch requests
+    const originalFetch = window.fetch;
+    window.fetch = function() {
+        console.log('Fetch called with:', arguments);
+        return originalFetch.apply(this, arguments);
+    };
 
-// Monitor all XHR requests
-const originalXHROpen = XMLHttpRequest.prototype.open;
-XMLHttpRequest.prototype.open = function() {
-    console.log('XHR open called with:', arguments);
-    return originalXHROpen.apply(this, arguments);
-};
-     // Property form submission
+    // Monitor all XHR requests
+    const originalXHROpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function() {
+        console.log('XHR open called with:', arguments);
+        return originalXHROpen.apply(this, arguments);
+    };
 
-const propertyForm = document.getElementById('propertyForm');
-if (propertyForm) {
-    // Remove any existing event listeners (by cloning and replacing)
-    const newForm = propertyForm.cloneNode(true);
-    propertyForm.parentNode.replaceChild(newForm, propertyForm);
+    // Update greeting based on time of day
+    function updateGreeting() {
+        const now = new Date();
+        const hour = now.getHours();
+        const greetingElement = document.getElementById('greeting');
+        const firstName = "<?php echo htmlspecialchars($firstName); ?>";
+        
+        if (hour >= 5 && hour < 12) {
+            greetingElement.textContent = 'Good Morning, ' + firstName + '!';
+        } else if (hour >= 12 && hour < 18) {
+            greetingElement.textContent = 'Good Afternoon, ' + firstName + '!';
+        } else {
+            greetingElement.textContent = 'Good Evening, ' + firstName + '!';
+        }
+    }
+
+    // Occupancy management
+    let occupiedRooms = <?php echo $stats['occupied']; ?>;
+    let totalRooms = <?php echo $stats['total'] ?: 1; ?>;
     
-    // Add new event listener to the cloned form
-    newForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        e.stopPropagation(); // Stop event propagation
+    function updateOccupancy() {
+        const percentage = Math.round((occupiedRooms / totalRooms) * 100);
+        const occupancyElement = document.getElementById('occupancyPercentage');
+        const progressElement = document.getElementById('progress');
+        if (occupancyElement) occupancyElement.textContent = `${percentage}%`;
+        if (progressElement) progressElement.style.width = `${percentage}%`;
+    }
+    
+    function occupyRoom() {
+        if (occupiedRooms < totalRooms) {
+            occupiedRooms++;
+            updateOccupancy();
+            showNotification('Room marked as occupied', 'success');
+        } else {
+            showNotification('All rooms are already occupied!', 'warning');
+        }
+    }
+    
+    function vacateRoom() {
+        if (occupiedRooms > 0) {
+            occupiedRooms--;
+            updateOccupancy();
+            showNotification('Room marked as vacant', 'info');
+        } else {
+            showNotification('No rooms are currently occupied!', 'warning');
+        }
+    }
+
+    // =============================================
+    // FIXED SIDEBAR NAVIGATION - This is the key part
+    // =============================================
+    document.addEventListener('DOMContentLoaded', function() {
+        updateGreeting();
+        updateOccupancy();
         
-        console.log('=== FORM SUBMISSION STARTED ===');
-        console.log('Form method attribute:', this.method);
-        console.log('Form action attribute:', this.action);
+        // Handle sidebar navigation properly
+        const sidebarLinks = document.querySelectorAll('.sidebar-menu a');
         
-        // Collect form data
-        const formData = new FormData(this);
+        sidebarLinks.forEach(link => {
+            link.addEventListener('click', function(e) {
+                const href = this.getAttribute('href');
+                
+                // Case 1: Dropdown toggles (links with href="#")
+                if (href === '#') {
+                    e.preventDefault();
+                    // Toggle dropdown
+                    const dropdown = this.closest('.dropdown');
+                    if (dropdown) {
+                        dropdown.classList.toggle('active');
+                    }
+                    return;
+                }
+                
+                // Case 2: Links to external pages (like propertylistings.php, profile.php, etc.)
+                // Don't prevent default - let browser navigate
+                
+                // Update active class
+                sidebarLinks.forEach(l => l.classList.remove('active'));
+                this.classList.add('active');
+                
+                // For index.php internal content (dashboard), handle specially
+                if (href === 'index.php') {
+                    e.preventDefault();
+                    // Show dashboard content
+                    document.querySelectorAll('.content').forEach(section => {
+                        section.classList.add('hidden');
+                    });
+                    const dashboard = document.getElementById('dashboard-content');
+                    if (dashboard) {
+                        dashboard.classList.remove('hidden');
+                    }
+                }
+                
+                console.log('Navigating to:', href);
+            });
+        });
         
-        // Log all form data
-        console.log('Form data being sent:');
-        for (let pair of formData.entries()) {
-            console.log(pair[0] + ': ' + pair[1]);
+        // Set active class based on current page
+        const currentPage = window.location.pathname.split('/').pop();
+        sidebarLinks.forEach(link => {
+            const href = link.getAttribute('href');
+            if (href === currentPage || (currentPage === 'index.php' && href === 'index.php')) {
+                link.classList.add('active');
+            }
+        });
+        
+        // Initialize charts if they exist
+        if (document.getElementById('viewsInquiriesChart') && typeof initializeCharts === 'function') {
+            initializeCharts();
         }
         
-        // Disable submit button
-        const submitBtn = this.querySelector('button[type="submit"]');
-        const originalText = submitBtn.innerHTML;
-        submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
-        submitBtn.disabled = true;
-        
-        // Create and send request with explicit POST
-        const xhr = new XMLHttpRequest();
-        xhr.open('POST', 'add_property_handler.php', true);
-        xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
-        
-        xhr.onload = function() {
-            console.log('Response status:', xhr.status);
-            console.log('Response text:', xhr.responseText);
-            
-            try {
-                const data = JSON.parse(xhr.responseText);
-                console.log('Parsed data:', data);
-                
-                if (data.success) {
-                    showNotification('Property added successfully!', 'success');
-                    newForm.reset();
-                    
-                    // Clear image previews if they exist
-                    const imagePreview = document.getElementById('image-preview');
-                    if (imagePreview) imagePreview.innerHTML = '';
-                    
-                    // Switch back to dashboard
-                    document.querySelectorAll('.content').forEach(s => s.classList.add('hidden'));
-                    const dashboard = document.getElementById('dashboard-content');
-                    if (dashboard) dashboard.classList.remove('hidden');
-                } else {
-                    showNotification(data.message || 'Error adding property', 'error');
+        // Time range change handler
+        const timeRange = document.getElementById('timeRange');
+        if (timeRange) {
+            timeRange.addEventListener('change', function() {
+                if (typeof updateCharts === 'function') {
+                    updateCharts(this.value);
                 }
-            } catch (e) {
-                console.error('Parse error:', e);
-                showNotification('Server error: Invalid response', 'error');
-            }
-            
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        };
-        
-        xhr.onerror = function() {
-            console.error('Network error occurred');
-            showNotification('Network error occurred', 'error');
-            submitBtn.innerHTML = originalText;
-            submitBtn.disabled = false;
-        };
-        
-        xhr.send(formData);
-        console.log('Request sent via XMLHttpRequest with POST method');
+            });
+        }
     });
-    
-    console.log('Form event listener reattached successfully');
-}
-// Show upload progress
-const formData = new FormData(this);
-let uploadProgress = 0;
 
-// You can add a progress indicator
-const files = document.getElementById('photos').files;
-if (files.length > 0) {
-    console.log(`Uploading ${files.length} images...`);
-}
-        // Add animation styles
-        const style = document.createElement('style');
-        style.textContent = `
-            @keyframes slideIn {
-                from {
-                    transform: translateX(100%);
-                    opacity: 0;
-                }
-                to {
-                    transform: translateX(0);
-                    opacity: 1;
-                }
+    // =============================================
+    // PROPERTY FORM SUBMISSION
+    // =============================================
+    const propertyForm = document.getElementById('propertyForm');
+    if (propertyForm) {
+        // Remove any existing event listeners (by cloning and replacing)
+        const newForm = propertyForm.cloneNode(true);
+        propertyForm.parentNode.replaceChild(newForm, propertyForm);
+        
+        // Add new event listener to the cloned form
+        newForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            e.stopPropagation();
+            
+            console.log('=== FORM SUBMISSION STARTED ===');
+            console.log('Form method attribute:', this.method);
+            console.log('Form action attribute:', this.action);
+            
+            // Collect form data
+            const formData = new FormData(this);
+            
+            // Log all form data
+            console.log('Form data being sent:');
+            for (let pair of formData.entries()) {
+                console.log(pair[0] + ': ' + pair[1]);
             }
             
-            @keyframes slideOut {
-                from {
-                    transform: translateX(0);
-                    opacity: 1;
+            // Check for file uploads
+            const files = document.getElementById('photos')?.files;
+            if (files && files.length > 0) {
+                console.log(`Uploading ${files.length} images...`);
+            }
+            
+            // Disable submit button
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Submitting...';
+            submitBtn.disabled = true;
+            
+            // Create and send request with explicit POST
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', 'add_property_handler.php', true);
+            xhr.setRequestHeader('X-Requested-With', 'XMLHttpRequest');
+            
+            xhr.onload = function() {
+                console.log('Response status:', xhr.status);
+                console.log('Response text:', xhr.responseText);
+                
+                try {
+                    const data = JSON.parse(xhr.responseText);
+                    console.log('Parsed data:', data);
+                    
+                    if (data.success) {
+                        showNotification('Property added successfully!', 'success');
+                        newForm.reset();
+                        
+                        // Clear image previews if they exist
+                        const imagePreview = document.getElementById('image-preview');
+                        if (imagePreview) imagePreview.innerHTML = '';
+                        
+                        // Switch back to dashboard
+                        document.querySelectorAll('.content').forEach(s => s.classList.add('hidden'));
+                        const dashboard = document.getElementById('dashboard-content');
+                        if (dashboard) dashboard.classList.remove('hidden');
+                    } else {
+                        showNotification(data.message || 'Error adding property', 'error');
+                    }
+                } catch (e) {
+                    console.error('Parse error:', e);
+                    showNotification('Server error: Invalid response', 'error');
                 }
-                to {
-                    transform: translateX(100%);
-                    opacity: 0;
+                
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            };
+            
+            xhr.onerror = function() {
+                console.error('Network error occurred');
+                showNotification('Network error occurred', 'error');
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            };
+            
+            xhr.send(formData);
+            console.log('Request sent via XMLHttpRequest with POST method');
+        });
+        
+        console.log('Form event listener reattached successfully');
+    }
+
+    // =============================================
+    // NOTIFICATION FUNCTION
+    // =============================================
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        
+        let icon = 'info-circle';
+        if (type === 'success') icon = 'check-circle';
+        if (type === 'error') icon = 'exclamation-circle';
+        if (type === 'warning') icon = 'exclamation-triangle';
+        
+        notification.innerHTML = `
+            <i class="fas fa-${icon}"></i>
+            <span>${message}</span>
+        `;
+        
+        notification.style.position = 'fixed';
+        notification.style.top = '20px';
+        notification.style.right = '20px';
+        notification.style.padding = '15px 20px';
+        notification.style.borderRadius = '8px';
+        notification.style.backgroundColor = type === 'success' ? '#00A699' : 
+                                          type === 'error' ? '#FF5A5F' : 
+                                          type === 'warning' ? '#FFB400' : '#4285F4';
+        notification.style.color = 'white';
+        notification.style.boxShadow = '0 4px 12px rgba(0,0,0,0.15)';
+        notification.style.zIndex = '9999';
+        notification.style.display = 'flex';
+        notification.style.alignItems = 'center';
+        notification.style.gap = '10px';
+        notification.style.animation = 'slideIn 0.3s ease';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease';
+            setTimeout(() => {
+                if (document.body.contains(notification)) {
+                    document.body.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+
+    // =============================================
+    // CHART FUNCTIONS (if needed)
+    // =============================================
+    let viewsInquiriesChart, earningsChart;
+
+    function initializeCharts() {
+        const ctx1 = document.getElementById('viewsInquiriesChart')?.getContext('2d');
+        const ctx2 = document.getElementById('earningsChart')?.getContext('2d');
+        
+        if (!ctx1 || !ctx2) return;
+        
+        // Generate data for the last 30 days by default
+        const days = generateDays(30);
+        const viewsData = generateRandomData(30, 50, 200);
+        const inquiriesData = generateRandomData(30, 5, 40);
+        const earningsData = generateRandomData(30, 5000, 25000);
+        
+        // Create Views vs Inquiries chart
+        viewsInquiriesChart = new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: days,
+                datasets: [
+                    {
+                        label: 'Views',
+                        data: viewsData,
+                        borderColor: '#4285F4',
+                        backgroundColor: 'rgba(66, 133, 244, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    },
+                    {
+                        label: 'Inquiries',
+                        data: inquiriesData,
+                        borderColor: '#FF385C',
+                        backgroundColor: 'rgba(255, 56, 92, 0.1)',
+                        tension: 0.3,
+                        fill: true
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
                 }
             }
-        `;
-        document.head.appendChild(style);
-    </script>
+        });
+        
+        // Create Earnings chart
+        earningsChart = new Chart(ctx2, {
+            type: 'bar',
+            data: {
+                labels: days,
+                datasets: [{
+                    label: 'Earnings (KES)',
+                    data: earningsData,
+                    backgroundColor: 'rgba(0, 166, 153, 0.7)',
+                    borderColor: 'rgba(0, 166, 153, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            drawBorder: false
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    function updateCharts(daysCount) {
+        if (!viewsInquiriesChart || !earningsChart) return;
+        
+        const days = generateDays(daysCount);
+        const viewsData = generateRandomData(daysCount, 50, 200);
+        const inquiriesData = generateRandomData(daysCount, 5, 40);
+        const earningsData = generateRandomData(daysCount, 5000, 25000);
+        
+        viewsInquiriesChart.data.labels = days;
+        viewsInquiriesChart.data.datasets[0].data = viewsData;
+        viewsInquiriesChart.data.datasets[1].data = inquiriesData;
+        viewsInquiriesChart.update();
+        
+        earningsChart.data.labels = days;
+        earningsChart.data.datasets[0].data = earningsData;
+        earningsChart.update();
+    }
+
+    function generateDays(count) {
+        const days = [];
+        for (let i = count - 1; i >= 0; i--) {
+            const date = new Date();
+            date.setDate(date.getDate() - i);
+            days.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }));
+        }
+        return days;
+    }
+
+    function generateRandomData(count, min, max) {
+        const data = [];
+        for (let i = 0; i < count; i++) {
+            data.push(Math.floor(Math.random() * (max - min + 1)) + min);
+        }
+        return data;
+    }
+
+    // =============================================
+    // ANIMATION STYLES
+    // =============================================
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+        
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+    `;
+    document.head.appendChild(style);
+</script>
 </body>
 </html>

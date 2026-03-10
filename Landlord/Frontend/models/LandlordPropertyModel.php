@@ -548,5 +548,35 @@ class LandlordPropertyModel {
             error_log("Create property_images table error: " . $e->getMessage());
         }
     }
+    /**
+     * Update property status
+     * @param int $property_id
+     * @param string $status
+     * @return array
+     */
+    public function updatePropertyStatus($property_id, $status) {
+        if (!$this->conn) {
+            return ['success' => false, 'message' => 'Database connection failed'];
+        }
+
+        try {
+            $query = "UPDATE " . $this->table_name . " 
+                      SET status = :status, updated_at = NOW() 
+                      WHERE id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':status', $status);
+            $stmt->bindParam(':id', $property_id);
+            
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Status updated successfully'];
+            } else {
+                return ['success' => false, 'message' => 'Failed to update status'];
+            }
+        } catch (PDOException $e) {
+            error_log("Update status error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error'];
+        }
+    }
 }
 ?>

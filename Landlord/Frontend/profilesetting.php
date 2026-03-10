@@ -688,7 +688,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <a href="#"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
                         <a href="addproperty.php"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="listings.php"><i class="fas fa-edit"></i> Listings</a>
+                        <a href="propertypropertylistings.php"><i class="fas fa-edit"></i> Listings</a>
                         <a href="location.php"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
@@ -969,7 +969,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <?php if (count($recentProperties) > 5): ?>
                                     <div style="text-align: center; margin-top: 20px;">
-                                        <a href="listings.php" class="btn btn-secondary">View All Properties</a>
+                                        <a href="propertypropertylistings.php" class="btn btn-secondary">View All Properties</a>
                                     </div>
                                 <?php endif; ?>
                             <?php endif; ?>
