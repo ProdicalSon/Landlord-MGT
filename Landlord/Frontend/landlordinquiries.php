@@ -791,7 +791,7 @@
                 <li class="dropdown">
                     <a href="#" class="active" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge">5</span></a>
                     <div class="dropdown-content">
-                        <a href="inquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="landlordinquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
                         <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>

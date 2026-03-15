@@ -759,7 +759,7 @@ $firstName = explode(' ', $landlordName)[0];
                 <li class="dropdown">
                     <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge"><?php echo $unreadInquiries; ?></span></a>
                     <div class="dropdown-content">
-                        <a href="inquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="landlordinquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
                         <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>
@@ -790,8 +790,8 @@ $firstName = explode(' ', $landlordName)[0];
                         
                         <!-- Dropdown Menu -->
                         <div class="dropdown-menu">
-                            <a href="profilesettings.php"><i class="fas fa-user"></i> My Profile</a>
-                            <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
+                            <a href="profilesetting.php"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="profilesetting.php"><i class="fas fa-cog"></i> Settings</a>
                             <hr>
                             <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>
@@ -835,7 +835,7 @@ $firstName = explode(' ', $landlordName)[0];
                             <button class="action-btn">Respond to All</button>
                             <button class="action-btn">Sort by Priority</button>
                         </div>
-                        <button class="action-btn"><a href="inquiries.php">Check Now</a></button> 
+                        <button class="action-btn"><a href="landlordinquiries.php">Check Now</a></button> 
                     </div>
 
                     <div class="card">

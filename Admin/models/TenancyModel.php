@@ -524,5 +524,21 @@ class TenancyModel {
             return [];
         }
     }
+    /**
+ * Count terminated tenancies
+ */
+public function countTerminatedTenancies() {
+    if (!$this->conn) return 0;
+    
+    try {
+        $query = "SELECT COUNT(*) as count FROM " . $this->table_name . " WHERE status = 'terminated'";
+        $stmt = $this->conn->query($query);
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['count'];
+    } catch (PDOException $e) {
+        error_log("Count terminated tenancies error: " . $e->getMessage());
+        return 0;
+    }
 }
-?>
+
+}
