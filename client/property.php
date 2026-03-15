@@ -9,21 +9,40 @@ require_once __DIR__ . '/models/SavedPropertyModel.php';
 require_once __DIR__ . '/models/NotificationModel.php';
 require_once __DIR__ . '/models/UserModel.php';
 
+// require_once __DIR__ . '/models/TenancyModel.php'; // Comment out for now
+
 // Initialize models
 $propertyModel = new PropertyModel();
 $savedPropertyModel = new SavedPropertyModel();
 $notificationModel = new NotificationModel();
 $userModel = new UserModel();
+// $tenancyModel = new TenancyModel(); // Comment out for now
 
 // Get property ID from URL
 $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Get current user ID from session (if logged in)
-$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
-$isLoggedIn = $user_id > 0;
+// DEBUG: Check if ID is received
+error_log("Property ID from URL: " . $property_id);
+echo "<!-- DEBUG: Property ID = " . $property_id . " -->";
 
-// Fetch property from database
-$property = $propertyModel->getPropertyById($property_id);
+if ($property_id === 0) {
+    error_log("No property ID provided - redirecting to index");
+    header('Location: index.php');
+    exit;
+}
+
+// Fetch property from database with payment details
+$property = $propertyModel->getPropertyWithPaymentDetails($property_id);
+
+// DEBUG: Check if property found
+error_log("Property found: " . ($property ? 'Yes' : 'No'));
+if ($property) {
+    error_log("Property name: " . $property['property_name']);
+    echo "<!-- DEBUG: Property found: " . $property['property_name'] . " -->";
+} else {
+    error_log("Property not found for ID: " . $property_id);
+    echo "<!-- DEBUG: Property NOT found for ID: " . $property_id . " -->";
+}
 
 // If property not found, redirect to index
 if (!$property) {
@@ -31,6 +50,7 @@ if (!$property) {
     exit;
 }
 
+// Rest of your code...
 // Check if property is saved by user
 $isSaved = $isLoggedIn ? $savedPropertyModel->isSaved($user_id, $property_id) : false;
 
@@ -39,6 +59,15 @@ $savedCount = $isLoggedIn ? $savedPropertyModel->countSaved($user_id) : 0;
 
 // Get unread notifications count
 $unreadCount = $isLoggedIn ? $notificationModel->getUnreadCount($user_id) : 0;
+
+// Get active tenancy if user is logged in as student
+$activeTenancy = null;
+if ($isLoggedIn && $user_type == 'student') {
+    $activeTenancy = $tenancyModel->getActiveTenancy($user_id, $property_id);
+}
+
+// Get landlord details
+$landlord = $userModel->getUserById($property['landlord_id']);
 
 // Handle rent request submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
@@ -119,10 +148,19 @@ function getPropertyFeatures($property) {
         $features[] = number_format($property['sqft']) . ' sq ft';
     }
     
-    // Default features
-    $defaultFeatures = ['Utilities included', 'High-speed internet', 'Laundry in building', 'Pet-friendly', 'Security system'];
+    // Decode amenities if they exist
+    if (!empty($property['amenities'])) {
+        $amenities = json_decode($property['amenities'], true);
+        if (is_array($amenities)) {
+            $features = array_merge($features, $amenities);
+        }
+    } else {
+        // Default features
+        $defaultFeatures = ['Water Supply', '24/7 Electricity', 'Security', 'Parking'];
+        $features = array_merge($features, $defaultFeatures);
+    }
     
-    return array_merge($features, $defaultFeatures);
+    return array_slice($features, 0, 8); // Limit to 8 features
 }
 
 // Format address for display
@@ -151,21 +189,33 @@ function getPropertyImages($property) {
             'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&h=600&fit=crop',
             'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop',
             'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=600&fit=crop'
+        ],
+        'Bed Sitter' => [
+            'https://images.unsplash.com/photo-1460317442991-0ec209658118?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop'
+        ],
+        'Single Room' => [
+            'https://images.unsplash.com/photo-1556912172-45b7abe8b7e1?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1460317442991-0ec209658118?w=800&h=600&fit=crop',
+            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop'
         ]
     ];
     
-    $type = strtolower($property['property_type'] ?? 'apartment');
+    $type = $property['property_type'] ?? 'apartment';
     return $images[$type] ?? $images['apartment'];
 }
 
 // Get landlord info
-function getLandlordInfo($property) {
+function getLandlordInfo($landlord, $property) {
     return [
-        'name' => $property['landlord_id'] ?? 'Property Manager',
-        'phone' => '(555) 123-4567',
-        'email' => 'landlord@example.com',
+        'name' => ($landlord['first_name'] ?? '') . ' ' . ($landlord['last_name'] ?? '') ?: 'Property Manager',
+        'phone' => $landlord['phone_number'] ?? '(555) 123-4567',
+        'email' => $landlord['email'] ?? 'landlord@example.com',
+        'mpesa' => $property['mpesa_number'] ?? $landlord['mpesa_number'] ?? 'Not provided',
         'rating' => 4.8,
-        'properties' => 12
+        'properties' => 12,
+        'joined' => isset($landlord['created_at']) ? date('Y', strtotime($landlord['created_at'])) : '2023'
     ];
 }
 ?>
@@ -181,6 +231,7 @@ function getLandlordInfo($property) {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
 
         body {
@@ -286,6 +337,7 @@ function getLandlordInfo($property) {
             font-weight: 600;
             cursor: pointer;
             transition: background-color 0.2s;
+            text-decoration: none;
         }
 
         .nav-button:hover {
@@ -369,14 +421,19 @@ function getLandlordInfo($property) {
             margin-top: 10px;
         }
 
-        .status-occupied {
-            background-color: #ffeaa7;
-            color: #d63031;
+        .status-available {
+            background-color: #d4edda;
+            color: #155724;
         }
 
-        .status-available {
-            background-color: #a8e6cf;
-            color: #27ae60;
+        .status-occupied {
+            background-color: #fff3cd;
+            color: #856404;
+        }
+
+        .status-maintenance {
+            background-color: #f8d7da;
+            color: #721c24;
         }
 
         /* Property Content */
@@ -480,7 +537,8 @@ function getLandlordInfo($property) {
         .description-section,
         .features-section,
         .landlord-section,
-        .rent-request-section {
+        .rent-request-section,
+        .payment-section {
             background: white;
             padding: 25px;
             border-radius: 12px;
@@ -490,7 +548,8 @@ function getLandlordInfo($property) {
         .description-section h3,
         .features-section h3,
         .landlord-section h3,
-        .rent-request-section h3 {
+        .rent-request-section h3,
+        .payment-section h3 {
             margin-bottom: 15px;
             color: #333;
             font-size: 20px;
@@ -526,7 +585,6 @@ function getLandlordInfo($property) {
         /* Landlord Info */
         .landlord-info {
             display: flex;
-            align-items: center;
             gap: 20px;
         }
 
@@ -535,36 +593,44 @@ function getLandlordInfo($property) {
             color: #0077b6;
         }
 
+        .landlord-details {
+            flex: 1;
+        }
+
         .landlord-details h4 {
             margin-bottom: 5px;
             font-size: 18px;
             color: #333;
         }
 
-        .landlord-rating {
-            margin-top: 8px;
+        .landlord-contact {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f8f9fa;
+            border-radius: 8px;
         }
 
-        .stars {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-bottom: 5px;
-        }
-
-        .stars i {
-            color: #ddd;
+        .landlord-contact p {
+            margin: 5px 0;
             font-size: 14px;
         }
 
-        .stars i.filled {
-            color: #f39c12;
+        .landlord-contact i {
+            color: #0077b6;
+            width: 20px;
+            margin-right: 8px;
         }
 
-        .stars span {
-            margin-left: 5px;
-            color: #666;
-            font-size: 14px;
+        .landlord-mpesa {
+            margin-top: 10px;
+            padding: 10px;
+            background: #e8f5e9;
+            border-radius: 8px;
+            border-left: 4px solid #27ae60;
+        }
+
+        .landlord-mpesa i {
+            color: #27ae60;
         }
 
         /* Rent Request Form */
@@ -660,6 +726,87 @@ function getLandlordInfo($property) {
             text-decoration: none;
             border-radius: 6px;
             font-weight: 600;
+        }
+
+        /* M-Pesa Payment Section */
+        .payment-section {
+            border-top: 3px solid #27ae60;
+        }
+
+        .mpesa-details {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .mpesa-details p {
+            margin: 8px 0;
+            font-size: 14px;
+        }
+
+        .mpesa-details i {
+            width: 20px;
+            margin-right: 8px;
+            color: #27ae60;
+        }
+
+        .pay-now-btn {
+            width: 100%;
+            padding: 15px;
+            background: #27ae60;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background 0.3s;
+        }
+
+        .pay-now-btn:hover:not(:disabled) {
+            background: #219a52;
+        }
+
+        .pay-now-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .payment-status {
+            margin-top: 15px;
+            padding: 12px;
+            border-radius: 6px;
+            display: none;
+        }
+
+        .payment-status.success {
+            display: block;
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .payment-status.error {
+            display: block;
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .payment-status.info {
+            display: block;
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .payment-status i {
+            margin-right: 8px;
         }
 
         /* Modal */
@@ -1002,6 +1149,9 @@ function getLandlordInfo($property) {
                         <i class="fas fa-user"></i> 
                         <span><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
                     </a>
+                    <a href="payments.php" class="nav-link">
+                        <i class="fas fa-credit-card"></i> <span>Payments</span>
+                    </a>
                     <a href="logout.php" class="nav-link" onclick="return confirm('Are you sure you want to logout?')">
                         <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
                     </a>
@@ -1056,7 +1206,7 @@ function getLandlordInfo($property) {
 
             <div class="property-info">
                 <div class="price-section">
-                    <h2>$<?php echo number_format($property['monthly_rent'] ?? 0, 2); ?> <span class="period">/month</span></h2>
+                    <h2>KES <?php echo number_format($property['monthly_rent'] ?? 0, 2); ?> <span class="period">/month</span></h2>
                     <div class="property-meta">
                         <?php if (!empty($property['bedrooms'])): ?>
                         <span><i class="fas fa-bed"></i> <?php echo $property['bedrooms']; ?> bed</span>
@@ -1092,24 +1242,74 @@ function getLandlordInfo($property) {
 
                 <div class="landlord-section">
                     <h3>Property Owner</h3>
+                    <?php $landlordInfo = getLandlordInfo($landlord, $property); ?>
                     <div class="landlord-info">
                         <div class="landlord-avatar">
                             <i class="fas fa-user-circle"></i>
                         </div>
                         <div class="landlord-details">
-                            <h4><?php echo htmlspecialchars(getLandlordInfo($property)['name']); ?></h4>
-                            <div class="landlord-rating">
-                                <div class="stars">
-                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                        <i class="fas fa-star <?php echo $i <= floor(getLandlordInfo($property)['rating']) ? 'filled' : ''; ?>"></i>
-                                    <?php endfor; ?>
-                                    <span>(<?php echo getLandlordInfo($property)['rating']; ?>)</span>
-                                </div>
-                                <p class="small-text"><?php echo getLandlordInfo($property)['properties']; ?> properties listed</p>
+                            <h4><?php echo htmlspecialchars($landlordInfo['name']); ?></h4>
+                            <p><i class="fas fa-calendar-alt"></i> Landlord since <?php echo $landlordInfo['joined']; ?></p>
+                            
+                            <div class="landlord-contact">
+                                <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($landlordInfo['phone']); ?></p>
+                                <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($landlordInfo['email']); ?></p>
                             </div>
+                            
+                            <?php if (!empty($landlordInfo['mpesa']) && $landlordInfo['mpesa'] !== 'Not provided'): ?>
+                            <div class="landlord-mpesa">
+                                <p><i class="fas fa-mobile-alt"></i> <strong>M-Pesa Paybill:</strong> <?php echo htmlspecialchars($landlordInfo['mpesa']); ?></p>
+                                <p style="font-size: 13px; margin-top: 5px;">Use this number to pay rent via M-Pesa</p>
+                            </div>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
+
+                <!-- M-Pesa Payment Section (only for logged-in students) -->
+                <?php if ($isLoggedIn && $user_type == 'student'): ?>
+                <div class="payment-section">
+                    <h3><i class="fas fa-mobile-alt" style="color: #27ae60;"></i> Pay Rent via M-Pesa</h3>
+                    
+                    <div class="mpesa-details">
+                        <p><strong>Monthly Rent:</strong> KES <?php echo number_format($property['monthly_rent'], 2); ?></p>
+                        <p><strong>Payment For:</strong> <?php echo date('F Y'); ?></p>
+                        <p><i class="fas fa-info-circle"></i> You will receive an STK push on your phone to complete payment</p>
+                    </div>
+                    
+                    <form id="mpesa-payment-form">
+                        <input type="hidden" name="property_id" value="<?php echo $property['id']; ?>">
+                        <input type="hidden" name="month_start" value="<?php echo date('Y-m-01'); ?>">
+                        <input type="hidden" name="amount" value="<?php echo $property['monthly_rent']; ?>">
+                        <?php if ($activeTenancy): ?>
+                        <input type="hidden" name="tenancy_id" value="<?php echo $activeTenancy['id']; ?>">
+                        <?php endif; ?>
+                        
+                        <div class="form-group">
+                            <label for="mpesa-phone">M-Pesa Phone Number</label>
+                            <input type="tel" id="mpesa-phone" name="phone_number" 
+                                   placeholder="e.g., 0712345678" 
+                                   value="<?php echo isset($_SESSION['phone']) ? htmlspecialchars($_SESSION['phone']) : ''; ?>"
+                                   required>
+                            <div style="font-size: 12px; color: #666; margin-top: 5px;">
+                                Enter the M-Pesa registered phone number
+                            </div>
+                        </div>
+                        
+                        <button type="submit" id="pay-now-btn" class="pay-now-btn">
+                            <i class="fas fa-lock"></i> Pay KES <?php echo number_format($property['monthly_rent'], 2); ?> via M-Pesa
+                        </button>
+                    </form>
+                    
+                    <div id="payment-status" class="payment-status"></div>
+                    
+                    <div style="margin-top: 15px; text-align: center;">
+                        <a href="payments.php" style="color: #0077b6; text-decoration: none; font-size: 14px;">
+                            <i class="fas fa-history"></i> View My Payment History
+                        </a>
+                    </div>
+                </div>
+                <?php endif; ?>
 
                 <!-- Rent Request Form -->
                 <div class="rent-request-section">
@@ -1120,17 +1320,23 @@ function getLandlordInfo($property) {
                             <input type="hidden" name="property_id" value="<?php echo $property['id']; ?>">
                             <div class="form-group">
                                 <label for="name">Full Name *</label>
-                                <input type="text" id="name" name="name" required>
+                                <input type="text" id="name" name="name" 
+                                       value="<?php echo isset($_SESSION['full_name']) ? htmlspecialchars($_SESSION['full_name']) : ''; ?>" 
+                                       required>
                             </div>
                             
                             <div class="form-group">
                                 <label for="email">Email Address *</label>
-                                <input type="email" id="email" name="email" required>
+                                <input type="email" id="email" name="email" 
+                                       value="<?php echo isset($_SESSION['user_email']) ? htmlspecialchars($_SESSION['user_email']) : ''; ?>" 
+                                       required>
                             </div>
                             
                             <div class="form-group">
                                 <label for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" required>
+                                <input type="tel" id="phone" name="phone" 
+                                       value="<?php echo isset($_SESSION['phone']) ? htmlspecialchars($_SESSION['phone']) : ''; ?>" 
+                                       required>
                             </div>
                             
                             <div class="form-group">
@@ -1224,6 +1430,7 @@ function getLandlordInfo($property) {
             <a href="index.php" class="mobile-nav-link">Browse</a>
             <?php if ($isLoggedIn): ?>
                 <a href="profile.php" class="mobile-nav-link">My Profile</a>
+                <a href="payments.php" class="mobile-nav-link">Payments</a>
                 <a href="saved-properties.php" class="mobile-nav-link">Saved Properties</a>
                 <a href="logout.php" class="mobile-nav-link" onclick="return confirm('Are you sure you want to logout?')">Logout</a>
             <?php else: ?>
@@ -1334,6 +1541,136 @@ function getLandlordInfo($property) {
             .finally(() => {
                 btn.disabled = false;
             });
+        }
+
+        // M-Pesa Payment Form Submission
+        const mpesaForm = document.getElementById('mpesa-payment-form');
+        if (mpesaForm) {
+            mpesaForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const phone = document.getElementById('mpesa-phone').value.trim();
+                
+                // Validate phone number (Kenyan format)
+                const phoneRegex = /^(0|254|\+254)[71][0-9]{8}$/;
+                const cleanedPhone = phone.replace(/\s+/g, '');
+                
+                if (!cleanedPhone) {
+                    showPaymentStatus('Please enter your M-Pesa phone number', 'error');
+                    return;
+                }
+                
+                if (!phoneRegex.test(cleanedPhone) && !/^07[0-9]{8}$/.test(cleanedPhone)) {
+                    showPaymentStatus('Please enter a valid Kenyan phone number (e.g., 0712345678)', 'error');
+                    return;
+                }
+                
+                // Disable button and show loading
+                const btn = document.getElementById('pay-now-btn');
+                const originalText = btn.innerHTML;
+                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing... Please check your phone';
+                btn.disabled = true;
+                
+                showPaymentStatus('Initiating payment... Please wait', 'info');
+                
+                // Initiate payment
+                const formData = new FormData(this);
+                formData.append('action', 'initiate_payment');
+                
+                fetch('process_payment.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Payment response:', data);
+                    
+                    if (data.success) {
+                        showPaymentStatus(data.message, 'success');
+                        
+                        // Check payment status after 10 seconds
+                        let checkCount = 0;
+                        const maxChecks = 6; // Check for 60 seconds
+                        
+                        const checkInterval = setInterval(() => {
+                            checkCount++;
+                            
+                            if (checkCount > maxChecks) {
+                                clearInterval(checkInterval);
+                                showPaymentStatus('Payment is still processing. You will receive a confirmation SMS.', 'info');
+                                btn.innerHTML = originalText;
+                                btn.disabled = false;
+                                return;
+                            }
+                            
+                            checkPaymentStatus(data.data.CheckoutRequestID, checkInterval);
+                        }, 10000); // Check every 10 seconds
+                        
+                    } else {
+                        showPaymentStatus(data.message || 'Payment failed. Please try again.', 'error');
+                        btn.innerHTML = originalText;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showPaymentStatus('An error occurred. Please try again.', 'error');
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                });
+            });
+        }
+
+        function checkPaymentStatus(checkoutRequestID, interval) {
+            const formData = new FormData();
+            formData.append('action', 'check_status');
+            formData.append('checkoutRequestID', checkoutRequestID);
+            
+            fetch('process_payment.php', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                console.log('Status check:', data);
+                
+                if (data.ResultCode === 0) {
+                    clearInterval(interval);
+                    showPaymentStatus('Payment completed successfully! You will receive a confirmation SMS.', 'success');
+                    
+                    // Update button
+                    const btn = document.getElementById('pay-now-btn');
+                    btn.innerHTML = '<i class="fas fa-check-circle"></i> Payment Complete';
+                    btn.style.background = '#28a745';
+                    btn.disabled = true;
+                    
+                    // Optionally refresh the page after 3 seconds
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                    
+                } else if (data.ResultCode === 1037) {
+                    // Still pending - wait
+                    console.log('Payment still pending...');
+                } else if (data.ResultCode) {
+                    // Failed or other error
+                    clearInterval(interval);
+                    showPaymentStatus('Payment failed. Please try again.', 'error');
+                    
+                    const btn = document.getElementById('pay-now-btn');
+                    btn.innerHTML = '<i class="fas fa-lock"></i> Pay via M-Pesa';
+                    btn.disabled = false;
+                }
+            })
+            .catch(error => {
+                console.error('Error checking status:', error);
+            });
+        }
+
+        function showPaymentStatus(message, type) {
+            const statusDiv = document.getElementById('payment-status');
+            statusDiv.className = 'payment-status ' + type;
+            statusDiv.innerHTML = '<i class="fas fa-' + (type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle') + '"></i> ' + message;
         }
 
         // Rent request form submission

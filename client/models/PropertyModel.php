@@ -152,5 +152,29 @@ class PropertyModel {
         
         return implode(', ', $parts);
     }
+    /**
+ * Get property with landlord M-Pesa details
+ */
+public function getPropertyWithPaymentDetails($property_id) {
+    if (!$this->conn) {
+        return null;
+    }
+
+    try {
+        $query = "SELECT p.*, u.mpesa_number, u.mpesa_business_shortcode 
+                  FROM " . $this->table_name . " p
+                  LEFT JOIN users u ON p.landlord_id = u.id
+                  WHERE p.id = :id";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':id', $property_id);
+        $stmt->execute();
+        
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get property with payment details error: " . $e->getMessage());
+        return null;
+    }
+}
 }
 ?>
