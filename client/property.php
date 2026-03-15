@@ -1053,7 +1053,7 @@ function getLandlordInfo($property) {
 
             <div class="property-info">
                 <div class="price-section">
-                    <h2>$<?php echo number_format($property['monthly_rent'] ?? 0, 2); ?> <span class="period">/month</span></h2>
+                    <h2>Ksh<?php echo number_format($property['monthly_rent'] ?? 0, 2); ?> <span class="period">/month</span></h2>
                     <div class="property-meta">
                         <?php if (!empty($property['bedrooms'])): ?>
                         <span><i class="fas fa-bed"></i> <?php echo $property['bedrooms']; ?> bed</span>
@@ -1144,6 +1144,9 @@ function getLandlordInfo($property) {
                             
                             <button type="submit" class="rent-request-btn">
                                 <i class="fas fa-paper-plane"></i> Send Rent Request
+                            </button>
+                            <button type="#" class="rent-request-btn" style="margin-top: 10px; background-color: #27ae60">
+                                 Make Payment
                             </button>
                             <p class="small-text form-note">
                                 Your request will be sent directly to the property owner.
