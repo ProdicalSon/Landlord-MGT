@@ -136,7 +136,7 @@ require_once __DIR__ . '/includes/sidebar.php';
     <table class="table">
         <thead>
             <tr>
-                <th>ID</th>
+                <!-- <th>ID</th> -->
                 <th>Landlord</th>
                 <th>Contact</th>
                 <th>Properties</th>
@@ -155,7 +155,7 @@ require_once __DIR__ . '/includes/sidebar.php';
                     $propertyCount = $propertyModel->countPropertiesByLandlord($landlord['id']);
                 ?>
                 <tr>
-                    <td>#<?php echo $landlord['id']; ?></td>
+                    <!-- <td>#<?php echo $landlord['id']; ?></td> -->
                     <td>
                         <div class="user-info">
                             <div class="user-avatar">
