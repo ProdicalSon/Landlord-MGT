@@ -1,4 +1,4 @@
-<?php
+ <?php
 error_reporting(E_ALL);
 ini_set('display_errors', 1);
 
@@ -167,7 +167,6 @@ if (isset($_GET['get_saved_count'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" href="assets/icons/smartlogo.png">
     <title>SmartHunt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -1088,7 +1087,7 @@ if (isset($_GET['get_saved_count'])) {
         <div class="nav-container">
             <div class="nav-logo">
                 <a href="index.php">
-                    <img src="assets/icons/smartlogo.png" alt="SmartHunt Logo" style="width: 50px; height: 50px; border-radius: 50%;">
+                    <i class="fas fa-home"></i>
                     <span>SmartHunt</span>
                 </a>
             </div>
@@ -1202,7 +1201,7 @@ if (isset($_GET['get_saved_count'])) {
                     $priceSteps = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000];
                     foreach ($priceSteps as $price) {
                         $selected = ($min_price == $price) ? 'selected' : '';
-                        echo "<option value=\"$price\" $selected>Ksh$price+</option>";
+                        echo "<option value=\"$price\" $selected>$$price+</option>";
                     }
                     ?>
                 </select>
@@ -1212,13 +1211,12 @@ if (isset($_GET['get_saved_count'])) {
                     $priceSteps = [1000, 2000, 3000, 4000, 5000, 7500, 10000, 15000];
                     foreach ($priceSteps as $price) {
                         $selected = ($max_price == $price) ? 'selected' : '';
-                        echo "<option value=\"$price\" $selected>Up to Ksh$price</option>";
+                        echo "<option value=\"$price\" $selected>Up to $$price</option>";
                     }
                     ?>
                 </select>
                 <select name="min_beds">
                     <option value="">Any Beds</option>
-                    <option value="0" <?php echo $min_beds == 0 ? 'selected' : ''; ?>>0 Bed</option>
                     <option value="1" <?php echo $min_beds == 1 ? 'selected' : ''; ?>>1+ Bed</option>
                     <option value="2" <?php echo $min_beds == 2 ? 'selected' : ''; ?>>2+ Beds</option>
                     <option value="3" <?php echo $min_beds == 3 ? 'selected' : ''; ?>>3+ Beds</option>
@@ -1257,9 +1255,7 @@ if (isset($_GET['get_saved_count'])) {
         <div class="properties-grid" id="propertiesGrid">
             <?php if (count($properties) > 0): ?>
                 <?php foreach ($properties as $property): ?>
-                <div class="property-card" 
-                    data-id="<?php echo $property['id']; ?>" 
-                    onclick="viewProperty(<?php echo $property['id']; ?>)">
+                <div class="property-card" onclick="viewProperty(<?php echo $property['id']; ?>)">
                     <?php if (isset($property['featured']) && $property['featured']): ?>
                     <div class="featured-badge">FEATURED</div>
                     <?php endif; ?>
@@ -1276,7 +1272,7 @@ if (isset($_GET['get_saved_count'])) {
                     
                     <div class="property-details">
                         <div class="property-price">
-                            <span class="price">Ksh<?php echo number_format($property['monthly_rent'], 2); ?></span>
+                            <span class="price">$<?php echo number_format($property['monthly_rent'], 2); ?></span>
                             <span class="period">/month</span>
                         </div>
                         
@@ -1420,13 +1416,6 @@ if (isset($_GET['get_saved_count'])) {
             }, 3000);
         }
 
-        // View property details - FIXED VERSION
-        function viewProperty(propertyId) {
-            // Use absolute path
-            const url = '/Landlord-MGT/client/property.php?id=' + propertyId;
-            window.location.href = url;
-        }
-
         // Save button functionality with AJAX
         function toggleSave(btn, propertyId) {
             event.stopPropagation();
@@ -1487,6 +1476,11 @@ if (isset($_GET['get_saved_count'])) {
                 return;
             }
             showToast('Viewing saved properties (feature coming soon)');
+        }
+
+        // View property details
+        function viewProperty(propertyId) {
+            window.location.href = 'property.php?id=' + propertyId;
         }
 
         // Clear all filters
