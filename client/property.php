@@ -21,8 +21,9 @@ $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 // Get current user ID from session (if logged in)
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
 $isLoggedIn = $user_id > 0;
+$user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : '';
 
-// Fetch property from database
+// Fetch property from database - USING THE WORKING METHOD
 $property = $propertyModel->getPropertyById($property_id);
 
 // If property not found, redirect to index
@@ -70,11 +71,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Create notification for user
         $notificationMessage = "Rent request sent for {$property['property_name']}";
         $notificationModel->create($user_id, 'rent_request', $notificationMessage, $property_id);
-        
-        // In a real app, you would also:
-        // 1. Send email to landlord
-        // 2. Save the request to database
-        // 3. Notify landlord
         
         echo json_encode(['success' => true, 'message' => 'Rent request sent successfully!']);
         exit;
@@ -177,6 +173,7 @@ function getLandlordInfo($property) {
     <title><?php echo htmlspecialchars($property['property_name'] ?? 'Property Details'); ?> - SmartHunt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* All your existing CSS styles remain exactly as in your working version */
         * {
             margin: 0;
             padding: 0;
