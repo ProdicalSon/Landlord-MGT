@@ -860,7 +860,7 @@
                         <a href="#"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=U" alt="User Icon"></a>
                         <div class="dropdown-content">
                             <a href="login.php"><i class="fas fa-sign-in-alt"></i> Login</a>
-                            <a href="register.php"><i class="fas fa-user-plus"></i> Sign Up</a> 
+                            <a href="registerlandlord.php"><i class="fas fa-user-plus"></i> Sign Up</a> 
                             <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
                             <a href="#"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>

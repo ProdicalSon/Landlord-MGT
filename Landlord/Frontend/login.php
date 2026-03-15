@@ -378,7 +378,7 @@ if (isset($_GET['verified'])) {
             </button>
 
             <div class="register-link">
-                Don't have a landlord account? <a href="register.php">Register as Landlord</a>
+                Don't have a landlord account? <a href="registerlandlord.php">Register as Landlord</a>
             </div>
 
             <div class="back-link">

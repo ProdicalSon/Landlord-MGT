@@ -1,5 +1,5 @@
 <?php
-// Landlord/Frontend/register.php
+// Landlord/Frontend/registerlandlord.php
 session_start();
 
 // If already logged in, redirect to dashboard

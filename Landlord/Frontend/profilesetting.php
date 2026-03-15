@@ -969,7 +969,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 
                                 <?php if (count($recentProperties) > 5): ?>
                                     <div style="text-align: center; margin-top: 20px;">
-                                        <a href="propertypropertylistings.php" class="btn btn-secondary">View All Properties</a>
+                                        <a href="propertylistings.php" class="btn btn-secondary">View All Properties</a>
                                     </div>
                                 <?php endif; ?>
                             <?php endif; ?>

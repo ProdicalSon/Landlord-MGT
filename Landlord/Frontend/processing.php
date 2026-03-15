@@ -94,11 +94,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // If there are errors, redirect back with messages
     $_SESSION['errors'] = $errors;
     $_SESSION['form_data'] = $_POST;
-    header("Location: register.php");
+    header("Location: registerlandlord.php");
     exit();
 } else {
     // If accessed directly
-    header("Location: register.php");
+    header("Location: registerlandlord.php");
     exit();
 }
 ?>
