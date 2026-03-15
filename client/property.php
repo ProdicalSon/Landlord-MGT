@@ -1,6 +1,8 @@
 <?php
-// property.php
 session_start();
+header('Access-Control-Allow-Origin: *');
+header('Access-Control-Allow-Methods: GET, POST');
+header('Access-Control-Allow-Headers: Content-Type');
 
 // Include database and models
 require_once __DIR__ . '/config/database.php';
@@ -8,7 +10,6 @@ require_once __DIR__ . '/models/PropertyModel.php';
 require_once __DIR__ . '/models/SavedPropertyModel.php';
 require_once __DIR__ . '/models/NotificationModel.php';
 require_once __DIR__ . '/models/UserModel.php';
-
 // require_once __DIR__ . '/models/TenancyModel.php'; // Comment out for now
 
 // Initialize models
@@ -20,6 +21,11 @@ $userModel = new UserModel();
 
 // Get property ID from URL
 $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+
+// Get current user ID from session (if logged in)
+$user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
+$isLoggedIn = $user_id > 0;
+$user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : '';
 
 // DEBUG: Check if ID is received
 error_log("Property ID from URL: " . $property_id);
@@ -42,15 +48,10 @@ if ($property) {
 } else {
     error_log("Property not found for ID: " . $property_id);
     echo "<!-- DEBUG: Property NOT found for ID: " . $property_id . " -->";
-}
-
-// If property not found, redirect to index
-if (!$property) {
     header('Location: index.php');
     exit;
 }
 
-// Rest of your code...
 // Check if property is saved by user
 $isSaved = $isLoggedIn ? $savedPropertyModel->isSaved($user_id, $property_id) : false;
 
@@ -60,11 +61,11 @@ $savedCount = $isLoggedIn ? $savedPropertyModel->countSaved($user_id) : 0;
 // Get unread notifications count
 $unreadCount = $isLoggedIn ? $notificationModel->getUnreadCount($user_id) : 0;
 
-// Get active tenancy if user is logged in as student
+// Get active tenancy if user is logged in as student (commented out for now)
 $activeTenancy = null;
-if ($isLoggedIn && $user_type == 'student') {
-    $activeTenancy = $tenancyModel->getActiveTenancy($user_id, $property_id);
-}
+// if ($isLoggedIn && $user_type == 'student' && isset($tenancyModel)) {
+//     $activeTenancy = $tenancyModel->getActiveTenancy($user_id, $property_id);
+// }
 
 // Get landlord details
 $landlord = $userModel->getUserById($property['landlord_id']);
@@ -99,11 +100,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         // Create notification for user
         $notificationMessage = "Rent request sent for {$property['property_name']}";
         $notificationModel->create($user_id, 'rent_request', $notificationMessage, $property_id);
-        
-        // In a real app, you would also:
-        // 1. Send email to landlord
-        // 2. Save the request to database
-        // 3. Notify landlord
         
         echo json_encode(['success' => true, 'message' => 'Rent request sent successfully!']);
         exit;
@@ -227,6 +223,7 @@ function getLandlordInfo($landlord, $property) {
     <title><?php echo htmlspecialchars($property['property_name'] ?? 'Property Details'); ?> - SmartHunt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
+        /* All your existing CSS styles here - keeping them as is */
         * {
             margin: 0;
             padding: 0;

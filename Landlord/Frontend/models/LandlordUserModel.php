@@ -607,4 +607,239 @@ public function removeProfileImage($user_id) {
         return false;
     }
 }
+/**
+ * Generate password reset token
+ * @param string $email User email
+ * @return array Result with success, message, and token
+ */
+public function generateResetToken($email) {
+    if (!$this->conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+
+    try {
+        // Check if user exists with this email
+        $query = "SELECT id, username, first_name, email FROM " . $this->table_name . " 
+                  WHERE email = :email AND user_type = 'landlord'";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':email', $email);
+        $stmt->execute();
+        
+        if ($stmt->rowCount() === 0) {
+            // Don't reveal that email doesn't exist for security
+            return ['success' => true, 'message' => 'If your email exists in our system, you will receive a reset link'];
+        }
+        
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Generate unique token
+        $token = bin2hex(random_bytes(32));
+        $expires = date('Y-m-d H:i:s', strtotime('+1 hour'));
+        
+        // Delete any existing tokens for this email
+        $deleteQuery = "DELETE FROM password_resets WHERE email = :email";
+        $deleteStmt = $this->conn->prepare($deleteQuery);
+        $deleteStmt->bindParam(':email', $email);
+        $deleteStmt->execute();
+        
+        // Insert new token
+        $insertQuery = "INSERT INTO password_resets (email, token, expires_at) 
+                        VALUES (:email, :token, :expires)";
+        $insertStmt = $this->conn->prepare($insertQuery);
+        $insertStmt->bindParam(':email', $email);
+        $insertStmt->bindParam(':token', $token);
+        $insertStmt->bindParam(':expires', $expires);
+        $insertStmt->execute();
+        
+        return [
+            'success' => true,
+            'message' => 'Reset token generated',
+            'token' => $token,
+            'email' => $email,
+            'user' => $user
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Generate reset token error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Database error occurred'];
+    }
+}
+
+/**
+ * Validate reset token
+ * @param string $token Reset token
+ * @return array|bool User data if valid, false if invalid
+ */
+public function validateResetToken($token) {
+    if (!$this->conn) {
+        return false;
+    }
+
+    try {
+        $query = "SELECT * FROM password_resets 
+                  WHERE token = :token 
+                  AND expires_at > NOW() 
+                  AND used = FALSE 
+                  ORDER BY created_at DESC 
+                  LIMIT 1";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':token', $token);
+        $stmt->execute();
+        
+        if ($stmt->rowCount() === 0) {
+            return false;
+        }
+        
+        $reset = $stmt->fetch(PDO::FETCH_ASSOC);
+        
+        // Get user info
+        $userQuery = "SELECT id, username, email, first_name FROM " . $this->table_name . " 
+                      WHERE email = :email AND user_type = 'landlord'";
+        $userStmt = $this->conn->prepare($userQuery);
+        $userStmt->bindParam(':email', $reset['email']);
+        $userStmt->execute();
+        
+        if ($userStmt->rowCount() === 0) {
+            return false;
+        }
+        
+        $user = $userStmt->fetch(PDO::FETCH_ASSOC);
+        
+        return [
+            'reset' => $reset,
+            'user' => $user
+        ];
+        
+    } catch (PDOException $e) {
+        error_log("Validate reset token error: " . $e->getMessage());
+        return false;
+    }
+}
+
+/**
+ * Reset password using token
+ * @param string $token Reset token
+ * @param string $newPassword New password
+ * @return array Result with success and message
+ */
+public function resetPassword($token, $newPassword) {
+    if (!$this->conn) {
+        return ['success' => false, 'message' => 'Database connection failed'];
+    }
+
+    try {
+        // Validate token
+        $validation = $this->validateResetToken($token);
+        
+        if (!$validation) {
+            return ['success' => false, 'message' => 'Invalid or expired reset token'];
+        }
+        
+        $email = $validation['reset']['email'];
+        $userId = $validation['user']['id'];
+        
+        // Hash new password
+        $hashedPassword = password_hash($newPassword, PASSWORD_DEFAULT);
+        
+        // Update user password
+        $updateQuery = "UPDATE " . $this->table_name . " 
+                        SET password_hash = :password, updated_at = NOW() 
+                        WHERE id = :id";
+        $updateStmt = $this->conn->prepare($updateQuery);
+        $updateStmt->bindParam(':password', $hashedPassword);
+        $updateStmt->bindParam(':id', $userId);
+        $updateStmt->execute();
+        
+        // Mark token as used
+        $markQuery = "UPDATE password_resets SET used = TRUE WHERE token = :token";
+        $markStmt = $this->conn->prepare($markQuery);
+        $markStmt->bindParam(':token', $token);
+        $markStmt->execute();
+        
+        // Delete all other tokens for this email
+        $deleteQuery = "DELETE FROM password_resets WHERE email = :email AND token != :token";
+        $deleteStmt = $this->conn->prepare($deleteQuery);
+        $deleteStmt->bindParam(':email', $email);
+        $deleteStmt->bindParam(':token', $token);
+        $deleteStmt->execute();
+        
+        return ['success' => true, 'message' => 'Password reset successfully'];
+        
+    } catch (PDOException $e) {
+        error_log("Reset password error: " . $e->getMessage());
+        return ['success' => false, 'message' => 'Database error occurred'];
+    }
+}
+
+/**
+ * Send password reset email
+ * @param string $email User email
+ * @param string $token Reset token
+ * @param array $user User data
+ * @return bool Success status
+ */
+public function sendResetEmail($email, $token, $user) {
+    // In a real application, you would use a mail library like PHPMailer
+    // This is a simplified version using PHP's mail() function
+    
+    $resetLink = "http://" . $_SERVER['HTTP_HOST'] . "/Landlord-MGT/Landlord/Frontend/reset-password.php?token=" . $token;
+    
+    $to = $email;
+    $subject = "Password Reset Request - SmartHunt";
+    
+    $message = "
+    <html>
+    <head>
+        <title>Password Reset</title>
+        <style>
+            body { font-family: Arial, sans-serif; line-height: 1.6; }
+            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+            .header { background: #FF385C; color: white; padding: 20px; text-align: center; }
+            .content { padding: 20px; background: #f9f9f9; }
+            .button { 
+                display: inline-block; 
+                padding: 12px 24px; 
+                background: #FF385C; 
+                color: white; 
+                text-decoration: none; 
+                border-radius: 5px;
+                margin: 20px 0;
+            }
+            .footer { text-align: center; padding: 20px; color: #666; font-size: 12px; }
+        </style>
+    </head>
+    <body>
+        <div class='container'>
+            <div class='header'>
+                <h2>SmartHunt Password Reset</h2>
+            </div>
+            <div class='content'>
+                <p>Hello " . htmlspecialchars($user['first_name'] ?: $user['username']) . ",</p>
+                <p>We received a request to reset your password for your SmartHunt landlord account.</p>
+                <p>Click the button below to reset your password:</p>
+                <p style='text-align: center;'>
+                    <a href='" . $resetLink . "' class='button'>Reset Password</a>
+                </p>
+                <p>If the button doesn't work, copy and paste this link into your browser:</p>
+                <p>" . $resetLink . "</p>
+                <p>This link will expire in 1 hour.</p>
+                <p>If you didn't request a password reset, please ignore this email or contact support.</p>
+            </div>
+            <div class='footer'>
+                <p>&copy; " . date('Y') . " SmartHunt. All rights reserved.</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    ";
+    
+    // Headers for HTML email
+    $headers = "MIME-Version: 1.0" . "\r\n";
+    $headers .= "Content-type:text/html;charset=UTF-8" . "\r\n";
+    $headers .= "From: noreply@smarthunt.com" . "\r\n";
+    
+    // Send email
+    return mail($to, $subject, $message, $headers);
+}
 }

@@ -953,18 +953,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge"><?php echo $unreadInquiries; ?></span></a>
-                    <div class="dropdown-content">
+                        <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries</a>                    <div class="dropdown-content">
                         <a href="landlordinquiries.php" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
                         <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>
-                <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge"><?php echo $pendingPayments; ?></span></a></li>
+                <li><a href="payments.php" data-content="payments"><i class="fas fa-credit-card"></i> Payments </span></a></li>
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="landlordreports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
                 <li><a href="profilesetting.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
-                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
+                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications </a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
@@ -989,7 +988,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div class="dropdown-menu">
-                            <a href="profilesettings.php"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="profilesetting.php"><i class="fas fa-user"></i> My Profile</a>
                             <a href="index.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                             <hr>
                             <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>

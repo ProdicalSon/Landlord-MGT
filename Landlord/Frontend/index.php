@@ -805,8 +805,6 @@ $firstName = explode(' ', $landlordName)[0];
                     <h1 id="greeting">Welcome Back, <?php echo htmlspecialchars($firstName); ?>!</h1>
                     <p class="date"><?php echo date('l, F j, Y'); ?></p>
                 </div>
-                <p>Manage your properties and track performance</p>
-
                 <div class="cards">
                     <div class="card" id="active-properties-card">
                         <h3><i class="fas fa-building"></i> Active Properties</h3>

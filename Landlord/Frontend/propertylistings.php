@@ -1,10 +1,10 @@
 <?php
-// Landlord/Frontend/profilesettings.php
+// propertylistings.php
 session_start();
 
 // Check if landlord is logged in
 if (!isset($_SESSION['landlord_id'])) {
-    $_SESSION['redirect_after_login'] = 'profilesettings.php';
+    $_SESSION['redirect_after_login'] = 'propertylistings.php';
     header('Location: login.php');
     exit;
 }
@@ -24,85 +24,121 @@ if (!$landlord) {
     exit;
 }
 
-// Get property statistics
+// Get only this landlord's properties
+$properties = $propertyModel->getLandlordProperties($landlord_id);
 $stats = $propertyModel->getPropertyStats($landlord_id);
-$recentProperties = $propertyModel->getLandlordProperties($landlord_id);
-$monthlyRevenue = $propertyModel->getMonthlyRevenue($landlord_id);
 
 // Format landlord name
-$fullName = $userModel->getFullName($landlord);
-$firstName = explode(' ', $fullName)[0];
+$landlordName = $userModel->getFullName($landlord) ?: $landlord['username'];
+$firstName = explode(' ', $landlordName)[0];
 
-// Handle profile update
-$message = '';
-$error = '';
+// Get unread notifications count
+$unreadNotifications = 7; // Placeholder
+$unreadInquiries = 5; // Placeholder
+$pendingPayments = 2; // Placeholder
 
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if (isset($_POST['action'])) {
-        // Update profile with image
-        if ($_POST['action'] === 'update_profile') {
-            $data = [
-                'first_name' => trim($_POST['first_name'] ?? ''),
-                'last_name' => trim($_POST['last_name'] ?? ''),
-                'phone_number' => trim($_POST['phone_number'] ?? '')
-            ];
-            
-            // Check if image was uploaded
-            $imageFile = isset($_FILES['profile_image']) ? $_FILES['profile_image'] : null;
-            
-            $result = $userModel->updateProfileWithImage($landlord_id, $data, $imageFile);
-            if ($result['success']) {
-                $message = $result['message'];
-                // Refresh landlord data
-                $landlord = $userModel->getLandlordById($landlord_id);
-                $fullName = $userModel->getFullName($landlord);
-                $firstName = explode(' ', $fullName)[0];
-            } else {
-                $error = $result['message'];
-            }
+// Handle AJAX requests for this page
+if (isset($_POST['action'])) {
+    header('Content-Type: application/json');
+    
+    if ($_POST['action'] === 'delete_property') {
+        $property_id = intval($_POST['property_id']);
+        
+        // Verify ownership
+        if (!$propertyModel->verifyOwnership($property_id, $landlord_id)) {
+            echo json_encode(['success' => false, 'message' => 'You do not own this property']);
+            exit;
         }
         
-        // Remove profile image
-        if ($_POST['action'] === 'remove_image') {
-            if ($userModel->removeProfileImage($landlord_id)) {
-                $message = 'Profile image removed successfully';
-                $landlord = $userModel->getLandlordById($landlord_id);
-            } else {
-                $error = 'Failed to remove profile image';
-            }
+        $result = $propertyModel->deleteProperty($property_id);
+        echo json_encode($result);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'add_property') {
+        // Get form data
+        $title = trim($_POST['title'] ?? '');
+        $type = $_POST['type'] ?? '';
+        $price = floatval($_POST['price'] ?? 0);
+        $status = $_POST['status'] ?? 'available';
+        $description = trim($_POST['description'] ?? '');
+        $address = trim($_POST['address'] ?? '');
+        $city = trim($_POST['city'] ?? '');
+        $neighborhood = trim($_POST['neighborhood'] ?? '');
+        $zip = trim($_POST['zip'] ?? '');
+        $bedrooms = $_POST['bedrooms'] ?? '1';
+        $bathrooms = $_POST['bathrooms'] ?? '1';
+        $area = floatval($_POST['area'] ?? 0);
+        $year_built = isset($_POST['year_built']) && !empty($_POST['year_built']) ? intval($_POST['year_built']) : null;
+        
+        // Get amenities
+        $amenities = [];
+        if (isset($_POST['amenities']) && is_array($_POST['amenities'])) {
+            $amenities = $_POST['amenities'];
         }
         
-        // Change password
-        if ($_POST['action'] === 'change_password') {
-            $current = $_POST['current_password'] ?? '';
-            $new = $_POST['new_password'] ?? '';
-            $confirm = $_POST['confirm_password'] ?? '';
-            
-            if (empty($current) || empty($new) || empty($confirm)) {
-                $error = 'All password fields are required';
-            } elseif ($new !== $confirm) {
-                $error = 'New passwords do not match';
-            } elseif (strlen($new) < 6) {
-                $error = 'Password must be at least 6 characters';
-            } else {
-                $result = $userModel->changePassword($landlord_id, $current, $new);
-                if ($result['success']) {
-                    $message = $result['message'];
-                } else {
-                    $error = $result['message'];
-                }
-            }
+        // Validate required fields
+        $errors = [];
+        if (empty($title)) $errors[] = 'Property title is required';
+        if (empty($type)) $errors[] = 'Property type is required';
+        if ($price <= 0) $errors[] = 'Valid monthly rent is required';
+        if (empty($description)) $errors[] = 'Property description is required';
+        if (empty($address)) $errors[] = 'Street address is required';
+        if (empty($city)) $errors[] = 'City is required';
+        if (empty($neighborhood)) $errors[] = 'Neighborhood is required';
+        if ($area <= 0) $errors[] = 'Valid area is required';
+        
+        if (!empty($errors)) {
+            echo json_encode(['success' => false, 'message' => implode('<br>', $errors)]);
+            exit;
         }
+        
+        // Prepare data for database
+        $propertyData = [
+            'title' => $title,
+            'type' => $type,
+            'price' => $price,
+            'status' => $status,
+            'description' => $description,
+            'address' => $address,
+            'city' => $city,
+            'neighborhood' => $neighborhood,
+            'zip' => $zip,
+            'bedrooms' => $bedrooms == '5+' ? 5 : intval($bedrooms),
+            'bathrooms' => $bathrooms == '5+' ? 5 : floatval($bathrooms),
+            'area' => $area,
+            'year_built' => $year_built,
+            'amenities' => $amenities,
+            'featured' => 0
+        ];
+        
+        // Add property to database
+        $result = $propertyModel->addProperty($propertyData, $landlord_id);
+        echo json_encode($result);
+        exit;
     }
 }
 
-// Helper function to get profile image URL
-function getProfileImageUrl($imagePath) {
-    if (empty($imagePath)) {
-        return null;
+// Handle GET request to refresh properties
+if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
+    header('Content-Type: application/json');
+    $properties = $propertyModel->getLandlordProperties($landlord_id);
+    $stats = $propertyModel->getPropertyStats($landlord_id);
+    
+    // Format properties for display
+    foreach ($properties as &$property) {
+        // Decode amenities if they're stored as JSON
+        if (isset($property['amenities'])) {
+            $property['amenities'] = json_decode($property['amenities'], true);
+        }
     }
-    // Images are stored in Landlord/Frontend/uploads/profiles/
-    return '/Landlord-MGT/Landlord/Frontend/' . $imagePath;
+    
+    echo json_encode([
+        'success' => true,
+        'properties' => $properties,
+        'stats' => $stats
+    ]);
+    exit;
 }
 ?>
 <!DOCTYPE html>
@@ -110,9 +146,14 @@ function getProfileImageUrl($imagePath) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <base href="/Landlord-MGT/Landlord/Frontend/">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <link rel="icon" href="assets/icons/smartlogo.png">
-    <title>Landlord Profile - SmartHunt</title>
+    <title>My Property Listings - SmartHunt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
@@ -150,7 +191,6 @@ function getProfileImageUrl($imagePath) {
             flex: 1;
         }
 
-        /* Sidebar Styles */
         .sidebar {
             width: 260px;
             background: var(--light);
@@ -199,7 +239,8 @@ function getProfileImageUrl($imagePath) {
             transition: all 0.3s;
         }
 
-        .sidebar-menu a:hover, .sidebar-menu a.active {
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
             background-color: var(--light-gray);
             color: var(--primary);
         }
@@ -235,7 +276,6 @@ function getProfileImageUrl($imagePath) {
             font-size: 14px;
         }
 
-        /* Main Content */
         .main-content {
             flex: 1;
             margin-left: 260px;
@@ -259,336 +299,140 @@ function getProfileImageUrl($imagePath) {
             color: var(--primary);
         }
 
-        .user-menu {
+        .login-image {
             display: flex;
             align-items: center;
-            gap: 20px;
         }
 
-        .user-info {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .user-avatar {
+        .login-image img {
             width: 40px;
             height: 40px;
-            background: var(--primary);
             border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: white;
-            font-weight: 600;
-            font-size: 18px;
-            overflow: hidden;
+            cursor: pointer;
         }
 
-        .user-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .page-header {
+            margin-bottom: 25px;
         }
 
-        .user-details {
-            text-align: right;
-        }
-
-        .user-name {
-            font-weight: 600;
+        .page-header h1 {
+            font-size: 28px;
             color: var(--dark);
-        }
-
-        .user-role {
-            font-size: 12px;
-            color: var(--text);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: 100%;
-            right: 0;
-            background: white;
-            border-radius: 8px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            min-width: 200px;
-            display: none;
-            z-index: 1000;
-        }
-
-        .user-info:hover .dropdown-menu {
-            display: block;
-        }
-
-        .dropdown-menu a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px 15px;
-            text-decoration: none;
-            color: var(--text);
-            transition: background 0.3s;
-        }
-
-        .dropdown-menu a:hover {
-            background: var(--light-gray);
-        }
-
-        .dropdown-menu hr {
-            margin: 5px 0;
-            border: none;
-            border-top: 1px solid var(--gray);
-        }
-
-        .logout-btn {
-            color: var(--danger) !important;
-        }
-
-        /* Profile Content */
-        .profile-container {
-            background: var(--light);
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            overflow: hidden;
-        }
-
-        .profile-header {
-            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
-            color: white;
-            padding: 40px 30px;
-            position: relative;
-        }
-
-        .profile-cover {
-            display: flex;
-            align-items: center;
-            gap: 30px;
-        }
-
-        .profile-avatar-large {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 4px solid white;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
-            background: white;
-            position: relative;
-        }
-
-        .profile-avatar-large img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .avatar-initials {
-            width: 100%;
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 48px;
-            font-weight: 600;
-            color: var(--primary);
-            background: white;
-        }
-
-        .profile-title h1 {
-            font-size: 32px;
             margin-bottom: 5px;
         }
 
-        .profile-title p {
-            opacity: 0.9;
-            font-size: 16px;
+        .page-header p {
+            color: var(--text);
         }
 
-        .profile-badge {
-            display: inline-block;
-            background: rgba(255, 255, 255, 0.2);
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 14px;
-            margin-top: 10px;
-        }
-
-        .profile-content {
-            padding: 30px;
-        }
-
-        .profile-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 30px;
-        }
-
-        .profile-section {
-            background: var(--light-gray);
-            border-radius: 12px;
-            padding: 25px;
-        }
-
-        .section-title {
+        /* Toggle between list and form */
+        .section-toggle {
             display: flex;
-            align-items: center;
             gap: 10px;
             margin-bottom: 20px;
-            color: var(--dark);
-            font-size: 18px;
         }
 
-        .section-title i {
-            color: var(--primary);
-            font-size: 20px;
-        }
-
-        .info-grid {
-            display: grid;
-            gap: 15px;
-        }
-
-        .info-item {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            padding: 10px;
-            background: white;
+        .toggle-btn {
+            padding: 10px 20px;
+            border: none;
             border-radius: 8px;
-        }
-
-        .info-icon {
-            width: 40px;
-            height: 40px;
-            background: var(--light-gray);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--primary);
-        }
-
-        .info-content {
-            flex: 1;
-        }
-
-        .info-label {
-            font-size: 12px;
-            color: var(--text);
-            margin-bottom: 2px;
-        }
-
-        .info-value {
+            font-size: 14px;
             font-weight: 600;
-            color: var(--dark);
-        }
-
-        .verification-badge {
+            cursor: pointer;
             display: inline-flex;
             align-items: center;
-            gap: 5px;
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
-            font-weight: 500;
+            gap: 8px;
+            transition: all 0.3s;
         }
 
-        .verified {
-            background: #d4edda;
-            color: #155724;
+        .toggle-btn.active {
+            background: var(--primary);
+            color: white;
         }
 
-        .unverified {
-            background: #f8d7da;
-            color: #721c24;
+        .toggle-btn:not(.active) {
+            background: var(--light-gray);
+            color: var(--text);
         }
 
+        .toggle-btn:not(.active):hover {
+            background: var(--gray);
+        }
+
+        .section {
+            display: none;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        /* Stats Cards */
         .stats-cards {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 15px;
-            margin: 30px 0;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .stat-card {
             background: var(--light);
+            border-radius: 12px;
             padding: 20px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .stat-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--primary-light);
             border-radius: 10px;
-            text-align: center;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-        }
-
-        .stat-card i {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
             font-size: 24px;
-            color: var(--primary);
-            margin-bottom: 10px;
         }
 
-        .stat-card .number {
-            font-size: 24px;
-            font-weight: 600;
-            color: var(--dark);
-        }
-
-        .stat-card .label {
-            font-size: 13px;
+        .stat-info h3 {
+            font-size: 14px;
             color: var(--text);
+            margin-bottom: 5px;
         }
 
-        /* Forms */
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 500;
-            color: var(--dark);
-            font-size: 14px;
-        }
-
-        .required-star {
-            color: var(--danger);
-            margin-left: 3px;
-        }
-
-        input, select, textarea {
-            width: 100%;
-            padding: 12px 15px;
-            border: 1px solid var(--gray);
-            border-radius: 8px;
-            font-size: 14px;
-            transition: all 0.3s;
-        }
-
-        input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: var(--primary);
-            box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
-        }
-
-        input[readonly] {
-            background: var(--light-gray);
-            cursor: not-allowed;
-        }
-
-        .btn {
-            padding: 12px 25px;
-            border: none;
-            border-radius: 8px;
-            font-size: 14px;
+        .stat-info .number {
+            font-size: 24px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s;
+            color: var(--dark);
+        }
+
+        /* Actions Bar */
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .btn-primary {
             background: var(--primary);
             color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: background 0.3s;
         }
 
         .btn-primary:hover {
@@ -598,264 +442,482 @@ function getProfileImageUrl($imagePath) {
         .btn-secondary {
             background: var(--light-gray);
             color: var(--text);
+            border: 1px solid var(--gray);
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            text-decoration: none;
+            transition: all 0.3s;
         }
 
         .btn-secondary:hover {
             background: var(--gray);
         }
 
-        .btn-danger {
+        .search-box {
+            display: flex;
+            gap: 10px;
+            flex: 1;
+            max-width: 400px;
+        }
+
+        .search-box input {
+            flex: 1;
+            padding: 10px 15px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        .search-box input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        /* Properties Grid */
+        .properties-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 25px;
+        }
+
+        .property-card {
+            background: var(--light);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s;
+            border: 1px solid var(--light-gray);
+        }
+
+        .property-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.12);
+        }
+
+        .property-image {
+            height: 200px;
+            background: var(--light-gray);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .property-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .property-status-badge {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: capitalize;
+        }
+
+        .status-available {
+            background: rgba(0, 166, 153, 0.1);
+            color: var(--success);
+        }
+
+        .status-occupied {
+            background: rgba(255, 180, 0, 0.1);
+            color: var(--warning);
+        }
+
+        .status-maintenance {
+            background: rgba(255, 90, 95, 0.1);
+            color: var(--danger);
+        }
+
+        .property-details {
+            padding: 20px;
+        }
+
+        .property-price {
+            font-size: 24px;
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .property-price span {
+            font-size: 14px;
+            font-weight: normal;
+            color: var(--text);
+        }
+
+        .property-title {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .property-location {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--text);
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .property-features {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .property-feature {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .property-feature i {
+            font-size: 16px;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+
+        .property-feature span {
+            font-size: 12px;
+            color: var(--text);
+        }
+
+        .property-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 13px;
+        }
+
+        .property-date {
+            color: var(--text);
+        }
+
+        .property-amenities {
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+        }
+
+        .amenity-tag {
+            background: var(--light-gray);
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 10px;
+            color: var(--text);
+        }
+
+        .property-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .property-actions button {
+            flex: 1;
+            padding: 8px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .btn-edit {
+            background: var(--light-gray);
+            color: var(--text);
+        }
+
+        .btn-edit:hover {
+            background: var(--gray);
+        }
+
+        .btn-view {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-view:hover {
+            background: #3367d6;
+        }
+
+        .btn-delete {
             background: var(--danger);
             color: white;
         }
 
-        .btn-danger:hover {
+        .btn-delete:hover {
             background: #e04a50;
         }
 
-        .btn-outline-primary {
-            background: white;
+        /* Add Property Form Styles */
+        .add-property-container {
+            background: var(--light);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            margin-bottom: 30px;
+        }
+
+        .form-header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+            color: white;
+            padding: 25px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .form-header h1 {
+            font-size: 24px;
+            font-weight: 600;
+        }
+
+        .close-form {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s;
+        }
+
+        .close-form:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .form-content {
+            padding: 30px;
+            max-height: 600px;
+            overflow-y: auto;
+        }
+
+        .form-section {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--light-gray);
+        }
+
+        .form-section h2 {
+            font-size: 18px;
             color: var(--primary);
-            border: 2px solid var(--primary);
-        }
-
-        .btn-outline-primary:hover {
-            background: var(--primary);
-            color: white;
-        }
-
-        .btn-outline-danger {
-            background: white;
-            color: var(--danger);
-            border: 2px solid var(--danger);
-        }
-
-        .btn-outline-danger:hover {
-            background: var(--danger);
-            color: white;
-        }
-
-        .alert {
-            padding: 15px;
-            border-radius: 8px;
             margin-bottom: 20px;
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
         }
 
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .form-group {
+            margin-bottom: 20px;
         }
 
-        .alert-close {
-            margin-left: auto;
-            background: none;
+        .form-group.full-width {
+            grid-column: span 2;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: var(--dark);
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 12px 15px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 56, 92, 0.1);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 100px;
+        }
+
+        .amenities-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+        }
+
+        .amenity-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 14px;
+        }
+
+        .amenity-item input[type="checkbox"] {
+            width: auto;
+            margin-right: 5px;
+        }
+
+        .form-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 15px;
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 1px solid var(--light-gray);
+        }
+
+        .btn-cancel {
+            background: var(--light-gray);
+            color: var(--text);
             border: none;
-            font-size: 20px;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
             cursor: pointer;
-            color: inherit;
-            opacity: 0.5;
+            transition: background 0.3s;
         }
 
-        .alert-close:hover {
-            opacity: 1;
+        .btn-cancel:hover {
+            background: var(--gray);
         }
 
-        /* Image Upload Section */
-        .image-upload-section {
+        .btn-submit {
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .btn-submit:hover {
+            background: var(--primary-light);
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            background: var(--light);
+            border-radius: 12px;
+            grid-column: 1 / -1;
+        }
+
+        .empty-state i {
+            font-size: 60px;
+            color: var(--gray);
+            margin-bottom: 20px;
+        }
+
+        .empty-state h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: var(--dark);
+        }
+
+        .empty-state p {
+            color: var(--text);
             margin-bottom: 25px;
         }
 
-        .image-upload-wrapper {
-            display: flex;
-            align-items: center;
-            gap: 25px;
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
+        .loading-spinner {
+            text-align: center;
+            padding: 40px;
+            grid-column: 1 / -1;
         }
 
-        .image-preview {
-            width: 100px;
-            height: 100px;
-            border-radius: 50%;
-            overflow: hidden;
-            border: 3px solid white;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .image-preview img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .image-placeholder {
-            width: 100%;
-            height: 100%;
-            background: var(--light-gray);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 60px;
-            color: var(--gray);
-        }
-
-        .upload-actions {
-            flex: 1;
-        }
-
-        .upload-buttons {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 8px;
-            flex-wrap: wrap;
-        }
-
-        .form-hint {
-            font-size: 12px;
-            color: var(--text);
-        }
-
-        /* Password Input */
-        .password-input-wrapper {
-            position: relative;
-        }
-
-        .password-input-wrapper input {
-            padding-right: 45px;
-        }
-
-        .password-toggle {
-            position: absolute;
-            right: 12px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: none;
-            border: none;
-            color: var(--gray);
-            cursor: pointer;
-            padding: 5px;
-        }
-
-        .password-toggle:hover {
+        .loading-spinner i {
+            font-size: 40px;
             color: var(--primary);
+            animation: spin 1s linear infinite;
         }
 
-        /* Password Requirements */
-        .password-requirements {
-            margin-top: 10px;
-            padding: 10px;
-            background: var(--light-gray);
-            border-radius: 6px;
-            border-left: 3px solid var(--primary);
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .requirements-title {
-            font-size: 12px;
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .requirements-list {
-            list-style: none;
-            padding: 0;
-        }
-
-        .req-item {
-            font-size: 11px;
-            color: var(--text);
-            margin-bottom: 3px;
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            border-radius: 8px;
+            color: white;
             display: flex;
             align-items: center;
-            gap: 5px;
-        }
-
-        .req-item i {
-            font-size: 8px;
-            color: var(--gray);
-        }
-
-        .req-item.valid {
-            color: var(--success);
-        }
-
-        .req-item.valid i {
-            color: var(--success);
-        }
-
-        .password-match-indicator {
-            margin: 15px 0;
-            padding: 10px;
-            border-radius: 6px;
-            font-size: 13px;
-        }
-
-        .password-match-indicator.match {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .password-match-indicator.no-match {
-            background: #f8d7da;
-            color: #721c24;
-        }
-
-        .recent-properties {
-            margin-top: 30px;
-        }
-
-        .property-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            border-bottom: 1px solid var(--light-gray);
-        }
-
-        .property-item:last-child {
-            border-bottom: none;
-        }
-
-        .property-info h4 {
-            font-size: 16px;
-            margin-bottom: 5px;
-        }
-
-        .property-info p {
-            font-size: 13px;
-            color: var(--text);
-        }
-
-        .property-status {
-            padding: 3px 10px;
-            border-radius: 12px;
-            font-size: 12px;
+            gap: 10px;
+            z-index: 9999;
+            animation: slideIn 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
             font-weight: 500;
         }
 
-        .status-available {
-            background: #d4edda;
-            color: #155724;
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
         }
 
-        .status-occupied {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status-maintenance {
-            background: #f8d7da;
-            color: #721c24;
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
         }
 
         .footer {
@@ -871,22 +933,16 @@ function getProfileImageUrl($imagePath) {
             margin-bottom: 10px;
         }
 
-        @media (max-width: 992px) {
-            .sidebar {
-                width: 220px;
-            }
-            .main-content {
-                margin-left: 220px;
-            }
-            .profile-grid {
-                grid-template-columns: 1fr;
-            }
+        .notification-badge {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 8px;
+            font-size: 12px;
+            margin-left: 5px;
         }
 
         @media (max-width: 768px) {
-            .dashboard-container {
-                flex-direction: column;
-            }
             .sidebar {
                 width: 100%;
                 height: auto;
@@ -895,19 +951,33 @@ function getProfileImageUrl($imagePath) {
             .main-content {
                 margin-left: 0;
             }
-            .profile-cover {
-                flex-direction: column;
-                text-align: center;
-            }
             .stats-cards {
                 grid-template-columns: 1fr;
             }
-            .image-upload-wrapper {
-                flex-direction: column;
-                text-align: center;
+            .properties-grid {
+                grid-template-columns: 1fr;
             }
-            .upload-buttons {
-                justify-content: center;
+            .actions-bar {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .search-box {
+                max-width: 100%;
+            }
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+            .form-group.full-width {
+                grid-column: span 1;
+            }
+            .amenities-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .amenities-grid {
+                grid-template-columns: 1fr;
             }
         }
     </style>
@@ -924,374 +994,294 @@ function getProfileImageUrl($imagePath) {
             <ul class="sidebar-menu">
                 <li><a href="index.php"><i class="fas fa-home"></i> Dashboard</a></li> 
                 <li class="dropdown">
-                    <a href="#"><i class="fas fa-building"></i> Properties</a>
+                    <a href="#" class="active"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
                         <a href="addproperty.php"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="propertylistings.php"><i class="fas fa-edit"></i> Listings</a>
+                        <a href="propertylistings.php" class="active"><i class="fas fa-edit"></i> My Listings</a>
                         <a href="location.php"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
-                <li><a href="view-tenant.php"><i class="fas fa-users"></i> Tenants</a></li>
-                <li><a href="inquiries.php"><i class="fas fa-question-circle"></i> Inquiries</a></li>
-                <li><a href="payments.php"><i class="fas fa-credit-card"></i> Payments</a></li>
-                <li><a href="profilesettings.php" class="active"><i class="fas fa-user-cog"></i> Profile</a></li>
-                <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li class="dropdown">
+                    <a href="#"><i class="fas fa-users"></i> Tenants <span class="notification-badge"><?php echo $stats['occupied'] ?? 0; ?></span></a> 
+                    <div class="dropdown-content">
+                        <a href="view-tenant.php"><i class="fas fa-list"></i> View Tenants</a>
+                        <a href="tenant-bookings.php"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
+                    </div>
+                </li>
+                <li class="dropdown">
+                    <a href="#"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge"><?php echo $unreadInquiries ?? 0; ?></span></a>
+                    <div class="dropdown-content">
+                        <a href="inquiries.php"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="#"><i class="fas fa-comments"></i> Chat</a>
+                    </div>
+                </li>
+                <li><a href="payments.php"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge"><?php echo $pendingPayments ?? 0; ?></span></a></li>
+                <li><a href="location.php"><i class="fas fa-map-marked-alt"></i> Location</a></li>
+                <li><a href="announcements.php"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="reports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="profilesetting.php"><i class="fas fa-user-cog"></i> Profile</a></li>
+                <li><a href="notifications.php"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications ?? 0; ?></span></a></li>
+                <li><a href="support.php"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">My Profile</div>
+                <div class="navbar-brand">My Property Listings</div>
                 
-                <div class="user-menu">
-                    <div class="user-info">
-                        <div class="user-details">
-                            <div class="user-name"><?php echo htmlspecialchars($fullName); ?></div>
-                            <div class="user-role">Landlord</div>
-                        </div>
-                        <div class="user-avatar">
-                            <?php if (!empty($landlord['profile_image'])): ?>
-                                <img src="<?php echo getProfileImageUrl($landlord['profile_image']); ?>" alt="Profile">
-                            <?php else: ?>
-                                <?php echo strtoupper(substr($firstName, 0, 1)); ?>
-                            <?php endif; ?>
-                        </div>
-                        
-                        <div class="dropdown-menu">
-                            <a href="profilesettings.php"><i class="fas fa-user"></i> My Profile</a>
+                <div class="login-image">
+                    <div class="dropdown">
+                        <a href="#"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=<?php echo strtoupper(substr($firstName, 0, 1)); ?>" alt="User Icon"></a>
+                        <div class="dropdown-content">
+                            <a href="profilesetting.php"><i class="fas fa-user"></i> My Profile</a>
                             <a href="index.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
-                            <hr>
-                            <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                            <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
                         </div>
-                    </div>
+                    </div>    
                 </div>
             </nav>
 
-            <!-- Profile Content -->
-            <div class="profile-container">
-                <div class="profile-header">
-                    <div class="profile-cover">
-                        <div class="profile-avatar-large">
-                            <?php if (!empty($landlord['profile_image'])): ?>
-                                <img src="<?php echo getProfileImageUrl($landlord['profile_image']); ?>" alt="Profile Image">
-                            <?php else: ?>
-                                <div class="avatar-initials">
-                                    <?php echo strtoupper(substr($firstName, 0, 1)); ?>
-                                </div>
-                            <?php endif; ?>
-                        </div>
-                        <div class="profile-title">
-                            <h1><?php echo htmlspecialchars($fullName); ?></h1>
-                            <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($landlord['email']); ?></p>
-                            <span class="profile-badge">
-                                <i class="fas fa-building"></i> Landlord since <?php echo date('F Y', strtotime($landlord['created_at'])); ?>
-                            </span>
-                        </div>
-                    </div>
-                </div>
+            <!-- Toggle Buttons -->
+            <div class="section-toggle">
+                <button class="toggle-btn active" id="show-listings-btn" onclick="showSection('listings')">
+                    <i class="fas fa-list"></i> View My Listings
+                </button>
+                <button class="toggle-btn" id="show-add-form-btn" onclick="showSection('add-form')">
+                    <i class="fas fa-plus"></i> Add New Property
+                </button>
+            </div>
 
-                <?php if ($message): ?>
-                    <div class="alert alert-success" style="margin: 20px;">
-                        <i class="fas fa-check-circle"></i>
-                        <span><?php echo htmlspecialchars($message); ?></span>
-                        <button type="button" class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
-                    </div>
-                <?php endif; ?>
-
-                <?php if ($error): ?>
-                    <div class="alert alert-error" style="margin: 20px;">
-                        <i class="fas fa-exclamation-circle"></i>
-                        <span><?php echo htmlspecialchars($error); ?></span>
-                        <button type="button" class="alert-close" onclick="this.parentElement.style.display='none'">&times;</button>
-                    </div>
-                <?php endif; ?>
-
+            <!-- Listings Section -->
+            <div class="section active" id="listings-section">
+                <!-- Statistics Cards -->
                 <div class="stats-cards">
                     <div class="stat-card">
-                        <i class="fas fa-building"></i>
-                        <div class="number"><?php echo $stats['total']; ?></div>
-                        <div class="label">Total Properties</div>
+                        <div class="stat-icon"><i class="fas fa-home"></i></div>
+                        <div class="stat-info">
+                            <h3>Total Properties</h3>
+                            <div class="number" id="total-properties"><?php echo $stats['total'] ?? 0; ?></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fas fa-users"></i>
-                        <div class="number"><?php echo $stats['occupied']; ?></div>
-                        <div class="label">Occupied</div>
+                        <div class="stat-icon" style="background: var(--success);"><i class="fas fa-check-circle"></i></div>
+                        <div class="stat-info">
+                            <h3>Available</h3>
+                            <div class="number" id="available-count"><?php echo $stats['available'] ?? 0; ?></div>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <i class="fas fa-credit-card"></i>
-                        <div class="number">KES <?php echo number_format($monthlyRevenue); ?></div>
-                        <div class="label">Monthly Revenue</div>
+                        <div class="stat-icon" style="background: var(--warning);"><i class="fas fa-users"></i></div>
+                        <div class="stat-info">
+                            <h3>Occupied</h3>
+                            <div class="number" id="occupied-count"><?php echo $stats['occupied'] ?? 0; ?></div>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon" style="background: var(--danger);"><i class="fas fa-tools"></i></div>
+                        <div class="stat-info">
+                            <h3>Maintenance</h3>
+                            <div class="number" id="maintenance-count"><?php echo $stats['maintenance'] ?? 0; ?></div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="profile-content">
-                    <div class="profile-grid">
-                        <!-- Personal Information -->
-                        <div class="profile-section">
-                            <h2 class="section-title">
-                                <i class="fas fa-user-circle"></i>
-                                Personal Information
-                            </h2>
-                            
-                            <div class="info-grid">
-                                <div class="info-item">
-                                    <div class="info-icon">
-                                        <i class="fas fa-user"></i>
-                                    </div>
-                                    <div class="info-content">
-                                        <div class="info-label">Username</div>
-                                        <div class="info-value"><?php echo htmlspecialchars($landlord['username']); ?></div>
-                                    </div>
-                                </div>
+                <!-- Actions Bar -->
+                <div class="actions-bar">
+                    <div class="search-box">
+                        <input type="text" id="search-input" placeholder="Search properties by name or location...">
+                        <button class="btn-secondary" onclick="searchProperties()">
+                            <i class="fas fa-search"></i> Search
+                        </button>
+                    </div>
+                    <button class="btn-secondary" onclick="loadProperties()">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
+                </div>
 
-                                <div class="info-item">
-                                    <div class="info-icon">
-                                        <i class="fas fa-envelope"></i>
-                                    </div>
-                                    <div class="info-content">
-                                        <div class="info-label">Email Address</div>
-                                        <div class="info-value"><?php echo htmlspecialchars($landlord['email']); ?></div>
-                                    </div>
-                                </div>
+                <!-- Properties Grid -->
+                <div class="properties-grid" id="properties-grid">
+                    <div class="loading-spinner">
+                        <i class="fas fa-spinner fa-spin"></i>
+                        <p>Loading your properties...</p>
+                    </div>
+                </div>
+            </div>
 
-                                <div class="info-item">
-                                    <div class="info-icon">
-                                        <i class="fas fa-phone"></i>
+            <!-- Add Property Form Section -->
+            <div class="section" id="add-form-section">
+                <div class="add-property-container">
+                    <div class="form-header">
+                        <h1><i class="fas fa-plus-circle"></i> Add New Property</h1>
+                        <button class="close-form" onclick="showSection('listings')">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    
+                    <div class="form-content">
+                        <form id="add-property-form">
+                            <!-- Basic Information -->
+                            <div class="form-section">
+                                <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="title">Property Title *</label>
+                                        <input type="text" id="title" name="title" placeholder="e.g., Luxury 2-Bedroom Apartment" required>
                                     </div>
-                                    <div class="info-content">
-                                        <div class="info-label">Phone Number</div>
-                                        <div class="info-value"><?php echo htmlspecialchars($landlord['phone_number'] ?? 'Not provided'); ?></div>
+                                    <div class="form-group">
+                                        <label for="type">Property Type *</label>
+                                        <select id="type" name="type" required>
+                                            <option value="">Select Type</option>
+                                            <option value="apartment">Apartment</option>
+                                            <option value="house">House</option>
+                                            <option value="studio">Studio</option>
+                                            <option value="condo">Condo</option>
+                                            <option value="townhouse">Townhouse</option>
+                                            <option value="bedsitter">Bedsitter</option>
+                                            <option value="single room">Single Room</option>
+                                        </select>
                                     </div>
-                                </div>
-
-                                <div class="info-item">
-                                    <div class="info-icon">
-                                        <i class="fas fa-shield-alt"></i>
+                                    <div class="form-group">
+                                        <label for="price">Monthly Rent (KES) *</label>
+                                        <input type="number" id="price" name="price" placeholder="35000" min="0" required>
                                     </div>
-                                    <div class="info-content">
-                                        <div class="info-label">Account Status</div>
-                                        <div class="info-value">
-                                            <span class="verification-badge <?php echo $landlord['is_verified'] ? 'verified' : 'unverified'; ?>">
-                                                <i class="fas fa-<?php echo $landlord['is_verified'] ? 'check-circle' : 'exclamation-circle'; ?>"></i>
-                                                <?php echo $landlord['is_verified'] ? 'Verified' : 'Unverified'; ?>
-                                            </span>
-                                        </div>
+                                    <div class="form-group">
+                                        <label for="status">Status *</label>
+                                        <select id="status" name="status" required>
+                                            <option value="available">Available</option>
+                                            <option value="occupied">Occupied</option>
+                                            <option value="maintenance">Under Maintenance</option>
+                                        </select>
                                     </div>
-                                </div>
-
-                                <div class="info-item">
-                                    <div class="info-icon">
-                                        <i class="fas fa-calendar"></i>
-                                    </div>
-                                    <div class="info-content">
-                                        <div class="info-label">Member Since</div>
-                                        <div class="info-value"><?php echo date('F j, Y', strtotime($landlord['created_at'])); ?></div>
-                                    </div>
-                                </div>
-
-                                <div class="info-item">
-                                    <div class="info-icon">
-                                        <i class="fas fa-clock"></i>
-                                    </div>
-                                    <div class="info-content">
-                                        <div class="info-label">Last Updated</div>
-                                        <div class="info-value">
-                                        <?php 
-                                        if (isset($landlord['updated_at']) && !empty($landlord['updated_at'])) {
-                                            echo date('F j, Y', strtotime($landlord['updated_at']));
-                                        } else {
-                                            echo date('F j, Y', strtotime($landlord['created_at']));
-                                        }
-                                        ?>
-                                        </div>
+                                    <div class="form-group full-width">
+                                        <label for="description">Property Description *</label>
+                                        <textarea id="description" name="description" rows="4" placeholder="Describe your property, features, and amenities..." required></textarea>
                                     </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <!-- Edit Profile Form with Image Upload -->
-                        <div class="profile-section">
-                            <h2 class="section-title">
-                                <i class="fas fa-edit"></i>
-                                Edit Profile
-                            </h2>
                             
-                            <form method="POST" action="" enctype="multipart/form-data">
-                                <input type="hidden" name="action" value="update_profile">
-                                
-                                <!-- Profile Image Upload -->
-                                <div class="image-upload-section">
-                                    <label>Profile Image</label>
-                                    <div class="image-upload-wrapper">
-                                        <div class="image-preview">
-                                            <?php if (!empty($landlord['profile_image'])): ?>
-                                                <img src="<?php echo getProfileImageUrl($landlord['profile_image']); ?>" alt="Profile" id="image-preview">
-                                            <?php else: ?>
-                                                <div class="image-placeholder">
-                                                    <i class="fas fa-user-circle"></i>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
-                                        <div class="upload-actions">
-                                            <div class="upload-buttons">
-                                                <label for="profile_image" class="btn btn-outline-primary">
-                                                    <i class="fas fa-upload"></i> Choose Image
-                                                </label>
-                                                <input type="file" id="profile_image" name="profile_image" 
-                                                       accept="image/jpeg,image/png,image/gif,image/webp" hidden>
-                                                <?php if (!empty($landlord['profile_image'])): ?>
-                                                    <button type="button" class="btn btn-outline-danger" onclick="removeImage()">
-                                                        <i class="fas fa-trash"></i> Remove
-                                                    </button>
-                                                <?php endif; ?>
-                                            </div>
-                                            <small class="form-hint">Max size: 2MB. Allowed: JPG, PNG, GIF, WEBP</small>
-                                        </div>
+                            <!-- Location Details -->
+                            <div class="form-section">
+                                <h2><i class="fas fa-map-marker-alt"></i> Location Details</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="address">Street Address *</label>
+                                        <input type="text" id="address" name="address" placeholder="123 Main Street" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="city">City *</label>
+                                        <input type="text" id="city" name="city" placeholder="Nairobi" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="neighborhood">Neighborhood/Area *</label>
+                                        <input type="text" id="neighborhood" name="neighborhood" placeholder="Westlands" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="zip">ZIP Code</label>
+                                        <input type="text" id="zip" name="zip" placeholder="00100">
                                     </div>
                                 </div>
-                                
-                                <div class="form-group">
-                                    <label for="first_name">First Name</label>
-                                    <input type="text" id="first_name" name="first_name" 
-                                           value="<?php echo htmlspecialchars($landlord['first_name'] ?? ''); ?>"
-                                           placeholder="Enter your first name">
+                            </div>
+                            
+                            <!-- Property Details -->
+                            <div class="form-section">
+                                <h2><i class="fas fa-home"></i> Property Details</h2>
+                                <div class="form-grid">
+                                    <div class="form-group">
+                                        <label for="bedrooms">Bedrooms *</label>
+                                        <select id="bedrooms" name="bedrooms" required>
+                                            <option value="1">1</option>
+                                            <option value="2">2</option>
+                                            <option value="3">3</option>
+                                            <option value="4">4</option>
+                                            <option value="5">5+</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="bathrooms">Bathrooms *</label>
+                                        <select id="bathrooms" name="bathrooms" required>
+                                            <option value="1">1</option>
+                                            <option value="1.5">1.5</option>
+                                            <option value="2">2</option>
+                                            <option value="2.5">2.5</option>
+                                            <option value="3">3</option>
+                                            <option value="3.5">3.5</option>
+                                            <option value="4">4</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="area">Area (sq ft) *</label>
+                                        <input type="number" id="area" name="area" placeholder="1200" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="year_built">Year Built</label>
+                                        <input type="number" id="year_built" name="year_built" placeholder="2020" min="1900" max="<?php echo date('Y'); ?>">
+                                    </div>
                                 </div>
-
-                                <div class="form-group">
-                                    <label for="last_name">Last Name</label>
-                                    <input type="text" id="last_name" name="last_name" 
-                                           value="<?php echo htmlspecialchars($landlord['last_name'] ?? ''); ?>"
-                                           placeholder="Enter your last name">
+                            </div>
+                            
+                            <!-- Amenities -->
+                            <div class="form-section">
+                                <h2><i class="fas fa-concierge-bell"></i> Amenities</h2>
+                                <div class="amenities-grid">
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_wifi" name="amenities[]" value="WiFi">
+                                        <label for="amenity_wifi">Wi-Fi</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_parking" name="amenities[]" value="Parking">
+                                        <label for="amenity_parking">Parking</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_pool" name="amenities[]" value="Swimming Pool">
+                                        <label for="amenity_pool">Swimming Pool</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_gym" name="amenities[]" value="Gym">
+                                        <label for="amenity_gym">Gym</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_security" name="amenities[]" value="Security">
+                                        <label for="amenity_security">Security</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_water" name="amenities[]" value="Water Supply">
+                                        <label for="amenity_water">Water Supply</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_electricity" name="amenities[]" value="24/7 Electricity">
+                                        <label for="amenity_electricity">24/7 Electricity</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_laundry" name="amenities[]" value="Laundry">
+                                        <label for="amenity_laundry">Laundry</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_ac" name="amenities[]" value="Air Conditioning">
+                                        <label for="amenity_ac">Air Conditioning</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_heating" name="amenities[]" value="Heating">
+                                        <label for="amenity_heating">Heating</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_balcony" name="amenities[]" value="Balcony">
+                                        <label for="amenity_balcony">Balcony</label>
+                                    </div>
+                                    <div class="amenity-item">
+                                        <input type="checkbox" id="amenity_furnished" name="amenities[]" value="Furnished">
+                                        <label for="amenity_furnished">Furnished</label>
+                                    </div>
                                 </div>
-
-                                <div class="form-group">
-                                    <label for="phone_number">Phone Number</label>
-                                    <input type="tel" id="phone_number" name="phone_number" 
-                                           value="<?php echo htmlspecialchars($landlord['phone_number'] ?? ''); ?>"
-                                           placeholder="Enter your phone number">
-                                </div>
-
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-save"></i> Update Profile
+                            </div>
+                            
+                            <div class="form-actions">
+                                <button type="button" class="btn-cancel" onclick="showSection('listings')">Cancel</button>
+                                <button type="submit" class="btn-submit">
+                                    <i class="fas fa-plus-circle"></i> Add Property
                                 </button>
-                            </form>
-                            
-                            <!-- Hidden form for removing image -->
-                            <form method="POST" id="remove-image-form" style="display: none;">
-                                <input type="hidden" name="action" value="remove_image">
-                            </form>
-                        </div>
-
-                        <!-- Change Password Form -->
-                        <div class="profile-section">
-                            <h2 class="section-title">
-                                <i class="fas fa-lock"></i>
-                                Change Password
-                            </h2>
-                            
-                            <form method="POST" action="" onsubmit="return validatePassword()">
-                                <input type="hidden" name="action" value="change_password">
-                                
-                                <div class="form-group">
-                                    <label for="current_password">Current Password <span class="required-star">*</span></label>
-                                    <div class="password-input-wrapper">
-                                        <input type="password" id="current_password" name="current_password" required>
-                                        <button type="button" class="password-toggle" onclick="togglePassword('current_password')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="new_password">New Password <span class="required-star">*</span></label>
-                                    <div class="password-input-wrapper">
-                                        <input type="password" id="new_password" name="new_password" required>
-                                        <button type="button" class="password-toggle" onclick="togglePassword('new_password')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                    <div class="password-requirements">
-                                        <p class="requirements-title">Password must:</p>
-                                        <ul class="requirements-list">
-                                            <li id="req-length" class="req-item">
-                                                <i class="fas fa-circle"></i> Be at least 6 characters
-                                            </li>
-                                            <li id="req-uppercase" class="req-item">
-                                                <i class="fas fa-circle"></i> Contain at least 1 uppercase letter
-                                            </li>
-                                            <li id="req-lowercase" class="req-item">
-                                                <i class="fas fa-circle"></i> Contain at least 1 lowercase letter
-                                            </li>
-                                            <li id="req-number" class="req-item">
-                                                <i class="fas fa-circle"></i> Contain at least 1 number
-                                            </li>
-                                        </ul>
-                                    </div>
-                                </div>
-
-                                <div class="form-group">
-                                    <label for="confirm_password">Confirm New Password <span class="required-star">*</span></label>
-                                    <div class="password-input-wrapper">
-                                        <input type="password" id="confirm_password" name="confirm_password" required>
-                                        <button type="button" class="password-toggle" onclick="togglePassword('confirm_password')">
-                                            <i class="fas fa-eye"></i>
-                                        </button>
-                                    </div>
-                                </div>
-
-                                <div id="password-match" class="password-match-indicator"></div>
-
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="fas fa-key"></i> Change Password
-                                </button>
-                            </form>
-                        </div>
-
-                        <!-- Recent Properties -->
-                        <div class="profile-section">
-                            <h2 class="section-title">
-                                <i class="fas fa-building"></i>
-                                Recent Properties
-                            </h2>
-                            
-                            <?php if (empty($recentProperties)): ?>
-                                <p style="text-align: center; color: var(--text); padding: 20px;">
-                                    <i class="fas fa-home" style="font-size: 48px; color: var(--gray); margin-bottom: 10px; display: block;"></i>
-                                    No properties yet.
-                                    <br>
-                                    <a href="addproperty.php" style="color: var(--primary); text-decoration: none;">Add your first property</a>
-                                </p>
-                            <?php else: ?>
-                                <div class="recent-properties">
-                                    <?php foreach (array_slice($recentProperties, 0, 5) as $property): ?>
-                                        <div class="property-item">
-                                            <div class="property-info">
-                                                <h4><?php echo htmlspecialchars($property['property_name']); ?></h4>
-                                                <p>
-                                                    <i class="fas fa-map-marker-alt"></i> 
-                                                    <?php echo htmlspecialchars($property['neighborhood'] . ', ' . $property['city']); ?>
-                                                </p>
-                                            </div>
-                                            <div>
-                                                <span class="property-status status-<?php echo $property['status']; ?>">
-                                                    <?php echo ucfirst($property['status']); ?>
-                                                </span>
-                                                <strong style="margin-left: 15px; color: var(--primary);">
-                                                    KES <?php echo number_format($property['monthly_rent']); ?>
-                                                </strong>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                </div>
-                                
-                                <?php if (count($recentProperties) > 5): ?>
-                                    <div style="text-align: center; margin-top: 20px;">
-                                        <a href="propertylistings.php" class="btn btn-secondary">View All Properties</a>
-                                    </div>
-                                <?php endif; ?>
-                            <?php endif; ?>
-                        </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
@@ -1300,145 +1290,338 @@ function getProfileImageUrl($imagePath) {
 
     <footer class="footer">
         <img src="assets/icons/smartlogo.png" alt="SmartHunt Logo">
-        <h6>&copy; <?php echo date('Y'); ?> Algorithm-X Softwares. <br>All rights reserved</h6>
+        <p>&copy; 2024 SmartHunt. All rights reserved.</p>
+        <p>Making property management smarter and easier.</p>
     </footer>
 
     <script>
-        // Image preview
-        document.getElementById('profile_image')?.addEventListener('change', function(e) {
-            const file = e.target.files[0];
-            if (file) {
-                // Validate file size
-                if (file.size > 2 * 1024 * 1024) {
-                    alert('File too large. Maximum size is 2MB.');
-                    this.value = '';
-                    return;
-                }
-                
-                // Validate file type
-                const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-                if (!validTypes.includes(file.type)) {
-                    alert('Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.');
-                    this.value = '';
-                    return;
-                }
-                
-                const reader = new FileReader();
-                reader.onload = function(e) {
-                    const preview = document.getElementById('image-preview');
-                    if (preview) {
-                        preview.src = e.target.result;
-                    } else {
-                        const previewContainer = document.querySelector('.image-preview');
-                        previewContainer.innerHTML = `<img src="${e.target.result}" alt="Preview" id="image-preview">`;
-                    }
-                }
-                reader.readAsDataURL(file);
-            }
-        });
+        let allProperties = [];
 
-        // Remove image
-        function removeImage() {
-            if (confirm('Are you sure you want to remove your profile image?')) {
-                document.getElementById('remove-image-form').submit();
-            }
-        }
-
-        // Password validation
-        function validatePassword() {
-            const newPass = document.getElementById('new_password').value;
-            const confirmPass = document.getElementById('confirm_password').value;
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Page loaded, loading properties...');
+            loadProperties();
             
-            if (newPass.length < 6) {
-                alert('Password must be at least 6 characters long');
-                return false;
-            }
-            
-            if (!/[A-Z]/.test(newPass)) {
-                alert('Password must contain at least one uppercase letter');
-                return false;
-            }
-            
-            if (!/[a-z]/.test(newPass)) {
-                alert('Password must contain at least one lowercase letter');
-                return false;
-            }
-            
-            if (!/[0-9]/.test(newPass)) {
-                alert('Password must contain at least one number');
-                return false;
-            }
-            
-            if (newPass !== confirmPass) {
-                alert('Passwords do not match');
-                return false;
-            }
-            
-            return true;
-        }
-
-        // Toggle password visibility
-        function togglePassword(inputId) {
-            const input = document.getElementById(inputId);
-            const button = input.nextElementSibling;
-            const icon = button.querySelector('i');
-            
-            if (input.type === 'password') {
-                input.type = 'text';
-                icon.classList.remove('fa-eye');
-                icon.classList.add('fa-eye-slash');
-            } else {
-                input.type = 'password';
-                icon.classList.remove('fa-eye-slash');
-                icon.classList.add('fa-eye');
-            }
-        }
-
-        // Real-time password validation
-        document.getElementById('new_password')?.addEventListener('input', function() {
-            const password = this.value;
-            
-            document.getElementById('req-length').classList.toggle('valid', password.length >= 6);
-            document.getElementById('req-uppercase').classList.toggle('valid', /[A-Z]/.test(password));
-            document.getElementById('req-lowercase').classList.toggle('valid', /[a-z]/.test(password));
-            document.getElementById('req-number').classList.toggle('valid', /[0-9]/.test(password));
-            
-            document.querySelectorAll('.req-item').forEach(item => {
-                const icon = item.querySelector('i');
-                if (item.classList.contains('valid')) {
-                    icon.className = 'fas fa-check-circle';
-                } else {
-                    icon.className = 'fas fa-circle';
+            document.getElementById('search-input').addEventListener('keyup', function(e) {
+                if (e.key === 'Enter') {
+                    searchProperties();
                 }
             });
-            
-            checkPasswordMatch();
+
+            // Add form submission handler
+            const addPropertyForm = document.getElementById('add-property-form');
+            if (addPropertyForm) {
+                addPropertyForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    submitAddPropertyForm();
+                });
+            }
         });
 
-        document.getElementById('confirm_password')?.addEventListener('input', checkPasswordMatch);
-
-        function checkPasswordMatch() {
-            const newPass = document.getElementById('new_password').value;
-            const confirmPass = document.getElementById('confirm_password').value;
-            const indicator = document.getElementById('password-match');
+        function showSection(section) {
+            // Update toggle buttons
+            document.getElementById('show-listings-btn').classList.toggle('active', section === 'listings');
+            document.getElementById('show-add-form-btn').classList.toggle('active', section === 'add-form');
             
-            if (confirmPass.length > 0) {
-                if (newPass === confirmPass) {
-                    indicator.innerHTML = '<i class="fas fa-check-circle"></i> Passwords match';
-                    indicator.className = 'password-match-indicator match';
-                } else {
-                    indicator.innerHTML = '<i class="fas fa-times-circle"></i> Passwords do not match';
-                    indicator.className = 'password-match-indicator no-match';
+            // Show/hide sections
+            document.getElementById('listings-section').classList.toggle('active', section === 'listings');
+            document.getElementById('add-form-section').classList.toggle('active', section === 'add-form');
+        }
+
+        function loadProperties() {
+            console.log('Loading properties...');
+            
+            const grid = document.getElementById('properties-grid');
+            grid.innerHTML = `
+                <div class="loading-spinner">
+                    <i class="fas fa-spinner fa-spin"></i>
+                    <p>Loading your properties...</p>
+                </div>
+            `;
+            
+            const url = window.location.pathname + '?action=get_properties&t=' + new Date().getTime();
+            
+            fetch(url)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Properties loaded:', data);
+                    if (data.success) {
+                        allProperties = data.properties || [];
+                        displayProperties(allProperties);
+                        updateStats(data.stats || { total: 0, available: 0, occupied: 0, maintenance: 0 });
+                    } else {
+                        showNotification('Failed to load properties', 'error');
+                        displayEmptyState();
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading properties:', error);
+                    showNotification('Error loading properties', 'error');
+                    displayEmptyState();
+                });
+        }
+
+        function displayProperties(properties) {
+            const grid = document.getElementById('properties-grid');
+            
+            if (!properties || properties.length === 0) {
+                displayEmptyState();
+                return;
+            }
+
+            let html = '';
+            properties.forEach(property => {
+                const statusClass = `status-${property.status || 'available'}`;
+                const formattedDate = property.created_at ? new Date(property.created_at).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                }) : 'N/A';
+
+                // Parse amenities
+                let amenities = [];
+                if (property.amenities) {
+                    if (Array.isArray(property.amenities)) {
+                        amenities = property.amenities;
+                    } else if (typeof property.amenities === 'string') {
+                        try {
+                            amenities = JSON.parse(property.amenities);
+                        } catch (e) {
+                            amenities = [];
+                        }
+                    }
                 }
+
+                // Show first 3 amenities
+                const amenityTags = amenities.slice(0, 3).map(a => 
+                    `<span class="amenity-tag">${a}</span>`
+                ).join('');
+
+                html += `
+                    <div class="property-card" data-id="${property.id}">
+                        <div class="property-image">
+                            <img src="assets/icons/bed.jpg" alt="${property.property_name || 'Property'}">
+                            <div class="property-status-badge ${statusClass}">
+                                ${property.status || 'available'}
+                            </div>
+                        </div>
+                        <div class="property-details">
+                            <div class="property-price">
+                                KES ${Number(property.monthly_rent || 0).toLocaleString()} <span>/month</span>
+                            </div>
+                            <h3 class="property-title">${property.property_name || 'Untitled Property'}</h3>
+                            <div class="property-location">
+                                <i class="fas fa-map-marker-alt"></i>
+                                ${property.neighborhood || ''} ${property.city ? ', ' + property.city : ''}
+                            </div>
+                            <div class="property-features">
+                                <div class="property-feature">
+                                    <i class="fas fa-bed"></i>
+                                    <span>${property.bedrooms || 0} Beds</span>
+                                </div>
+                                <div class="property-feature">
+                                    <i class="fas fa-bath"></i>
+                                    <span>${property.bathrooms || 0} Baths</span>
+                                </div>
+                                <div class="property-feature">
+                                    <i class="fas fa-vector-square"></i>
+                                    <span>${property.sqft || 0} sqft</span>
+                                </div>
+                            </div>
+                            <div class="property-meta">
+                                <span class="property-date">
+                                    <i class="far fa-calendar"></i> Added: ${formattedDate}
+                                </span>
+                                <div class="property-amenities">
+                                    ${amenityTags}
+                                    ${amenities.length > 3 ? `<span class="amenity-tag">+${amenities.length - 3}</span>` : ''}
+                                </div>
+                            </div>
+                            <div class="property-actions">
+                                <button class="btn-edit" onclick="editProperty(${property.id})">
+                                    <i class="fas fa-edit"></i> Edit
+                                </button>
+                                <button class="btn-view" onclick="viewProperty(${property.id})">
+                                    <i class="fas fa-eye"></i> View
+                                </button>
+                                <button class="btn-delete" onclick="deleteProperty(${property.id})">
+                                    <i class="fas fa-trash"></i> Delete
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+
+            grid.innerHTML = html;
+        }
+
+        function displayEmptyState() {
+            const grid = document.getElementById('properties-grid');
+            grid.innerHTML = `
+                <div class="empty-state">
+                    <i class="fas fa-home"></i>
+                    <h3>No Properties Yet</h3>
+                    <p>You haven't added any properties. Click "Add New Property" to get started.</p>
+                    <button class="btn-primary" onclick="showSection('add-form')">
+                        <i class="fas fa-plus"></i> Add Your First Property
+                    </button>
+                </div>
+            `;
+        }
+
+        function updateStats(stats) {
+            document.getElementById('total-properties').textContent = stats.total || 0;
+            document.getElementById('available-count').textContent = stats.available || 0;
+            document.getElementById('occupied-count').textContent = stats.occupied || 0;
+            document.getElementById('maintenance-count').textContent = stats.maintenance || 0;
+        }
+
+        function searchProperties() {
+            const searchTerm = document.getElementById('search-input').value.toLowerCase().trim();
+            
+            if (!searchTerm) {
+                displayProperties(allProperties);
+                return;
+            }
+
+            const filtered = allProperties.filter(property => 
+                (property.property_name && property.property_name.toLowerCase().includes(searchTerm)) ||
+                (property.city && property.city.toLowerCase().includes(searchTerm)) ||
+                (property.neighborhood && property.neighborhood.toLowerCase().includes(searchTerm)) ||
+                (property.status && property.status.toLowerCase().includes(searchTerm))
+            );
+
+            if (filtered.length === 0) {
+                document.getElementById('properties-grid').innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-search"></i>
+                        <h3>No Results Found</h3>
+                        <p>No properties match your search term "${searchTerm}"</p>
+                        <button class="btn-secondary" onclick="document.getElementById('search-input').value = ''; loadProperties();">
+                            Clear Search
+                        </button>
+                    </div>
+                `;
             } else {
-                indicator.innerHTML = '';
+                displayProperties(filtered);
             }
         }
 
-        // Phone number formatting
-        document.getElementById('phone_number')?.addEventListener('input', function(e) {
-            this.value = this.value.replace(/[^0-9+\-\s]/g, '');
-        });
+        function submitAddPropertyForm() {
+            const form = document.getElementById('add-property-form');
+            const formData = new FormData(form);
+            formData.append('action', 'add_property');
+            
+            // Disable submit button
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            submitBtn.disabled = true;
+            
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Property added successfully!', 'success');
+                    form.reset();
+                    showSection('listings');
+                    loadProperties(); // Refresh the listings
+                } else {
+                    showNotification(data.message || 'Error adding property', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred. Please try again.', 'error');
+            })
+            .finally(() => {
+                submitBtn.innerHTML = originalText;
+                submitBtn.disabled = false;
+            });
+        }
+
+        function editProperty(propertyId) {
+            window.location.href = `edit-property.php?id=${propertyId}`;
+        }
+
+        function viewProperty(propertyId) {
+            window.location.href = `../client/property.php?id=${propertyId}`;
+        }
+
+        function deleteProperty(propertyId) {
+            if (!confirm('Are you sure you want to delete this property? This action cannot be undone.')) {
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('action', 'delete_property');
+            formData.append('property_id', propertyId);
+
+            fetch(window.location.pathname, {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    showNotification('Property deleted successfully!', 'success');
+                    loadProperties();
+                } else {
+                    showNotification(data.message || 'Error deleting property', 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showNotification('An error occurred while deleting', 'error');
+            });
+        }
+
+        function showNotification(message, type = 'info') {
+            const existing = document.querySelector('.notification');
+            if (existing) existing.remove();
+
+            const notification = document.createElement('div');
+            notification.className = 'notification';
+            
+            let icon = 'info-circle';
+            let bgColor = '#4285F4';
+            
+            if (type === 'success') {
+                icon = 'check-circle';
+                bgColor = '#00A699';
+            } else if (type === 'error') {
+                icon = 'exclamation-circle';
+                bgColor = '#FF5A5F';
+            } else if (type === 'warning') {
+                icon = 'exclamation-triangle';
+                bgColor = '#FFB400';
+            }
+
+            notification.style.backgroundColor = bgColor;
+            notification.innerHTML = `
+                <i class="fas fa-${icon}"></i>
+                <span>${message}</span>
+            `;
+
+            document.body.appendChild(notification);
+
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => {
+                    if (document.body.contains(notification)) {
+                        document.body.removeChild(notification);
+                    }
+                }, 300);
+            }, 3000);
+        }
     </script>
 </body>
 </html>
