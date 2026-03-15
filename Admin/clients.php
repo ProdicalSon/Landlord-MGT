@@ -54,7 +54,7 @@ require_once __DIR__ . '/includes/sidebar.php';
 
 <div class="content-header">
     <div class="header-actions">
-        <a href="add_client.php" class="btn btn-primary">
+        <a href="add_client.php" class="btn btn-primary" style="text-decoration: none;">
             <i class="fas fa-plus"></i> Add New Client
         </a>
     </div>
@@ -69,7 +69,7 @@ require_once __DIR__ . '/includes/sidebar.php';
 <?php endif; ?>
 
 <!-- Statistics Cards -->
-<div class="stats-grid">
+<div class="stats-grid" style="display: flex; justify-content: center; gap: 80px; margin-bottom: 10px;">
     <div class="stat-card">
         <div class="stat-icon" style="background: #4e73df20; color: #4e73df;">
             <i class="fas fa-users"></i>

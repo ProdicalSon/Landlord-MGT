@@ -53,10 +53,9 @@ require_once __DIR__ . '/includes/sidebar.php';
 ?>
 
 <div class="content-header">
-    <h1><i class="fas fa-building"></i> Manage Landlords</h1>
     <div class="header-actions">
-        <a href="add_landlord.php" class="btn btn-primary">
-            <i class="fas fa-plus"></i> Add New Landlord
+        <a href="add_landlord.php" class="btn btn-primary" style="text-decoration: none;">
+            <i class="fas fa-plus" ></i> Add New Landlord
         </a>
     </div>
 </div>

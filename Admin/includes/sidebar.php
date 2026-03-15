@@ -4,7 +4,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
 ?>
 <aside class="admin-sidebar">
     <div class="sidebar-header">
-        <img src="../assets/icons/smartlogo.png" alt="SmartHunt" onerror="this.src='https://via.placeholder.com/60x60?text=SH'">
+        <img src="assets/icons/smarthunt logo.png" alt="" style="background-color: black;">
         <h2>SmartHunt Admin</h2>
     </div>
 
