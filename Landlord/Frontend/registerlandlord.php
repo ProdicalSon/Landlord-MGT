@@ -413,7 +413,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <div class="back-link">
-                <a href="../index.php"><i class="fas fa-arrow-left"></i> Back to Main Site</a>
+                <a href="./index.php"><i class="fas fa-arrow-left"></i> Back to Main Site</a>
             </div>
         </form>
     </div>

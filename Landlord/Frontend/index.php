@@ -767,7 +767,7 @@ $firstName = explode(' ', $landlordName)[0];
                 <li><a href="location.php" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
                 <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
                 <li><a href="landlordreports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                <li><a href="profile.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
+                <li><a href="profilesetting.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Settings</a></li>
                 <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
                 <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
@@ -790,7 +790,7 @@ $firstName = explode(' ', $landlordName)[0];
                         
                         <!-- Dropdown Menu -->
                         <div class="dropdown-menu">
-                            <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="profilesettings.php"><i class="fas fa-user"></i> My Profile</a>
                             <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
                             <hr>
                             <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
@@ -1240,7 +1240,7 @@ $firstName = explode(' ', $landlordName)[0];
                     return;
                 }
                 
-                // Case 2: Links to external pages (like propertylistings.php, profile.php, etc.)
+                // Case 2: Links to external pages (like propertylistings.php, profilesettings.php, etc.)
                 // Don't prevent default - let browser navigate
                 
                 // Update active class

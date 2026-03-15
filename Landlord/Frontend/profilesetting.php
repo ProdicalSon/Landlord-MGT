@@ -1,10 +1,10 @@
 <?php
-// Landlord/Frontend/profile.php
+// Landlord/Frontend/profilesettings.php
 session_start();
 
 // Check if landlord is logged in
 if (!isset($_SESSION['landlord_id'])) {
-    $_SESSION['redirect_after_login'] = 'profile.php';
+    $_SESSION['redirect_after_login'] = 'profilesettings.php';
     header('Location: login.php');
     exit;
 }
@@ -695,7 +695,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="view-tenant.php"><i class="fas fa-users"></i> Tenants</a></li>
                 <li><a href="inquiries.php"><i class="fas fa-question-circle"></i> Inquiries</a></li>
                 <li><a href="payments.php"><i class="fas fa-credit-card"></i> Payments</a></li>
-                <li><a href="profile.php" class="active"><i class="fas fa-user-cog"></i> Profile</a></li>
+                <li><a href="profilesettings.php" class="active"><i class="fas fa-user-cog"></i> Profile</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
@@ -716,7 +716,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
                         
                         <div class="dropdown-menu">
-                            <a href="profile.php"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="profilesettings.php"><i class="fas fa-user"></i> My Profile</a>
                             <a href="index.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
                             <hr>
                             <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
