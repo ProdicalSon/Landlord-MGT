@@ -447,8 +447,12 @@ public function updateProfileWithImage($id, $data, $imageFile = null) {
 /**
  * Upload profile image
  */
+/**
+ * Upload profile image
+ */
 private function uploadProfileImage($file, $admin_id) {
-    // Define upload directory
+    // Define upload directory - relative to the admin folder
+    // This will create: C:\xampp\htdocs\Landlord-MGT\Admin\uploads\profiles\
     $uploadDir = __DIR__ . '/../uploads/profiles/';
     
     // Create directory if it doesn't exist
@@ -497,9 +501,13 @@ private function uploadProfileImage($file, $admin_id) {
         // Delete old profile image if exists
         $this->deleteOldProfileImage($admin_id);
         
+        // IMPORTANT: Store path relative to the admin folder
+        // This will be 'uploads/profiles/filename.jpg'
+        $dbPath = 'uploads/profiles/' . $filename;
+        
         return [
             'success' => true,
-            'filename' => 'uploads/profiles/' . $filename,
+            'filename' => $dbPath,
             'filepath' => $filepath
         ];
     }
@@ -510,6 +518,7 @@ private function uploadProfileImage($file, $admin_id) {
 /**
  * Delete old profile image
  */
+
 private function deleteOldProfileImage($admin_id) {
     try {
         // Get current profile image
@@ -520,6 +529,7 @@ private function deleteOldProfileImage($admin_id) {
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         
         if ($result && !empty($result['profile_image'])) {
+            // Construct the full file path relative to admin folder
             $oldFile = __DIR__ . '/../' . $result['profile_image'];
             if (file_exists($oldFile)) {
                 unlink($oldFile);
