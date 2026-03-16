@@ -84,10 +84,10 @@ class AdminModel {
     }
 
     /**
-     * Update admin profile - SINGLE VERSION
+     * Update admin profile
      */
     public function updateProfile($id, $data) {
-        if (!$this->conn) return false;
+        if (!$this->conn) return ['success' => false, 'message' => 'Database connection failed'];
 
         try {
             $query = "UPDATE " . $this->table_name . " 
@@ -103,9 +103,202 @@ class AdminModel {
             $stmt->bindParam(':email', $data['email']);
             $stmt->bindParam(':id', $id);
             
-            return $stmt->execute();
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Profile updated successfully'];
+            }
+            return ['success' => false, 'message' => 'Failed to update profile'];
         } catch (PDOException $e) {
             error_log("Update profile error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Update profile with image
+     */
+    public function updateProfileWithImage($id, $data, $imageFile = null) {
+        if (!$this->conn) {
+            return ['success' => false, 'message' => 'Database connection failed'];
+        }
+
+        try {
+            // Start building the query
+            $query = "UPDATE " . $this->table_name . " 
+                      SET first_name = :first_name, 
+                          last_name = :last_name, 
+                          email = :email, 
+                          updated_at = NOW()";
+            
+            $params = [
+                ':first_name' => $data['first_name'],
+                ':last_name' => $data['last_name'],
+                ':email' => $data['email'],
+                ':id' => $id
+            ];
+            
+            // Add profile image if provided
+            if ($imageFile && isset($imageFile['name']) && !empty($imageFile['name']) && $imageFile['error'] === UPLOAD_ERR_OK) {
+                // Upload image
+                $uploadResult = $this->uploadProfileImage($imageFile, $id);
+                if (!$uploadResult['success']) {
+                    return $uploadResult;
+                }
+                
+                $query .= ", profile_image = :profile_image";
+                $params[':profile_image'] = $uploadResult['filename'];
+            }
+            
+            $query .= " WHERE id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            foreach ($params as $key => &$value) {
+                $stmt->bindParam($key, $value);
+            }
+            
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Profile updated successfully'];
+            }
+            return ['success' => false, 'message' => 'Failed to update profile'];
+        } catch (PDOException $e) {
+            error_log("Update profile with image error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Upload profile image
+     */
+    private function uploadProfileImage($file, $admin_id) {
+        // Define upload directory - relative to the admin folder
+        $uploadDir = __DIR__ . '/../uploads/profiles/';
+        
+        // Create directory if it doesn't exist
+        if (!file_exists($uploadDir)) {
+            if (!mkdir($uploadDir, 0777, true)) {
+                return ['success' => false, 'message' => 'Failed to create upload directory'];
+            }
+        }
+        
+        // Check if directory is writable
+        if (!is_writable($uploadDir)) {
+            return ['success' => false, 'message' => 'Upload directory is not writable'];
+        }
+        
+        // Check for upload errors
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize directive in php.ini',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds the MAX_FILE_SIZE directive in the HTML form',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload'
+            ];
+            $errorMessage = isset($uploadErrors[$file['error']]) ? $uploadErrors[$file['error']] : 'Unknown upload error';
+            return ['success' => false, 'message' => 'Upload error: ' . $errorMessage];
+        }
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            return ['success' => false, 'message' => 'Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.'];
+        }
+        
+        // Validate file size (max 2MB)
+        $maxSize = 2 * 1024 * 1024; // 2MB
+        if ($file['size'] > $maxSize) {
+            return ['success' => false, 'message' => 'File too large. Maximum size is 2MB.'];
+        }
+        
+        // Get file extension from mime type
+        $extension = '';
+        switch ($mimeType) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                $extension = 'jpg';
+                break;
+            case 'image/png':
+                $extension = 'png';
+                break;
+            case 'image/gif':
+                $extension = 'gif';
+                break;
+            case 'image/webp':
+                $extension = 'webp';
+                break;
+            default:
+                $extension = 'jpg';
+        }
+        
+        // Generate unique filename
+        $filename = 'admin_' . $admin_id . '_' . time() . '.' . $extension;
+        $filepath = $uploadDir . $filename;
+        
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            // Delete old profile image if exists
+            $this->deleteOldProfileImage($admin_id);
+            
+            // Store path relative to the admin folder
+            $dbPath = 'uploads/profiles/' . $filename;
+            
+            return [
+                'success' => true,
+                'filename' => $dbPath,
+                'filepath' => $filepath
+            ];
+        }
+        
+        return ['success' => false, 'message' => 'Failed to save uploaded file'];
+    }
+
+    /**
+     * Delete old profile image
+     */
+    private function deleteOldProfileImage($admin_id) {
+        try {
+            // Get current profile image
+            $query = "SELECT profile_image FROM " . $this->table_name . " WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $admin_id);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result && !empty($result['profile_image'])) {
+                // Construct the full file path
+                $oldFile = __DIR__ . '/../' . $result['profile_image'];
+                if (file_exists($oldFile)) {
+                    unlink($oldFile);
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("Delete old profile image error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove profile image
+     */
+    public function removeProfileImage($admin_id) {
+        if (!$this->conn) return false;
+        
+        try {
+            // Delete the file first
+            $this->deleteOldProfileImage($admin_id);
+            
+            // Update database to remove image reference
+            $query = "UPDATE " . $this->table_name . " SET profile_image = NULL, updated_at = NOW() WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $admin_id);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Remove profile image error: " . $e->getMessage());
             return false;
         }
     }
@@ -271,7 +464,7 @@ class AdminModel {
     }
 
     /**
-     * Get all admins (for super admin)
+     * Get all admins with pagination
      */
     public function getAllAdmins($limit = 20, $offset = 0) {
         if (!$this->conn) return [];
@@ -308,6 +501,40 @@ class AdminModel {
             return $result['count'];
         } catch (PDOException $e) {
             error_log("Count admins error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Count super admins
+     */
+    public function countSuperAdmins() {
+        if (!$this->conn) return 0;
+
+        try {
+            $query = "SELECT COUNT(*) as count FROM " . $this->table_name . " WHERE role = 'super_admin'";
+            $stmt = $this->conn->query($query);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['count'];
+        } catch (PDOException $e) {
+            error_log("Count super admins error: " . $e->getMessage());
+            return 0;
+        }
+    }
+
+    /**
+     * Count inactive admins
+     */
+    public function countInactiveAdmins() {
+        if (!$this->conn) return 0;
+
+        try {
+            $query = "SELECT COUNT(*) as count FROM " . $this->table_name . " WHERE is_active = 0";
+            $stmt = $this->conn->query($query);
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['count'];
+        } catch (PDOException $e) {
+            error_log("Count inactive admins error: " . $e->getMessage());
             return 0;
         }
     }
@@ -393,171 +620,5 @@ class AdminModel {
             return false;
         }
     }
-    /**
- * Update profile with image
- */
-public function updateProfileWithImage($id, $data, $imageFile = null) {
-    if (!$this->conn) return ['success' => false, 'message' => 'Database connection failed'];
-
-    try {
-        // Start building the query
-        $query = "UPDATE " . $this->table_name . " 
-                  SET first_name = :first_name, 
-                      last_name = :last_name, 
-                      email = :email, 
-                      updated_at = NOW()";
-        
-        $params = [
-            ':first_name' => $data['first_name'],
-            ':last_name' => $data['last_name'],
-            ':email' => $data['email'],
-            ':id' => $id
-        ];
-        
-        // Add profile image if provided
-        if ($imageFile && isset($imageFile['name']) && !empty($imageFile['name'])) {
-            // Upload image
-            $uploadResult = $this->uploadProfileImage($imageFile, $id);
-            if (!$uploadResult['success']) {
-                return $uploadResult;
-            }
-            
-            $query .= ", profile_image = :profile_image";
-            $params[':profile_image'] = $uploadResult['filename'];
-        }
-        
-        $query .= " WHERE id = :id";
-        
-        $stmt = $this->conn->prepare($query);
-        
-        foreach ($params as $key => &$value) {
-            $stmt->bindParam($key, $value);
-        }
-        
-        if ($stmt->execute()) {
-            return ['success' => true, 'message' => 'Profile updated successfully'];
-        }
-        return ['success' => false, 'message' => 'Failed to update profile'];
-    } catch (PDOException $e) {
-        error_log("Update profile with image error: " . $e->getMessage());
-        return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
-    }
 }
-
-/**
- * Upload profile image
- */
-/**
- * Upload profile image
- */
-private function uploadProfileImage($file, $admin_id) {
-    // Define upload directory - relative to the admin folder
-    // This will create: C:\xampp\htdocs\Landlord-MGT\Admin\uploads\profiles\
-    $uploadDir = __DIR__ . '/../uploads/profiles/';
-    
-    // Create directory if it doesn't exist
-    if (!file_exists($uploadDir)) {
-        mkdir($uploadDir, 0777, true);
-    }
-    
-    // Check for upload errors
-    if ($file['error'] !== UPLOAD_ERR_OK) {
-        $uploadErrors = [
-            UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize',
-            UPLOAD_ERR_FORM_SIZE => 'File exceeds form MAX_FILE_SIZE',
-            UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
-            UPLOAD_ERR_NO_FILE => 'No file was uploaded',
-            UPLOAD_ERR_NO_TMP_DIR => 'Missing temporary folder',
-            UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
-            UPLOAD_ERR_EXTENSION => 'File upload stopped by extension'
-        ];
-        $errorMessage = $uploadErrors[$file['error']] ?? 'Unknown upload error';
-        return ['success' => false, 'message' => 'Upload error: ' . $errorMessage];
-    }
-    
-    // Validate file type
-    $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
-    $finfo = finfo_open(FILEINFO_MIME_TYPE);
-    $mimeType = finfo_file($finfo, $file['tmp_name']);
-    finfo_close($finfo);
-    
-    if (!in_array($mimeType, $allowedTypes)) {
-        return ['success' => false, 'message' => 'Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.'];
-    }
-    
-    // Validate file size (max 2MB)
-    $maxSize = 2 * 1024 * 1024; // 2MB
-    if ($file['size'] > $maxSize) {
-        return ['success' => false, 'message' => 'File too large. Maximum size is 2MB.'];
-    }
-    
-    // Generate unique filename
-    $extension = pathinfo($file['name'], PATHINFO_EXTENSION);
-    $filename = 'admin_' . $admin_id . '_' . time() . '.' . $extension;
-    $filepath = $uploadDir . $filename;
-    
-    // Move uploaded file
-    if (move_uploaded_file($file['tmp_name'], $filepath)) {
-        // Delete old profile image if exists
-        $this->deleteOldProfileImage($admin_id);
-        
-        // IMPORTANT: Store path relative to the admin folder
-        // This will be 'uploads/profiles/filename.jpg'
-        $dbPath = 'uploads/profiles/' . $filename;
-        
-        return [
-            'success' => true,
-            'filename' => $dbPath,
-            'filepath' => $filepath
-        ];
-    }
-    
-    return ['success' => false, 'message' => 'Failed to save uploaded file'];
-}
-
-/**
- * Delete old profile image
- */
-
-private function deleteOldProfileImage($admin_id) {
-    try {
-        // Get current profile image
-        $query = "SELECT profile_image FROM " . $this->table_name . " WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $admin_id);
-        $stmt->execute();
-        $result = $stmt->fetch(PDO::FETCH_ASSOC);
-        
-        if ($result && !empty($result['profile_image'])) {
-            // Construct the full file path relative to admin folder
-            $oldFile = __DIR__ . '/../' . $result['profile_image'];
-            if (file_exists($oldFile)) {
-                unlink($oldFile);
-            }
-        }
-    } catch (PDOException $e) {
-        error_log("Delete old profile image error: " . $e->getMessage());
-    }
-}
-
-/**
- * Remove profile image
- */
-public function removeProfileImage($admin_id) {
-    if (!$this->conn) return false;
-    
-    try {
-        // Delete the file
-        $this->deleteOldProfileImage($admin_id);
-        
-        // Update database
-        $query = "UPDATE " . $this->table_name . " SET profile_image = NULL, updated_at = NOW() WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $admin_id);
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        error_log("Remove profile image error: " . $e->getMessage());
-        return false;
-    }
-}
-}
+?>

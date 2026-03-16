@@ -79,6 +79,27 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     <span>Logout</span>
                 </a>
             </li>
+            <li class="nav-section">System</li>
+                <?php if (isSuperAdmin()): ?>
+                <li class="<?php echo basename($_SERVER['PHP_SELF']) == 'admins.php' ? 'active' : ''; ?>">
+                    <a href="admins.php">
+                        <i class="fas fa-user-shield"></i>
+                        <span>Manage Admins</span>
+                    </a>
+                </li>
+                <?php endif; ?>
+                <li class="<?php echo basename($_SERVER['PHP_SELF']) == 'settings.php' ? 'active' : ''; ?>">
+                    <a href="settings.php">
+                        <i class="fas fa-cog"></i>
+                        <span>Settings</span>
+                    </a>
+                </li>
+                <li class="<?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
+                    <a href="profile.php">
+                        <i class="fas fa-user-circle"></i>
+                        <span>My Profile</span>
+                    </a>
+                </li>
         </ul>
     </nav>
 
