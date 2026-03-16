@@ -629,6 +629,32 @@ function getLandlordInfo($property) {
             cursor: not-allowed;
         }
 
+           .rent-request-btn1 {
+            width: 100%;
+            background-color: #0077b6;
+            color: white;
+            border: none;
+            padding: 16px;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: background-color 0.2s;
+        }
+
+        .rent-request-btn1:hover:not(:disabled) {
+            background-color: #005a8c;
+        }
+
+        .rent-request-btn1:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
         .form-note {
             margin-top: 12px;
             text-align: center;
@@ -1145,7 +1171,7 @@ function getLandlordInfo($property) {
                             <button type="submit" class="rent-request-btn">
                                 <i class="fas fa-paper-plane"></i> Send Rent Request
                             </button>
-                            <button type="#" class="rent-request-btn" style="margin-top: 10px; background-color: #27ae60">
+                            <button  class="rent-request-btn1" style="margin-top: 10px; background-color: #27ae60">
                                  Make Payment
                             </button>
                             <p class="small-text form-note">

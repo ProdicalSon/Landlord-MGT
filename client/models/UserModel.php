@@ -72,104 +72,102 @@ class UserModel {
     }
 
     // Login user
-public function login($username_or_email, $password, $remember = false) {
-    if (!$this->conn) {
-        return ['success' => false, 'message' => 'Database connection failed'];
-    }
+    public function login($username_or_email, $password, $remember = false) {
+        if (!$this->conn) {
+            return ['success' => false, 'message' => 'Database connection failed'];
+        }
 
-    try {
-        // Get client IP address
-        $ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-        
-        // Check if input is email or username
-        $field = filter_var($username_or_email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
-        
-        $query = "SELECT * FROM " . $this->table_name . " 
-                  WHERE ($field = :credential)";
-        
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':credential', $username_or_email);
-        $stmt->execute();
+        try {
+            // Get client IP address
+            $ip_address = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+            
+            // Check if input is email or username
+            $field = filter_var($username_or_email, FILTER_VALIDATE_EMAIL) ? 'email' : 'username';
+            
+            $query = "SELECT * FROM " . $this->table_name . " 
+                      WHERE ($field = :credential)";
+            
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':credential', $username_or_email);
+            $stmt->execute();
 
-        if ($stmt->rowCount() > 0) {
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
-            
-            // Verify password
-            $password_valid = password_verify($password, $user['password_hash']);
-            
-            // =============================================
-            // RECORD LOGIN ATTEMPT - MOVED BEFORE VERIFICATION CHECK
-            // =============================================
-            try {
-                $attemptQuery = "INSERT INTO login_attempts 
-                                (user_id, username, ip_address, success, created_at) 
-                                VALUES (:user_id, :username, :ip, :success, NOW())";
-                $attemptStmt = $this->conn->prepare($attemptQuery);
-                $attemptStmt->execute([
-                    ':user_id' => $user['id'],
-                    ':username' => $username_or_email,
-                    ':ip' => $ip_address,
-                    ':success' => $password_valid ? 1 : 0
-                ]);
-            } catch (PDOException $e) {
-                // Log but don't stop login if logging fails
-                error_log("Failed to record login attempt: " . $e->getMessage());
-            }
-            
-            // Check if account is verified
-            if (!$user['is_verified']) {
-                return ['success' => false, 'message' => 'Please verify your email before logging in'];
-            }
-            
-            // Check password
-            if ($password_valid) {
-                // Update last login
-                $this->updateLastLogin($user['id']);
+            if ($stmt->rowCount() > 0) {
+                $user = $stmt->fetch(PDO::FETCH_ASSOC);
                 
-                // Create session token for remember me
-                $session_token = null;
-                if ($remember) {
-                    $session_token = $this->createRememberMeToken($user['id']);
+                // Verify password
+                $password_valid = password_verify($password, $user['password_hash']);
+                
+                // Record login attempt
+                try {
+                    $attemptQuery = "INSERT INTO login_attempts 
+                                    (user_id, username, ip_address, success, created_at) 
+                                    VALUES (:user_id, :username, :ip, :success, NOW())";
+                    $attemptStmt = $this->conn->prepare($attemptQuery);
+                    $attemptStmt->execute([
+                        ':user_id' => $user['id'],
+                        ':username' => $username_or_email,
+                        ':ip' => $ip_address,
+                        ':success' => $password_valid ? 1 : 0
+                    ]);
+                } catch (PDOException $e) {
+                    error_log("Failed to record login attempt: " . $e->getMessage());
                 }
                 
-                // Remove sensitive data
-                unset($user['password_hash']);
-                unset($user['verification_token']);
-                unset($user['reset_token']);
+                // Check if account is verified
+                if (!$user['is_verified']) {
+                    return ['success' => false, 'message' => 'Please verify your email before logging in'];
+                }
                 
-                return [
-                    'success' => true,
-                    'message' => 'Login successful',
-                    'user' => $user,
-                    'session_token' => $session_token
-                ];
+                // Check password
+                if ($password_valid) {
+                    // Update last login
+                    $this->updateLastLogin($user['id']);
+                    
+                    // Create session token for remember me
+                    $session_token = null;
+                    if ($remember) {
+                        $session_token = $this->createRememberMeToken($user['id']);
+                    }
+                    
+                    // Remove sensitive data
+                    unset($user['password_hash']);
+                    unset($user['verification_token']);
+                    unset($user['reset_token']);
+                    
+                    return [
+                        'success' => true,
+                        'message' => 'Login successful',
+                        'user' => $user,
+                        'session_token' => $session_token
+                    ];
+                } else {
+                    return ['success' => false, 'message' => 'Invalid password'];
+                }
             } else {
-                return ['success' => false, 'message' => 'Invalid password'];
+                // User not found - record attempt with null user_id
+                try {
+                    $attemptQuery = "INSERT INTO login_attempts 
+                                    (user_id, username, ip_address, success, created_at) 
+                                    VALUES (:user_id, :username, :ip, :success, NOW())";
+                    $attemptStmt = $this->conn->prepare($attemptQuery);
+                    $attemptStmt->execute([
+                        ':user_id' => null,
+                        ':username' => $username_or_email,
+                        ':ip' => $ip_address,
+                        ':success' => 0
+                    ]);
+                } catch (PDOException $e) {
+                    error_log("Failed to record login attempt: " . $e->getMessage());
+                }
+                
+                return ['success' => false, 'message' => 'User not found'];
             }
-        } else {
-            // User not found - record attempt with null user_id
-            try {
-                $attemptQuery = "INSERT INTO login_attempts 
-                                (user_id, username, ip_address, success, created_at) 
-                                VALUES (:user_id, :username, :ip, :success, NOW())";
-                $attemptStmt = $this->conn->prepare($attemptQuery);
-                $attemptStmt->execute([
-                    ':user_id' => null,
-                    ':username' => $username_or_email,
-                    ':ip' => $ip_address,
-                    ':success' => 0
-                ]);
-            } catch (PDOException $e) {
-                error_log("Failed to record login attempt: " . $e->getMessage());
-            }
-            
-            return ['success' => false, 'message' => 'User not found'];
+        } catch (PDOException $e) {
+            error_log("Login error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error occurred'];
         }
-    } catch (PDOException $e) {
-        error_log("Login error: " . $e->getMessage());
-        return ['success' => false, 'message' => 'Database error occurred'];
     }
-}
+
     // Get user by ID
     public function getUserById($user_id) {
         if (!$this->conn) {
@@ -253,6 +251,206 @@ public function login($username_or_email, $password, $remember = false) {
         } catch (PDOException $e) {
             error_log("Update profile error: " . $e->getMessage());
             return ['success' => false, 'message' => 'Database error occurred'];
+        }
+    }
+
+    /**
+     * Update profile with image
+     * @param int $id User ID
+     * @param array $data Profile data (first_name, last_name, phone_number)
+     * @param array|null $imageFile Uploaded image file
+     * @return array Result with success and message
+     */
+    public function updateProfileWithImage($id, $data, $imageFile = null) {
+        if (!$this->conn) {
+            return ['success' => false, 'message' => 'Database connection failed'];
+        }
+
+        try {
+            // Start building the query
+            $query = "UPDATE " . $this->table_name . " 
+                      SET first_name = :first_name, 
+                          last_name = :last_name, 
+                          phone_number = :phone_number, 
+                          updated_at = NOW()";
+            
+            $params = [
+                ':first_name' => $data['first_name'],
+                ':last_name' => $data['last_name'],
+                ':phone_number' => $data['phone_number'],
+                ':id' => $id
+            ];
+            
+            // Add profile image if provided
+            if ($imageFile && isset($imageFile['name']) && !empty($imageFile['name']) && $imageFile['error'] === UPLOAD_ERR_OK) {
+                // Upload image
+                $uploadResult = $this->uploadProfileImage($imageFile, $id);
+                if (!$uploadResult['success']) {
+                    return $uploadResult;
+                }
+                
+                $query .= ", profile_image = :profile_image";
+                $params[':profile_image'] = $uploadResult['filename'];
+            }
+            
+            $query .= " WHERE id = :id";
+            
+            $stmt = $this->conn->prepare($query);
+            
+            foreach ($params as $key => &$value) {
+                $stmt->bindParam($key, $value);
+            }
+            
+            if ($stmt->execute()) {
+                return ['success' => true, 'message' => 'Profile updated successfully'];
+            }
+            return ['success' => false, 'message' => 'Failed to update profile'];
+        } catch (PDOException $e) {
+            error_log("Update profile with image error: " . $e->getMessage());
+            return ['success' => false, 'message' => 'Database error: ' . $e->getMessage()];
+        }
+    }
+
+    /**
+     * Upload profile image
+     * @param array $file Uploaded file from $_FILES
+     * @param int $user_id User ID
+     * @return array Result with success, message, and filename
+     */
+    private function uploadProfileImage($file, $user_id) {
+        // Define upload directory - relative to the client folder
+        $uploadDir = __DIR__ . '/../uploads/profiles/';
+        
+        // Create directory if it doesn't exist
+        if (!file_exists($uploadDir)) {
+            if (!mkdir($uploadDir, 0777, true)) {
+                return ['success' => false, 'message' => 'Failed to create upload directory'];
+            }
+        }
+        
+        // Check if directory is writable
+        if (!is_writable($uploadDir)) {
+            return ['success' => false, 'message' => 'Upload directory is not writable'];
+        }
+        
+        // Check for upload errors
+        if ($file['error'] !== UPLOAD_ERR_OK) {
+            $uploadErrors = [
+                UPLOAD_ERR_INI_SIZE => 'File exceeds upload_max_filesize directive in php.ini',
+                UPLOAD_ERR_FORM_SIZE => 'File exceeds the MAX_FILE_SIZE directive in the HTML form',
+                UPLOAD_ERR_PARTIAL => 'File was only partially uploaded',
+                UPLOAD_ERR_NO_FILE => 'No file was uploaded',
+                UPLOAD_ERR_NO_TMP_DIR => 'Missing a temporary folder',
+                UPLOAD_ERR_CANT_WRITE => 'Failed to write file to disk',
+                UPLOAD_ERR_EXTENSION => 'A PHP extension stopped the file upload'
+            ];
+            $errorMessage = isset($uploadErrors[$file['error']]) ? $uploadErrors[$file['error']] : 'Unknown upload error';
+            return ['success' => false, 'message' => 'Upload error: ' . $errorMessage];
+        }
+        
+        // Validate file type
+        $allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif', 'image/webp'];
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mimeType = finfo_file($finfo, $file['tmp_name']);
+        finfo_close($finfo);
+        
+        if (!in_array($mimeType, $allowedTypes)) {
+            return ['success' => false, 'message' => 'Invalid file type. Only JPG, PNG, GIF, and WEBP are allowed.'];
+        }
+        
+        // Validate file size (max 2MB)
+        $maxSize = 2 * 1024 * 1024; // 2MB
+        if ($file['size'] > $maxSize) {
+            return ['success' => false, 'message' => 'File too large. Maximum size is 2MB.'];
+        }
+        
+        // Get file extension from mime type
+        $extension = '';
+        switch ($mimeType) {
+            case 'image/jpeg':
+            case 'image/jpg':
+                $extension = 'jpg';
+                break;
+            case 'image/png':
+                $extension = 'png';
+                break;
+            case 'image/gif':
+                $extension = 'gif';
+                break;
+            case 'image/webp':
+                $extension = 'webp';
+                break;
+            default:
+                $extension = 'jpg';
+        }
+        
+        // Generate unique filename
+        $filename = 'user_' . $user_id . '_' . time() . '.' . $extension;
+        $filepath = $uploadDir . $filename;
+        
+        // Move uploaded file
+        if (move_uploaded_file($file['tmp_name'], $filepath)) {
+            // Delete old profile image if exists
+            $this->deleteOldProfileImage($user_id);
+            
+            // Store path relative to the client folder
+            $dbPath = 'uploads/profiles/' . $filename;
+            
+            return [
+                'success' => true,
+                'filename' => $dbPath,
+                'filepath' => $filepath
+            ];
+        }
+        
+        return ['success' => false, 'message' => 'Failed to save uploaded file'];
+    }
+
+    /**
+     * Delete old profile image
+     * @param int $user_id User ID
+     */
+    private function deleteOldProfileImage($user_id) {
+        try {
+            // Get current profile image
+            $query = "SELECT profile_image FROM " . $this->table_name . " WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $user_id);
+            $stmt->execute();
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            
+            if ($result && !empty($result['profile_image'])) {
+                // Construct the full file path
+                $oldFile = __DIR__ . '/../' . $result['profile_image'];
+                if (file_exists($oldFile)) {
+                    unlink($oldFile);
+                }
+            }
+        } catch (PDOException $e) {
+            error_log("Delete old profile image error: " . $e->getMessage());
+        }
+    }
+
+    /**
+     * Remove profile image
+     * @param int $user_id User ID
+     * @return bool Success status
+     */
+    public function removeProfileImage($user_id) {
+        if (!$this->conn) return false;
+        
+        try {
+            // Delete the file first
+            $this->deleteOldProfileImage($user_id);
+            
+            // Update database to remove image reference
+            $query = "UPDATE " . $this->table_name . " SET profile_image = NULL, updated_at = NOW() WHERE id = :id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':id', $user_id);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Remove profile image error: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -521,21 +719,22 @@ public function login($username_or_email, $password, $remember = false) {
         return implode(' ', $parts);
     }
 
+    // Logout user
     public function logout($user_id) {
-    if (!$this->conn) {
-        return false;
-    }
+        if (!$this->conn) {
+            return false;
+        }
 
-    try {
-        // If you have a user_sessions table, clear sessions
-        $query = "DELETE FROM user_sessions WHERE user_id = :user_id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':user_id', $user_id);
-        return $stmt->execute();
-    } catch (PDOException $e) {
-        error_log("Logout error: " . $e->getMessage());
-        return false;
+        try {
+            // If you have a user_sessions table, clear sessions
+            $query = "DELETE FROM user_sessions WHERE user_id = :user_id";
+            $stmt = $this->conn->prepare($query);
+            $stmt->bindParam(':user_id', $user_id);
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            error_log("Logout error: " . $e->getMessage());
+            return false;
+        }
     }
-}
 }
 ?>

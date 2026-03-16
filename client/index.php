@@ -1201,7 +1201,7 @@ if (isset($_GET['get_saved_count'])) {
                     $priceSteps = [500, 1000, 1500, 2000, 2500, 3000, 4000, 5000];
                     foreach ($priceSteps as $price) {
                         $selected = ($min_price == $price) ? 'selected' : '';
-                        echo "<option value=\"$price\" $selected>$$price+</option>";
+                        echo "<option value=\"$price\" $selected>Ksh$price+</option>";
                     }
                     ?>
                 </select>
@@ -1211,12 +1211,13 @@ if (isset($_GET['get_saved_count'])) {
                     $priceSteps = [1000, 2000, 3000, 4000, 5000, 7500, 10000, 15000];
                     foreach ($priceSteps as $price) {
                         $selected = ($max_price == $price) ? 'selected' : '';
-                        echo "<option value=\"$price\" $selected>Up to $$price</option>";
+                        echo "<option value=\"$price\" $selected>Up to Ksh$price</option>";
                     }
                     ?>
                 </select>
                 <select name="min_beds">
                     <option value="">Any Beds</option>
+                    <option value="0" <?php echo $min_beds == 0 ? 'selected' : ''; ?>>0 Bed</option>
                     <option value="1" <?php echo $min_beds == 1 ? 'selected' : ''; ?>>1+ Bed</option>
                     <option value="2" <?php echo $min_beds == 2 ? 'selected' : ''; ?>>2+ Beds</option>
                     <option value="3" <?php echo $min_beds == 3 ? 'selected' : ''; ?>>3+ Beds</option>
@@ -1272,7 +1273,7 @@ if (isset($_GET['get_saved_count'])) {
                     
                     <div class="property-details">
                         <div class="property-price">
-                            <span class="price">$<?php echo number_format($property['monthly_rent'], 2); ?></span>
+                            <span class="price">Ksh <?php echo number_format($property['monthly_rent'], 2); ?></span>
                             <span class="period">/month</span>
                         </div>
                         
