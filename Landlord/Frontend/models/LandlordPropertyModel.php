@@ -470,27 +470,6 @@ class LandlordPropertyModel {
     }
 
     /**
-     * Get property images
-     */
-    public function getPropertyImages($property_id) {
-        if (!$this->conn) {
-            return [];
-        }
-
-        try {
-            $query = "SELECT * FROM property_images WHERE property_id = :property_id ORDER BY is_primary DESC, created_at DESC";
-            $stmt = $this->conn->prepare($query);
-            $stmt->bindParam(':property_id', $property_id);
-            $stmt->execute();
-            
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (PDOException $e) {
-            error_log("Get property images error: " . $e->getMessage());
-            return [];
-        }
-    }
-
-    /**
      * Get primary property image
      */
     public function getPrimaryPropertyImage($property_id) {
@@ -578,5 +557,55 @@ class LandlordPropertyModel {
             return ['success' => false, 'message' => 'Database error'];
         }
     }
+    /**
+ * Get landlord properties with images
+ */
+public function getLandlordPropertiesWithImages($landlord_id) {
+    if (!$this->conn) return [];
+    
+    try {
+        $query = "SELECT p.* FROM " . $this->table_name . " p 
+                  WHERE p.landlord_id = :landlord_id 
+                  ORDER BY p.created_at DESC";
+        
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':landlord_id', $landlord_id);
+        $stmt->execute();
+        
+        $properties = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Get images for each property
+        foreach ($properties as &$property) {
+            $property['images'] = $this->getPropertyImages($property['id']);
+        }
+        
+        return $properties;
+    } catch (PDOException $e) {
+        error_log("Get landlord properties error: " . $e->getMessage());
+        return [];
+    }
 }
-?>
+
+/**
+ * Get property images
+ */
+public function getPropertyImages($property_id) {
+    try {
+        // Check if property_images table exists
+        $query = "SHOW TABLES LIKE 'property_images'";
+        $stmt = $this->conn->query($query);
+        if ($stmt->rowCount() == 0) {
+            return [];
+        }
+        
+        $query = "SELECT * FROM property_images WHERE property_id = :property_id ORDER BY is_primary DESC, id ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':property_id', $property_id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get property images error: " . $e->getMessage());
+        return [];
+    }
+}
+}

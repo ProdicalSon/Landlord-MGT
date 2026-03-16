@@ -11,9 +11,11 @@ if (!isset($_SESSION['landlord_id'])) {
 
 require_once __DIR__ . '/models/LandlordUserModel.php';
 require_once __DIR__ . '/models/LandlordPropertyModel.php';
+require_once __DIR__ . '/models/PropertyImageModel.php'; // We'll create this
 
 $userModel = new LandlordUserModel();
 $propertyModel = new LandlordPropertyModel();
+$propertyImageModel = new PropertyImageModel();
 
 $landlord_id = $_SESSION['landlord_id'];
 $landlord = $userModel->getLandlordById($landlord_id);
@@ -55,74 +57,116 @@ if (isset($_POST['action'])) {
         exit;
     }
     
-    if ($_POST['action'] === 'add_property') {
-        // Get form data
-        $title = trim($_POST['title'] ?? '');
-        $type = $_POST['type'] ?? '';
-        $price = floatval($_POST['price'] ?? 0);
-        $status = $_POST['status'] ?? 'available';
-        $description = trim($_POST['description'] ?? '');
-        $address = trim($_POST['address'] ?? '');
-        $city = trim($_POST['city'] ?? '');
-        $neighborhood = trim($_POST['neighborhood'] ?? '');
-        $zip = trim($_POST['zip'] ?? '');
-        $bedrooms = $_POST['bedrooms'] ?? '1';
-        $bathrooms = $_POST['bathrooms'] ?? '1';
-        $area = floatval($_POST['area'] ?? 0);
-        $year_built = isset($_POST['year_built']) && !empty($_POST['year_built']) ? intval($_POST['year_built']) : null;
-        
-        // Get amenities
-        $amenities = [];
-        if (isset($_POST['amenities']) && is_array($_POST['amenities'])) {
-            $amenities = $_POST['amenities'];
-        }
-        
-        // Validate required fields
-        $errors = [];
-        if (empty($title)) $errors[] = 'Property title is required';
-        if (empty($type)) $errors[] = 'Property type is required';
-        if ($price <= 0) $errors[] = 'Valid monthly rent is required';
-        if (empty($description)) $errors[] = 'Property description is required';
-        if (empty($address)) $errors[] = 'Street address is required';
-        if (empty($city)) $errors[] = 'City is required';
-        if (empty($neighborhood)) $errors[] = 'Neighborhood is required';
-        if ($area <= 0) $errors[] = 'Valid area is required';
-        
-        if (!empty($errors)) {
-            echo json_encode(['success' => false, 'message' => implode('<br>', $errors)]);
-            exit;
-        }
-        
-        // Prepare data for database
-        $propertyData = [
-            'title' => $title,
-            'type' => $type,
-            'price' => $price,
-            'status' => $status,
-            'description' => $description,
-            'address' => $address,
-            'city' => $city,
-            'neighborhood' => $neighborhood,
-            'zip' => $zip,
-            'bedrooms' => $bedrooms == '5+' ? 5 : intval($bedrooms),
-            'bathrooms' => $bathrooms == '5+' ? 5 : floatval($bathrooms),
-            'area' => $area,
-            'year_built' => $year_built,
-            'amenities' => $amenities,
-            'featured' => 0
-        ];
-        
-        // Add property to database
-        $result = $propertyModel->addProperty($propertyData, $landlord_id);
-        echo json_encode($result);
+   if ($_POST['action'] === 'add_property') {
+    // Log all received data
+    error_log("========== ADD PROPERTY DEBUG ==========");
+    error_log("POST data: " . print_r($_POST, true));
+    error_log("FILES data: " . print_r($_FILES, true));
+    
+    // Get form data
+    $title = trim($_POST['title'] ?? '');
+    $type = $_POST['type'] ?? '';
+    $price = floatval($_POST['price'] ?? 0);
+    $status = $_POST['status'] ?? 'available';
+    $description = trim($_POST['description'] ?? '');
+    $address = trim($_POST['address'] ?? '');
+    $city = trim($_POST['city'] ?? '');
+    $neighborhood = trim($_POST['neighborhood'] ?? '');
+    $zip = trim($_POST['zip'] ?? '');
+    $bedrooms = $_POST['bedrooms'] ?? '1';
+    $bathrooms = $_POST['bathrooms'] ?? '1';
+    $area = floatval($_POST['area'] ?? 0);
+    $year_built = isset($_POST['year_built']) && !empty($_POST['year_built']) ? intval($_POST['year_built']) : null;
+    
+    // Log parsed data
+    error_log("Parsed data - Title: $title, Type: $type, Price: $price, Status: $status");
+    error_log("Location - Address: $address, City: $city, Neighborhood: $neighborhood");
+    error_log("Details - Bedrooms: $bedrooms, Bathrooms: $bathrooms, Area: $area");
+    
+    // Get amenities
+    $amenities = [];
+    if (isset($_POST['amenities']) && is_array($_POST['amenities'])) {
+        $amenities = $_POST['amenities'];
+        error_log("Amenities: " . print_r($amenities, true));
+    }
+    
+    // Validate required fields
+    $errors = [];
+    if (empty($title)) $errors[] = 'Property title is required';
+    if (empty($type)) $errors[] = 'Property type is required';
+    if ($price <= 0) $errors[] = 'Valid monthly rent is required';
+    if (empty($description)) $errors[] = 'Property description is required';
+    if (empty($address)) $errors[] = 'Street address is required';
+    if (empty($city)) $errors[] = 'City is required';
+    if (empty($neighborhood)) $errors[] = 'Neighborhood is required';
+    if ($area <= 0) $errors[] = 'Valid area is required';
+    
+    if (!empty($errors)) {
+        error_log("Validation errors: " . implode(', ', $errors));
+        echo json_encode(['success' => false, 'message' => implode('<br>', $errors)]);
         exit;
     }
+    
+    // Prepare data for database
+    $propertyData = [
+        'title' => $title,
+        'type' => $type,
+        'price' => $price,
+        'status' => $status,
+        'description' => $description,
+        'address' => $address,
+        'city' => $city,
+        'neighborhood' => $neighborhood,
+        'zip' => $zip,
+        'bedrooms' => $bedrooms == '5+' ? 5 : intval($bedrooms),
+        'bathrooms' => $bathrooms == '5+' ? 5 : floatval($bathrooms),
+        'area' => $area,
+        'year_built' => $year_built,
+        'amenities' => $amenities,
+        'featured' => 0
+    ];
+    
+    error_log("Property data for DB: " . print_r($propertyData, true));
+    
+    // Add property to database
+    try {
+        $result = $propertyModel->addProperty($propertyData, $landlord_id);
+        error_log("addProperty result: " . print_r($result, true));
+        
+        // If property added successfully and images were uploaded
+        if ($result['success'] && isset($_FILES['property_images']) && !empty($_FILES['property_images']['name'][0])) {
+            $property_id = $result['property_id'];
+            error_log("Processing images for property ID: $property_id");
+            
+            // Make sure PropertyImageModel is included
+            require_once __DIR__ . '/models/PropertyImageModel.php';
+            $propertyImageModel = new PropertyImageModel();
+            
+            $uploadResult = $propertyImageModel->uploadMultipleImages($_FILES['property_images'], $property_id);
+            error_log("Image upload result: " . print_r($uploadResult, true));
+            
+            if (!$uploadResult['success']) {
+                $result['image_message'] = $uploadResult['message'];
+            }
+        }
+        
+        echo json_encode($result);
+        
+    } catch (Exception $e) {
+        error_log("EXCEPTION in add_property: " . $e->getMessage());
+        error_log("Stack trace: " . $e->getTraceAsString());
+        echo json_encode(['success' => false, 'message' => 'Server error: ' . $e->getMessage()]);
+    }
+    exit;
+}
 }
 
 // Handle GET request to refresh properties
 if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
     header('Content-Type: application/json');
-    $properties = $propertyModel->getLandlordProperties($landlord_id);
+    
+    // Use the new method that includes images
+    $properties = $propertyModel->getLandlordPropertiesWithImages($landlord_id);
     $stats = $propertyModel->getPropertyStats($landlord_id);
     
     // Format properties for display
@@ -645,6 +689,105 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
             gap: 5px;
         }
 
+        /* Property Image Gallery Styles */
+.property-image-container {
+    position: relative;
+}
+
+.property-main-image {
+    height: 200px;
+    overflow: hidden;
+    position: relative;
+}
+
+.property-main-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s;
+}
+
+.property-card:hover .property-main-image img {
+    transform: scale(1.05);
+}
+
+.property-thumbnails {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    height: 50px;
+    margin-top: 2px;
+}
+
+.thumbnail {
+    position: relative;
+    overflow: hidden;
+    height: 50px;
+}
+
+.thumbnail img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: opacity 0.3s;
+}
+
+.thumbnail:hover img {
+    opacity: 0.8;
+}
+
+.thumbnail.more-images {
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.thumbnail.more-images:hover {
+    background: rgba(0, 0, 0, 0.8);
+}
+
+.property-feature i.fa-images {
+    color: var(--secondary);
+}
+
+/* Image count badge */
+.image-count-badge {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    z-index: 2;
+}
+
+.image-count-badge i {
+    font-size: 12px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .property-thumbnails {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .property-thumbnails {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
         .btn-edit {
             background: var(--light-gray);
             color: var(--text);
@@ -779,6 +922,89 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
         .form-group textarea {
             resize: vertical;
             min-height: 100px;
+        }
+
+        /* Multiple Image Upload Styles */
+        .image-upload-area {
+            border: 2px dashed var(--gray);
+            border-radius: 10px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: var(--light-gray);
+            margin-bottom: 15px;
+        }
+
+        .image-upload-area:hover {
+            border-color: var(--primary);
+            background: rgba(255, 56, 92, 0.05);
+        }
+
+        .image-upload-area i {
+            font-size: 48px;
+            color: var(--primary);
+            margin-bottom: 15px;
+        }
+
+        .image-upload-area h3 {
+            font-size: 18px;
+            margin-bottom: 5px;
+            color: var(--dark);
+        }
+
+        .image-upload-area p {
+            color: var(--text);
+            font-size: 14px;
+        }
+
+        .image-preview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .preview-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            height: 120px;
+            border: 2px solid var(--light-gray);
+        }
+
+        .preview-item img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .preview-remove {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 255, 255, 0.9);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 12px;
+            color: var(--danger);
+            transition: all 0.3s;
+        }
+
+        .preview-remove:hover {
+            background: var(--danger);
+            color: white;
+        }
+
+        .image-counter {
+            margin-top: 10px;
+            font-size: 13px;
+            color: var(--text);
         }
 
         .amenities-grid {
@@ -973,10 +1199,16 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
             .amenities-grid {
                 grid-template-columns: repeat(2, 1fr);
             }
+            .image-preview-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
         }
 
         @media (max-width: 480px) {
             .amenities-grid {
+                grid-template-columns: 1fr;
+            }
+            .image-preview-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -1119,7 +1351,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
                     </div>
                     
                     <div class="form-content">
-                        <form id="add-property-form">
+                        <form id="add-property-form" enctype="multipart/form-data">
                             <!-- Basic Information -->
                             <div class="form-section">
                                 <h2><i class="fas fa-info-circle"></i> Basic Information</h2>
@@ -1275,6 +1507,22 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
                                 </div>
                             </div>
                             
+                            <!-- Property Images - Multiple Upload -->
+                            <div class="form-section">
+                                <h2><i class="fas fa-images"></i> Property Images</h2>
+                                <div class="form-group full-width">
+                                    <div class="image-upload-area" id="image-upload-area">
+                                        <i class="fas fa-cloud-upload-alt"></i>
+                                        <h3>Upload Property Images</h3>
+                                        <p>Drag & drop images here or click to browse</p>
+                                        <p><small>You can select multiple images. First image will be the main photo.</small></p>
+                                        <input type="file" id="property-images" name="property_images[]" multiple accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" style="display: none;">
+                                    </div>
+                                    <div class="image-counter" id="image-counter">0 images selected</div>
+                                    <div class="image-preview-grid" id="image-preview-grid"></div>
+                                </div>
+                            </div>
+                            
                             <div class="form-actions">
                                 <button type="button" class="btn-cancel" onclick="showSection('listings')">Cancel</button>
                                 <button type="submit" class="btn-submit">
@@ -1296,6 +1544,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
 
     <script>
         let allProperties = [];
+        let selectedFiles = [];
 
         document.addEventListener('DOMContentLoaded', function() {
             console.log('Page loaded, loading properties...');
@@ -1315,6 +1564,43 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
                     submitAddPropertyForm();
                 });
             }
+
+            // Image upload functionality
+            const uploadArea = document.getElementById('image-upload-area');
+            const fileInput = document.getElementById('property-images');
+            
+            if (uploadArea && fileInput) {
+                // Click to upload
+                uploadArea.addEventListener('click', function() {
+                    fileInput.click();
+                });
+                
+                // Drag and drop
+                uploadArea.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--primary)';
+                    uploadArea.style.background = 'rgba(255, 56, 92, 0.05)';
+                });
+                
+                uploadArea.addEventListener('dragleave', function() {
+                    uploadArea.style.borderColor = 'var(--gray)';
+                    uploadArea.style.background = 'var(--light-gray)';
+                });
+                
+                uploadArea.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    uploadArea.style.borderColor = 'var(--gray)';
+                    uploadArea.style.background = 'var(--light-gray)';
+                    
+                    const files = e.dataTransfer.files;
+                    handleFiles(files);
+                });
+                
+                // File input change
+                fileInput.addEventListener('change', function() {
+                    handleFiles(this.files);
+                });
+            }
         });
 
         function showSection(section) {
@@ -1325,6 +1611,59 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
             // Show/hide sections
             document.getElementById('listings-section').classList.toggle('active', section === 'listings');
             document.getElementById('add-form-section').classList.toggle('active', section === 'add-form');
+        }
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files);
+            updateImagePreview();
+        }
+
+        function updateImagePreview() {
+            const previewGrid = document.getElementById('image-preview-grid');
+            const counter = document.getElementById('image-counter');
+            
+            // Clear preview grid
+            previewGrid.innerHTML = '';
+            
+            if (selectedFiles.length === 0) {
+                counter.textContent = '0 images selected';
+                return;
+            }
+            
+            counter.textContent = selectedFiles.length + ' image(s) selected';
+            
+            // Create preview for each file
+            selectedFiles.forEach((file, index) => {
+                const reader = new FileReader();
+                const previewItem = document.createElement('div');
+                previewItem.className = 'preview-item';
+                
+                reader.onload = function(e) {
+                    previewItem.innerHTML = `
+                        <img src="${e.target.result}" alt="Preview ${index + 1}">
+                        <div class="preview-remove" onclick="removeImage(${index})">&times;</div>
+                        ${index === 0 ? '<small style="position:absolute; bottom:0; left:0; background:var(--primary); color:white; padding:2px 5px; font-size:10px;">Main</small>' : ''}
+                    `;
+                };
+                
+                reader.readAsDataURL(file);
+                previewGrid.appendChild(previewItem);
+            });
+        }
+
+        function removeImage(index) {
+            selectedFiles.splice(index, 1);
+            
+            // Update file input
+            const fileInput = document.getElementById('property-images');
+            const dt = new DataTransfer();
+            
+            selectedFiles.forEach(file => {
+                dt.items.add(file);
+            });
+            
+            fileInput.files = dt.files;
+            updateImagePreview();
         }
 
         function loadProperties() {
@@ -1365,101 +1704,142 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
                 });
         }
 
-        function displayProperties(properties) {
-            const grid = document.getElementById('properties-grid');
+function displayProperties(properties) {
+    const grid = document.getElementById('properties-grid');
+    
+    if (!properties || properties.length === 0) {
+        displayEmptyState();
+        return;
+    }
+
+    let html = '';
+    properties.forEach(property => {
+        const statusClass = `status-${property.status || 'available'}`;
+        const formattedDate = property.created_at ? new Date(property.created_at).toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        }) : 'N/A';
+
+        // Get images - use first image as main, or default
+        let mainImage = 'assets/icons/bed.jpg';
+        let additionalImages = [];
+        let imageCount = 0;
+        
+        if (property.images && property.images.length > 0) {
+            mainImage = '/Landlord-MGT/Landlord/Frontend/' + property.images[0].image_path;
+            imageCount = property.images.length;
             
-            if (!properties || properties.length === 0) {
-                displayEmptyState();
-                return;
-            }
-
-            let html = '';
-            properties.forEach(property => {
-                const statusClass = `status-${property.status || 'available'}`;
-                const formattedDate = property.created_at ? new Date(property.created_at).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                }) : 'N/A';
-
-                // Parse amenities
-                let amenities = [];
-                if (property.amenities) {
-                    if (Array.isArray(property.amenities)) {
-                        amenities = property.amenities;
-                    } else if (typeof property.amenities === 'string') {
-                        try {
-                            amenities = JSON.parse(property.amenities);
-                        } catch (e) {
-                            amenities = [];
-                        }
-                    }
-                }
-
-                // Show first 3 amenities
-                const amenityTags = amenities.slice(0, 3).map(a => 
-                    `<span class="amenity-tag">${a}</span>`
-                ).join('');
-
-                html += `
-                    <div class="property-card" data-id="${property.id}">
-                        <div class="property-image">
-                            <img src="assets/icons/bed.jpg" alt="${property.property_name || 'Property'}">
-                            <div class="property-status-badge ${statusClass}">
-                                ${property.status || 'available'}
-                            </div>
-                        </div>
-                        <div class="property-details">
-                            <div class="property-price">
-                                KES ${Number(property.monthly_rent || 0).toLocaleString()} <span>/month</span>
-                            </div>
-                            <h3 class="property-title">${property.property_name || 'Untitled Property'}</h3>
-                            <div class="property-location">
-                                <i class="fas fa-map-marker-alt"></i>
-                                ${property.neighborhood || ''} ${property.city ? ', ' + property.city : ''}
-                            </div>
-                            <div class="property-features">
-                                <div class="property-feature">
-                                    <i class="fas fa-bed"></i>
-                                    <span>${property.bedrooms || 0} Beds</span>
-                                </div>
-                                <div class="property-feature">
-                                    <i class="fas fa-bath"></i>
-                                    <span>${property.bathrooms || 0} Baths</span>
-                                </div>
-                                <div class="property-feature">
-                                    <i class="fas fa-vector-square"></i>
-                                    <span>${property.sqft || 0} sqft</span>
-                                </div>
-                            </div>
-                            <div class="property-meta">
-                                <span class="property-date">
-                                    <i class="far fa-calendar"></i> Added: ${formattedDate}
-                                </span>
-                                <div class="property-amenities">
-                                    ${amenityTags}
-                                    ${amenities.length > 3 ? `<span class="amenity-tag">+${amenities.length - 3}</span>` : ''}
-                                </div>
-                            </div>
-                            <div class="property-actions">
-                                <button class="btn-edit" onclick="editProperty(${property.id})">
-                                    <i class="fas fa-edit"></i> Edit
-                                </button>
-                                <button class="btn-view" onclick="viewProperty(${property.id})">
-                                    <i class="fas fa-eye"></i> View
-                                </button>
-                                <button class="btn-delete" onclick="deleteProperty(${property.id})">
-                                    <i class="fas fa-trash"></i> Delete
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                `;
-            });
-
-            grid.innerHTML = html;
+            // Get additional images (up to 3 for preview)
+            additionalImages = property.images.slice(1, 4).map(img => 
+                '/Landlord-MGT/Landlord/Frontend/' + img.image_path
+            );
         }
 
+        // Parse amenities
+        let amenities = [];
+        if (property.amenities) {
+            if (Array.isArray(property.amenities)) {
+                amenities = property.amenities;
+            } else if (typeof property.amenities === 'string') {
+                try {
+                    amenities = JSON.parse(property.amenities);
+                } catch (e) {
+                    amenities = [];
+                }
+            }
+        }
+
+        // Show first 3 amenities
+        const amenityTags = amenities.slice(0, 3).map(a => 
+            `<span class="amenity-tag">${a}</span>`
+        ).join('');
+
+        html += `
+            <div class="property-card" data-id="${property.id}">
+                <div class="property-image-container">
+                    <div class="property-main-image">
+                        <img src="${mainImage}" alt="${property.property_name || 'Property'}">
+                        <div class="property-status-badge ${statusClass}">
+                            ${property.status || 'available'}
+                        </div>
+                    </div>
+                    
+                    ${additionalImages.length > 0 ? `
+                    <div class="property-thumbnails">
+                        ${additionalImages.map(img => `
+                            <div class="thumbnail">
+                                <img src="${img}" alt="Property thumbnail">
+                            </div>
+                        `).join('')}
+                        ${imageCount > 4 ? `
+                            <div class="thumbnail more-images">
+                                <span>+${imageCount - 4}</span>
+                            </div>
+                        ` : ''}
+                    </div>
+                    ` : ''}
+                </div>
+                
+                <div class="property-details">
+                    <div class="property-price">
+                        KES ${Number(property.monthly_rent || 0).toLocaleString()} <span>/month</span>
+                    </div>
+                    <h3 class="property-title">${property.property_name || 'Untitled Property'}</h3>
+                    <div class="property-location">
+                        <i class="fas fa-map-marker-alt"></i>
+                        ${property.neighborhood || ''} ${property.city ? ', ' + property.city : ''}
+                    </div>
+                    
+                    <div class="property-features">
+                        <div class="property-feature">
+                            <i class="fas fa-bed"></i>
+                            <span>${property.bedrooms || 0} Beds</span>
+                        </div>
+                        <div class="property-feature">
+                            <i class="fas fa-bath"></i>
+                            <span>${property.bathrooms || 0} Baths</span>
+                        </div>
+                        <div class="property-feature">
+                            <i class="fas fa-vector-square"></i>
+                            <span>${property.sqft || 0} sqft</span>
+                        </div>
+                        <div class="property-feature">
+                            <i class="fas fa-images"></i>
+                            <span>${imageCount} Photo${imageCount !== 1 ? 's' : ''}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="property-meta">
+                        <span class="property-date">
+                            <i class="far fa-calendar"></i> Added: ${formattedDate}
+                        </span>
+                        <div class="property-amenities">
+                            ${amenityTags}
+                            ${amenities.length > 3 ? `<span class="amenity-tag">+${amenities.length - 3}</span>` : ''}
+                        </div>
+                    </div>
+                    
+                    <div class="property-actions">
+                        <button class="btn-edit" onclick="editProperty(${property.id})">
+                            <i class="fas fa-edit"></i> Edit
+                        </button>
+                        <button class="btn-view" onclick="viewProperty(${property.id})">
+                            <i class="fas fa-eye"></i> View
+                        </button>
+                        <button class="btn-delete" onclick="deleteProperty(${property.id})">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+
+    grid.innerHTML = html;
+}
+        
+        
         function displayEmptyState() {
             const grid = document.getElementById('properties-grid');
             grid.innerHTML = `
@@ -1512,48 +1892,85 @@ if (isset($_GET['action']) && $_GET['action'] === 'get_properties') {
             }
         }
 
-        function submitAddPropertyForm() {
-            const form = document.getElementById('add-property-form');
-            const formData = new FormData(form);
-            formData.append('action', 'add_property');
-            
-            // Disable submit button
-            const submitBtn = form.querySelector('button[type="submit"]');
-            const originalText = submitBtn.innerHTML;
-            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
-            submitBtn.disabled = true;
-            
-            fetch(window.location.pathname, {
-                method: 'POST',
-                body: formData
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    showNotification('Property added successfully!', 'success');
-                    form.reset();
-                    showSection('listings');
-                    loadProperties(); // Refresh the listings
-                } else {
-                    showNotification(data.message || 'Error adding property', 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                showNotification('An error occurred. Please try again.', 'error');
-            })
-            .finally(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            });
+function submitAddPropertyForm() {
+    const form = document.getElementById('add-property-form');
+    const formData = new FormData(form);
+    
+    // Add action
+    formData.append('action', 'add_property');
+    
+    // Add selected files
+    if (selectedFiles.length > 0) {
+        selectedFiles.forEach(file => {
+            formData.append('property_images[]', file);
+        });
+        console.log('Uploading', selectedFiles.length, 'images');
+    }
+    
+    // Log form data for debugging
+    console.log('Submitting property form:');
+    for (let pair of formData.entries()) {
+        if (pair[0] !== 'property_images[]') {
+            console.log(pair[0] + ': ' + pair[1]);
+        } else {
+            console.log(pair[0] + ': [File] ' + pair[1].name);
         }
-
+    }
+    
+    // Disable submit button
+    const submitBtn = form.querySelector('button[type="submit"]');
+    const originalText = submitBtn.innerHTML;
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+    submitBtn.disabled = true;
+    
+    fetch(window.location.pathname, {
+        method: 'POST',
+        body: formData
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        console.log('Response headers:', response.headers);
+        return response.text(); // Get as text first to see any PHP errors
+    })
+    .then(text => {
+        console.log('Raw response:', text.substring(0, 500)); // Log first 500 chars
+        
+        try {
+            const data = JSON.parse(text);
+            console.log('Parsed data:', data);
+            
+            if (data.success) {
+                showNotification('Property added successfully!', 'success');
+                form.reset();
+                selectedFiles = [];
+                updateImagePreview();
+                showSection('listings');
+                loadProperties();
+            } else {
+                showNotification(data.message || 'Error adding property', 'error');
+            }
+        } catch (e) {
+            console.error('JSON parse error:', e);
+            console.error('Response was not JSON. First 500 chars:', text.substring(0, 500));
+            showNotification('Server error: Invalid response format', 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Fetch Error:', error);
+        showNotification('Connection error: ' + error.message, 'error');
+    })
+    .finally(() => {
+        submitBtn.innerHTML = originalText;
+        submitBtn.disabled = false;
+    });
+}
+        
         function editProperty(propertyId) {
             window.location.href = `edit-property.php?id=${propertyId}`;
         }
 
         function viewProperty(propertyId) {
-            window.location.href = `../client/property.php?id=${propertyId}`;
+            window.location.href = `../../client/property.php?id=${propertyId}`;
         }
 
         function deleteProperty(propertyId) {
