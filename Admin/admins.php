@@ -88,7 +88,7 @@ require_once __DIR__ . '/includes/sidebar.php';
 ?>
 
 <div class="content-header">
-    <h1><i class="fas fa-user-shield"></i> Manage Administrators</h1>
+   
     <button class="btn btn-primary" onclick="showAddAdminModal()">
         <i class="fas fa-plus"></i> Add New Admin
     </button>
@@ -109,8 +109,8 @@ require_once __DIR__ . '/includes/sidebar.php';
 <?php endif; ?>
 
 <!-- Statistics Cards -->
-<div class="stats-grid">
-    <div class="stat-card">
+<div class="stats-grid" style="display: flex; gap: 150px; margin-top: 20px; margin-bottom: 20px;">
+    <div class="stat-card" style="display: flex;">
         <div class="stat-icon" style="background: #4e73df20; color: #4e73df;">
             <i class="fas fa-user-shield"></i>
         </div>
