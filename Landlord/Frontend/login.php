@@ -95,6 +95,8 @@ if (isset($_GET['verified'])) {
             align-items: center;
             justify-content: center;
             padding: 20px;
+
+            
         }
 
         .login-container {
@@ -103,6 +105,7 @@ if (isset($_GET['verified'])) {
             box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
             width: 100%;
             max-width: 450px;
+            height: 900px;
             padding: 40px;
         }
 
@@ -119,14 +122,14 @@ if (isset($_GET['verified'])) {
         }
 
         .logo h2 {
-            font-size: 24px;
+            font-size: 20px;
             color: var(--primary);
             font-weight: 600;
         }
 
         .logo p {
             color: var(--text);
-            font-size: 14px;
+            font-size: 12px;
             margin-top: 5px;
         }
 
@@ -134,21 +137,21 @@ if (isset($_GET['verified'])) {
             text-align: center;
             color: var(--dark);
             margin-bottom: 10px;
-            font-size: 28px;
+            font-size: 24px;
         }
 
         .subtitle {
             text-align: center;
             color: var(--text);
             margin-bottom: 30px;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .alert {
             padding: 15px;
             border-radius: 8px;
             margin-bottom: 20px;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .alert-error {
@@ -164,7 +167,7 @@ if (isset($_GET['verified'])) {
         }
 
         .form-group {
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         label {
@@ -172,7 +175,7 @@ if (isset($_GET['verified'])) {
             margin-bottom: 8px;
             color: var(--dark);
             font-weight: 500;
-            font-size: 14px;
+            font-size: 12px;
         }
 
         .input-group {
@@ -185,7 +188,7 @@ if (isset($_GET['verified'])) {
             position: absolute;
             left: 15px;
             color: #999;
-            font-size: 16px;
+            font-size: 14px;
         }
 
         input {
@@ -206,13 +209,13 @@ if (isset($_GET['verified'])) {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
         .remember-me {
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 6px;
         }
 
         .remember-me input {
