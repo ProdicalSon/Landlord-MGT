@@ -2,31 +2,41 @@
 // property.php
 session_start();
 
-// Include database and models
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+// Include models
 require_once __DIR__ . '/config/database.php';
 require_once __DIR__ . '/models/PropertyModel.php';
 require_once __DIR__ . '/models/SavedPropertyModel.php';
 require_once __DIR__ . '/models/NotificationModel.php';
 require_once __DIR__ . '/models/UserModel.php';
+require_once __DIR__ . '/models/PaymentModel.php';
 
 // Initialize models
 $propertyModel = new PropertyModel();
 $savedPropertyModel = new SavedPropertyModel();
 $notificationModel = new NotificationModel();
 $userModel = new UserModel();
+$paymentModel = new PaymentModel();
 
 // Get property ID from URL
 $property_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
 
-// Get current user ID from session (if logged in)
+// Get current user ID from session
 $user_id = isset($_SESSION['user_id']) ? $_SESSION['user_id'] : 0;
 $isLoggedIn = $user_id > 0;
 $user_type = isset($_SESSION['user_type']) ? $_SESSION['user_type'] : '';
 
-// Fetch property from database - USING THE WORKING METHOD
-$property = $propertyModel->getPropertyById($property_id);
+if ($property_id === 0) {
+    header('Location: index.php');
+    exit;
+}
 
-// If property not found, redirect to index
+// Fetch property from database with images
+$property = $propertyModel->getPropertyById($property_id);
+$propertyImages = $propertyModel->getPropertyImages($property_id);
+
 if (!$property) {
     header('Location: index.php');
     exit;
@@ -35,42 +45,73 @@ if (!$property) {
 // Check if property is saved by user
 $isSaved = $isLoggedIn ? $savedPropertyModel->isSaved($user_id, $property_id) : false;
 
-// Get user's saved count for navigation
-$savedCount = $isLoggedIn ? $savedPropertyModel->countSaved($user_id) : 0;
+// Get landlord details
+$landlord = $userModel->getUserById($property['landlord_id']);
 
-// Get unread notifications count
-$unreadCount = $isLoggedIn ? $notificationModel->getUnreadCount($user_id) : 0;
+// Helper functions
+function getPropertyImageUrl($imagePath) {
+    if (empty($imagePath)) return null;
+    return '/Landlord-MGT/Landlord/Frontend/' . $imagePath;
+}
 
-// Handle rent request submission
+function getPropertyFeatures($property) {
+    $features = [];
+    if (!empty($property['property_type'])) $features[] = ucfirst($property['property_type']);
+    if (!empty($property['bedrooms'])) $features[] = $property['bedrooms'] . ' Bedroom' . ($property['bedrooms'] > 1 ? 's' : '');
+    if (!empty($property['bathrooms'])) $features[] = $property['bathrooms'] . ' Bathroom' . ($property['bathrooms'] > 1 ? 's' : '');
+    if (!empty($property['sqft'])) $features[] = number_format($property['sqft']) . ' sq ft';
+    
+    if (!empty($property['amenities'])) {
+        $amenities = json_decode($property['amenities'], true);
+        if (is_array($amenities)) $features = array_merge($features, $amenities);
+    }
+    return array_slice($features, 0, 12);
+}
+
+function formatFullAddress($property) {
+    $parts = [];
+    if (!empty($property['address'])) $parts[] = $property['address'];
+    if (!empty($property['neighborhood'])) $parts[] = $property['neighborhood'];
+    if (!empty($property['city'])) $parts[] = $property['city'];
+    return implode(', ', $parts);
+}
+
+function getLandlordInfo($landlord, $property) {
+    return [
+        'name' => ($landlord['first_name'] ?? '') . ' ' . ($landlord['last_name'] ?? '') ?: 'Property Manager',
+        'phone' => $landlord['phone_number'] ?? 'Not provided',
+        'email' => $landlord['email'] ?? 'landlord@example.com',
+        'mpesa' => $property['mpesa_number'] ?? $landlord['mpesa_number'] ?? 'Not provided',
+        'joined' => isset($landlord['created_at']) ? date('Y', strtotime($landlord['created_at'])) : '2023'
+    ];
+}
+
+// Handle AJAX requests
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     header('Content-Type: application/json');
     
     if ($_POST['action'] === 'send_rent_request') {
-        // Check if user is logged in
         if (!$isLoggedIn) {
             echo json_encode(['success' => false, 'message' => 'Please login to send a rent request']);
             exit;
         }
         
-        $name = filter_var($_POST['name'] ?? '', FILTER_SANITIZE_STRING);
-        $email = filter_var($_POST['email'] ?? '', FILTER_VALIDATE_EMAIL);
-        $phone = filter_var($_POST['phone'] ?? '', FILTER_SANITIZE_STRING);
+        $name = trim($_POST['name'] ?? '');
+        $email = trim($_POST['email'] ?? '');
+        $phone = trim($_POST['phone'] ?? '');
         $move_date = $_POST['moveDate'] ?? '';
-        $message = filter_var($_POST['message'] ?? '', FILTER_SANITIZE_STRING);
+        $message = trim($_POST['message'] ?? '');
         
-        if (!$email) {
-            echo json_encode(['success' => false, 'message' => 'Invalid email address']);
+        if (empty($name) || empty($email) || empty($phone) || empty($move_date)) {
+            echo json_encode(['success' => false, 'message' => 'All fields are required']);
             exit;
         }
         
-        if (empty($name) || empty($phone) || empty($move_date)) {
-            echo json_encode(['success' => false, 'message' => 'Please fill in all required fields']);
-            exit;
-        }
+        $notificationMessage = "New rent request from $name for {$property['property_name']}\n";
+        $notificationMessage .= "Email: $email\nPhone: $phone\nMove-in Date: $move_date\nMessage: $message";
         
-        // Create notification for user
-        $notificationMessage = "Rent request sent for {$property['property_name']}";
-        $notificationModel->create($user_id, 'rent_request', $notificationMessage, $property_id);
+        $notificationModel->create($property['landlord_id'], 'rent_request', $notificationMessage, $property_id);
+        $notificationModel->create($user_id, 'rent_request_sent', "Your rent request for {$property['property_name']} has been sent", $property_id);
         
         echo json_encode(['success' => true, 'message' => 'Rent request sent successfully!']);
         exit;
@@ -82,1242 +123,422 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             exit;
         }
         
-        $property_id = intval($_POST['property_id']);
         $result = $savedPropertyModel->saveProperty($user_id, $property_id);
         $isSaved = $savedPropertyModel->isSaved($user_id, $property_id);
-        $count = $savedPropertyModel->countSaved($user_id);
         
         echo json_encode([
             'success' => $result,
             'saved' => $isSaved,
-            'count' => $count,
-            'message' => $isSaved ? 'Property saved to favorites' : 'Property removed from favorites'
+            'message' => $isSaved ? 'Property saved' : 'Property removed'
         ]);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'initiate_payment') {
+        if (!$isLoggedIn) {
+            echo json_encode(['success' => false, 'message' => 'Please login to make a payment']);
+            exit;
+        }
+        
+        $phone = trim($_POST['phone_number'] ?? '');
+        $amount = floatval($_POST['amount'] ?? 0);
+        
+        $cleanPhone = preg_replace('/[^0-9]/', '', $phone);
+        if (substr($cleanPhone, 0, 1) == '0') $cleanPhone = '254' . substr($cleanPhone, 1);
+        if (substr($cleanPhone, 0, 3) != '254') $cleanPhone = '254' . $cleanPhone;
+        
+        $paymentData = [
+            'property_id' => $property_id,
+            'tenant_id' => $user_id,
+            'landlord_id' => $property['landlord_id'],
+            'amount' => $amount,
+            'phone_number' => $cleanPhone,
+            'status' => 'pending'
+        ];
+        
+        $payment_id = $paymentModel->createPayment($paymentData);
+        
+        if (!$payment_id) {
+            echo json_encode(['success' => false, 'message' => 'Failed to create payment record']);
+            exit;
+        }
+        
+        $checkoutRequestId = 'SIM' . time() . rand(1000, 9999);
+        $notificationModel->create($property['landlord_id'], 'payment_initiated', "Payment of KES " . number_format($amount) . " initiated for {$property['property_name']}", $property_id);
+        
+        echo json_encode([
+            'success' => true,
+            'message' => 'STK Push sent. Check your phone.',
+            'checkout_request_id' => $checkoutRequestId,
+            'payment_id' => $payment_id
+        ]);
+        exit;
+    }
+    
+    if ($_POST['action'] === 'check_payment_status') {
+        $payment_id = intval($_POST['payment_id'] ?? 0);
+        static $attempt = 0;
+        $attempt++;
+        
+        if ($attempt >= 3) {
+            $paymentModel->updatePaymentStatus($payment_id, 'completed', 'SIM' . rand(100000, 999999));
+            $payment = $paymentModel->getPaymentById($payment_id);
+            if ($payment) {
+                $notificationModel->create($payment['landlord_id'], 'payment_received', "Payment of KES " . number_format($payment['amount']) . " received", $payment['property_id']);
+            }
+            echo json_encode(['success' => true, 'status' => 'completed', 'message' => 'Payment completed!']);
+        } else {
+            echo json_encode(['success' => true, 'status' => 'pending', 'message' => 'Processing...']);
+        }
         exit;
     }
 }
 
-// Helper function to format property features
-function getPropertyFeatures($property) {
-    $features = [];
-    
-    // Add basic features based on property data
-    if (!empty($property['property_type'])) {
-        $features[] = ucfirst($property['property_type']);
-    }
-    if (!empty($property['bedrooms'])) {
-        $features[] = $property['bedrooms'] . ' Bedroom' . ($property['bedrooms'] > 1 ? 's' : '');
-    }
-    if (!empty($property['bathrooms'])) {
-        $features[] = $property['bathrooms'] . ' Bathroom' . ($property['bathrooms'] > 1 ? 's' : '');
-    }
-    if (!empty($property['sqft'])) {
-        $features[] = number_format($property['sqft']) . ' sq ft';
-    }
-    
-    // Default features
-    $defaultFeatures = ['Utilities included', 'High-speed internet', 'Laundry in building', 'Pet-friendly', 'Security system'];
-    
-    return array_merge($features, $defaultFeatures);
-}
-
-// Format address for display
-function formatFullAddress($property) {
-    $parts = [];
-    if (!empty($property['address'])) $parts[] = $property['address'];
-    if (!empty($property['neighborhood'])) $parts[] = $property['neighborhood'];
-    if (!empty($property['city'])) $parts[] = $property['city'];
-    return implode(', ', $parts);
-}
-
-// Get property images
-function getPropertyImages($property) {
-    $images = [
-        'apartment' => [
-            'https://images.unsplash.com/photo-1545324418-cc1a3fa10c00?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1502672260266-1c1ef2d93688?w=800&h=600&fit=crop'
-        ],
-        'house' => [
-            'https://images.unsplash.com/photo-1580587771525-78b9dba3b058?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1570129477492-45c003edd2be?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1568605114967-8130f3a36994?w=800&h=600&fit=crop'
-        ],
-        'studio' => [
-            'https://images.unsplash.com/photo-1536376072261-38c75010e6c9?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1522771739844-6a9f6d5f14af?w=800&h=600&fit=crop',
-            'https://images.unsplash.com/photo-1493809842364-78817add7ffb?w=800&h=600&fit=crop'
-        ]
-    ];
-    
-    $type = strtolower($property['property_type'] ?? 'apartment');
-    return $images[$type] ?? $images['apartment'];
-}
-
-// Get landlord info
-function getLandlordInfo($property) {
-    return [
-        'name' => $property['landlord_id'] ?? 'Property Manager',
-        'phone' => '(555) 123-4567',
-        'email' => 'landlord@example.com',
-        'rating' => 4.8,
-        'properties' => 12
-    ];
-}
+$landlordInfo = getLandlordInfo($landlord, $property);
 ?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($property['property_name'] ?? 'Property Details'); ?> - SmartHunt</title>
+    <title><?php echo htmlspecialchars($property['property_name']); ?> - SmartHunt</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        /* All your existing CSS styles remain exactly as in your working version */
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
-            line-height: 1.6;
-            color: #333;
-            background-color: #f8f9fa;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; background: #f8f9fa; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        
         /* Navigation */
-        .navbar {
-            background-color: white;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            position: sticky;
-            top: 0;
-            z-index: 1000;
-        }
-
-        .nav-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .nav-logo a {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            text-decoration: none;
-            font-size: 22px;
-            font-weight: 700;
-            color: #0077b6;
-        }
-
-        .nav-menu {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .nav-link {
-            display: flex;
-            align-items: center;
-            text-decoration: none;
-            color: #333;
-            font-size: 14px;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: background-color 0.2s;
-            background: none;
-            border: none;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .nav-link i {
-            margin-right: 6px;
-            font-size: 16px;
-        }
-
-        .nav-link.active {
-            color: #0077b6;
-            background-color: #e6f2ff;
-        }
-
-        .nav-link:hover {
-            background-color: #f5f5f5;
-        }
-
-        .notification-badge {
-            position: absolute;
-            top: 0;
-            right: 0;
-            background-color: #e74c3c;
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            min-width: 18px;
-            height: 18px;
-            border-radius: 9px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0 5px;
-        }
-
-        .nav-button {
-            background-color: #0077b6;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 4px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background-color 0.2s;
-        }
-
-        .nav-button:hover {
-            background-color: #005a8c;
-        }
-
-        .mobile-menu-btn {
-            display: none;
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #333;
-            cursor: pointer;
-        }
-
+        .navbar { background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000; }
+        .nav-container { max-width: 1200px; margin: 0 auto; padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-logo a { display: flex; align-items: center; gap: 10px; text-decoration: none; font-size: 22px; font-weight: 700; color: #0077b6; }
+        .nav-menu { display: flex; align-items: center; gap: 20px; }
+        .nav-link { text-decoration: none; color: #333; font-size: 14px; padding: 8px 12px; border-radius: 4px; transition: background 0.2s; }
+        .nav-link:hover { background: #f5f5f5; }
+        .nav-button { background: #0077b6; color: white; border: none; padding: 10px 20px; border-radius: 4px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; }
+        .mobile-menu-btn { display: none; background: none; border: none; font-size: 20px; cursor: pointer; }
+        
         /* Property Header */
-        .property-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: flex-start;
-            flex-wrap: wrap;
-            gap: 20px;
-            margin-bottom: 30px;
-            background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .property-header h1 {
-            font-size: 32px;
-            margin-bottom: 10px;
-            color: #333;
-        }
-
-        .save-property-btn {
-            background-color: white;
-            border: 2px solid #0077b6;
-            color: #0077b6;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            transition: all 0.2s;
-        }
-
-        .save-property-btn:hover:not(:disabled) {
-            background-color: #0077b6;
-            color: white;
-        }
-
-        .save-property-btn.saved {
-            background-color: #e74c3c;
-            border-color: #e74c3c;
-            color: white;
-        }
-
-        .save-property-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .property-location {
-            color: #666;
-            font-size: 16px;
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .property-status {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: 600;
-            margin-top: 10px;
-        }
-
-        .status-occupied {
-            background-color: #ffeaa7;
-            color: #d63031;
-        }
-
-        .status-available {
-            background-color: #a8e6cf;
-            color: #27ae60;
-        }
-
-        /* Property Content */
-        .property-content {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 30px;
-        }
-
+        .property-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 20px; margin-bottom: 30px; background: white; padding: 30px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .property-header h1 { font-size: 32px; margin-bottom: 10px; color: #333; }
+        .save-property-btn { background: white; border: 2px solid #0077b6; color: #0077b6; padding: 12px 24px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 10px; transition: all 0.2s; }
+        .save-property-btn.saved { background: #e74c3c; border-color: #e74c3c; color: white; }
+        .property-location { color: #666; font-size: 16px; display: flex; align-items: center; gap: 8px; }
+        .property-status { display: inline-block; padding: 6px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; margin-top: 10px; }
+        .status-available { background: #d4edda; color: #155724; }
+        .status-occupied { background: #fff3cd; color: #856404; }
+        
         /* Gallery */
-        .property-gallery {
-            background: white;
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .main-image {
-            height: 400px;
-            overflow: hidden;
-            border-radius: 8px;
-            margin-bottom: 15px;
-        }
-
-        .main-image img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            transition: transform 0.3s;
-        }
-
-        .main-image img:hover {
-            transform: scale(1.05);
-        }
-
-        .image-thumbnails {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-        }
-
-        .image-thumbnails img {
-            width: 100%;
-            height: 100px;
-            object-fit: cover;
-            border-radius: 6px;
-            cursor: pointer;
-            transition: opacity 0.2s, transform 0.2s;
-        }
-
-        .image-thumbnails img:hover {
-            opacity: 0.8;
-            transform: translateY(-2px);
-        }
-
-        /* Property Info Sections */
-        .property-info {
-            display: flex;
-            flex-direction: column;
-            gap: 20px;
-        }
-
-        .price-section {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .price-section h2 {
-            font-size: 36px;
-            color: #0077b6;
-            margin-bottom: 15px;
-        }
-
-        .price-section .period {
-            font-size: 16px;
-            color: #666;
-            font-weight: normal;
-        }
-
-        .property-meta {
-            display: flex;
-            gap: 25px;
-            flex-wrap: wrap;
-        }
-
-        .property-meta span {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 15px;
-            color: #555;
-        }
-
-        .property-meta i {
-            color: #0077b6;
-            font-size: 18px;
-        }
-
-        .description-section,
-        .features-section,
-        .landlord-section,
-        .rent-request-section {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .description-section h3,
-        .features-section h3,
-        .landlord-section h3,
-        .rent-request-section h3 {
-            margin-bottom: 15px;
-            color: #333;
-            font-size: 20px;
-        }
-
-        .description-section p {
-            color: #666;
-            line-height: 1.8;
-        }
-
-        .features-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .feature-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            font-size: 14px;
-            color: #555;
-            padding: 8px;
-            background: #f8f9fa;
-            border-radius: 6px;
-        }
-
-        .feature-item i {
-            color: #27ae60;
-            font-size: 16px;
-        }
-
+        .gallery-section { margin-bottom: 40px; }
+        .main-image { width: 100%; height: 500px; border-radius: 12px; overflow: hidden; margin-bottom: 15px; cursor: pointer; background: #f5f5f5; }
+        .main-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 0.3s; }
+        .main-image:hover img { transform: scale(1.05); }
+        .thumbnail-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 10px; }
+        .thumbnail { height: 80px; border-radius: 8px; overflow: hidden; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; background: #f5f5f5; }
+        .thumbnail.active { border-color: #0077b6; }
+        .thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        .image-counter { margin-top: 10px; font-size: 13px; color: #666; text-align: center; }
+        
+        /* Property Content */
+        .property-content { display: grid; grid-template-columns: 2fr 1fr; gap: 30px; }
+        .info-card { background: white; border-radius: 12px; padding: 25px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); margin-bottom: 25px; }
+        .info-card h3 { font-size: 20px; margin-bottom: 15px; color: #333; display: flex; align-items: center; gap: 10px; }
+        .info-card h3 i { color: #0077b6; }
+        .price-section { background: linear-gradient(135deg, #0077b6 0%, #00a8e8 100%); color: white; }
+        .price-section h2 { font-size: 36px; margin-bottom: 10px; }
+        .property-meta { display: flex; gap: 25px; margin-top: 15px; flex-wrap: wrap; }
+        .property-meta span { display: flex; align-items: center; gap: 8px; font-size: 14px; color: rgba(255,255,255,0.9); }
+        .features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .feature-item { display: flex; align-items: center; gap: 10px; padding: 8px; background: #f8f9fa; border-radius: 6px; font-size: 14px; }
+        .feature-item i { color: #27ae60; }
+        
         /* Landlord Info */
-        .landlord-info {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .landlord-avatar i {
-            font-size: 64px;
-            color: #0077b6;
-        }
-
-        .landlord-details h4 {
-            margin-bottom: 5px;
-            font-size: 18px;
-            color: #333;
-        }
-
-        .landlord-rating {
-            margin-top: 8px;
-        }
-
-        .stars {
-            display: flex;
-            align-items: center;
-            gap: 4px;
-            margin-bottom: 5px;
-        }
-
-        .stars i {
-            color: #ddd;
-            font-size: 14px;
-        }
-
-        .stars i.filled {
-            color: #f39c12;
-        }
-
-        .stars span {
-            margin-left: 5px;
-            color: #666;
-            font-size: 14px;
-        }
-
-        /* Rent Request Form */
-        .rent-form {
-            margin-top: 20px;
-        }
-
-        .form-group {
-            margin-bottom: 20px;
-        }
-
-        .form-group label {
-            display: block;
-            margin-bottom: 8px;
-            font-size: 14px;
-            font-weight: 500;
-            color: #333;
-        }
-
-        .form-group input,
-        .form-group textarea {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e0e0e0;
-            border-radius: 8px;
-            font-size: 14px;
-            transition: border-color 0.2s;
-            font-family: inherit;
-        }
-
-        .form-group input:focus,
-        .form-group textarea:focus {
-            outline: none;
-            border-color: #0077b6;
-        }
-
-        .form-group input:disabled {
-            background: #f5f5f5;
-            cursor: not-allowed;
-        }
-
-        .rent-request-btn {
-            width: 100%;
-            background-color: #0077b6;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background-color 0.2s;
-        }
-
-        .rent-request-btn:hover:not(:disabled) {
-            background-color: #005a8c;
-        }
-
-        .rent-request-btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-           .rent-request-btn1 {
-            width: 100%;
-            background-color: #0077b6;
-            color: white;
-            border: none;
-            padding: 16px;
-            border-radius: 8px;
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: background-color 0.2s;
-        }
-
-        .rent-request-btn1:hover:not(:disabled) {
-            background-color: #005a8c;
-        }
-
-        .rent-request-btn1:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        .form-note {
-            margin-top: 12px;
-            text-align: center;
-            color: #666;
-            font-size: 13px;
-        }
-
-        .login-prompt {
-            text-align: center;
-            padding: 30px;
-            background: #f8f9fa;
-            border-radius: 8px;
-            margin-top: 20px;
-        }
-
-        .login-prompt p {
-            margin-bottom: 15px;
-            color: #666;
-        }
-
-        .login-prompt .btn {
-            display: inline-block;
-            padding: 10px 20px;
-            background: #0077b6;
-            color: white;
-            text-decoration: none;
-            border-radius: 6px;
-            font-weight: 600;
-        }
-
+        .landlord-info { display: flex; gap: 20px; align-items: center; }
+        .landlord-avatar { width: 80px; height: 80px; background: linear-gradient(135deg, #0077b6, #00a8e8); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; }
+        .landlord-contact { margin-top: 10px; padding: 10px; background: #f8f9fa; border-radius: 8px; }
+        .landlord-contact p { margin: 5px 0; font-size: 14px; }
+        .landlord-contact i { width: 20px; margin-right: 8px; color: #0077b6; }
+        
+        /* Buttons */
+        .action-buttons { display: flex; gap: 15px; margin-top: 20px; }
+        .btn-primary, .btn-outline { flex: 1; padding: 14px; border-radius: 8px; font-size: 16px; font-weight: 600; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all 0.3s; }
+        .btn-primary { background: #0077b6; color: white; border: none; }
+        .btn-primary:hover { background: #005a8c; }
+        .btn-outline { background: white; color: #0077b6; border: 2px solid #0077b6; }
+        .btn-outline:hover { background: #0077b6; color: white; }
+        
+        /* Forms */
+        .form-group { margin-bottom: 20px; }
+        .form-group label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 500; color: #333; }
+        .form-group input, .form-group textarea { width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px; transition: border-color 0.2s; }
+        .form-group input:focus, .form-group textarea:focus { outline: none; border-color: #0077b6; }
+        .form-group small { display: block; margin-top: 5px; font-size: 12px; color: #666; }
+        
         /* Modal */
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 3000;
-            align-items: center;
-            justify-content: center;
-        }
-
-        .modal.active {
-            display: flex;
-        }
-
-        .modal-content {
-            background-color: white;
-            padding: 40px;
-            border-radius: 12px;
-            text-align: center;
-            max-width: 400px;
-            width: 90%;
-            animation: slideIn 0.3s ease;
-        }
-
-        @keyframes slideIn {
-            from {
-                transform: translateY(-20px);
-                opacity: 0;
-            }
-            to {
-                transform: translateY(0);
-                opacity: 1;
-            }
-        }
-
-        .modal-icon {
-            font-size: 64px;
-            color: #27ae60;
-            margin-bottom: 20px;
-        }
-
-        .modal-icon.error {
-            color: #e74c3c;
-        }
-
-        .modal h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-
-        .modal p {
-            color: #666;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-
-        .modal-close-btn {
-            background-color: #0077b6;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
-
-        .modal-close-btn:hover {
-            background-color: #005a8c;
-        }
-
-        /* Toast Notification */
-        .toast-notification {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%) translateY(100px);
-            background-color: #333;
-            color: white;
-            padding: 12px 24px;
-            border-radius: 8px;
-            font-size: 14px;
-            z-index: 4000;
-            opacity: 0;
-            transition: transform 0.3s, opacity 0.3s;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-        }
-
-        .toast-notification.show {
-            transform: translateX(-50%) translateY(0);
-            opacity: 1;
-        }
-
-        .toast-notification.success {
-            background-color: #27ae60;
-        }
-
-        .toast-notification.error {
-            background-color: #e74c3c;
-        }
-
+        .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); z-index: 3000; align-items: center; justify-content: center; backdrop-filter: blur(5px); }
+        .modal.active { display: flex; }
+        .modal-content { background: white; border-radius: 20px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; animation: slideUp 0.3s ease; }
+        .modal-header { padding: 24px 30px; border-bottom: 1px solid #e9ecef; display: flex; justify-content: space-between; align-items: center; background: linear-gradient(135deg, #0077b6 0%, #00a8e8 100%); border-radius: 20px 20px 0 0; }
+        .modal-header h3 { font-size: 22px; font-weight: 600; color: white; display: flex; align-items: center; gap: 10px; }
+        .modal-close { background: rgba(255,255,255,0.2); border: none; width: 36px; height: 36px; border-radius: 50%; cursor: pointer; color: white; font-size: 20px; transition: all 0.3s; }
+        .modal-close:hover { transform: rotate(90deg); background: rgba(255,255,255,0.3); }
+        .modal-body { padding: 30px; }
+        .modal-footer { padding: 20px 30px; border-top: 1px solid #e9ecef; display: flex; justify-content: flex-end; gap: 15px; background: #f8f9fa; border-radius: 0 0 20px 20px; }
+        .property-info-card { background: linear-gradient(135deg, #f8f9fa 0%, #fff 100%); border-radius: 12px; padding: 20px; margin-bottom: 25px; border: 1px solid #e9ecef; }
+        .property-info-card h4 { font-size: 16px; color: #0077b6; margin-bottom: 10px; }
+        .property-info-card .property-detail { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e9ecef; }
+        .payment-status { margin-top: 20px; padding: 15px; border-radius: 10px; display: none; align-items: center; gap: 10px; font-size: 14px; }
+        .payment-status.success { background: #d4edda; color: #155724; display: flex; }
+        .payment-status.error { background: #f8d7da; color: #721c24; display: flex; }
+        .payment-status.info { background: #d1ecf1; color: #0c5460; display: flex; }
+        
+        /* Toast */
+        .toast-notification { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%) translateY(100px); background: #333; color: white; padding: 12px 24px; border-radius: 8px; font-size: 14px; z-index: 4000; opacity: 0; transition: transform 0.3s, opacity 0.3s; }
+        .toast-notification.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+        .toast-notification.success { background: #27ae60; }
+        .toast-notification.error { background: #e74c3c; }
+        
         /* Footer */
-        .footer {
-            background-color: #2c3e50;
-            color: white;
-            margin-top: 60px;
-        }
-
-        .footer-container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 40px 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 40px;
-        }
-
-        .footer-section h4 {
-            margin-bottom: 16px;
-            font-size: 16px;
-        }
-
-        .footer-section ul {
-            list-style: none;
-        }
-
-        .footer-section ul li {
-            margin-bottom: 8px;
-        }
-
-        .footer-section ul li a {
-            color: #bdc3c7;
-            text-decoration: none;
-            font-size: 12px;
-            transition: color 0.2s;
-            cursor: pointer;
-        }
-
-        .footer-section ul li a:hover {
-            color: white;
-        }
-
-        .social-links {
-            display: flex;
-            gap: 12px;
-            margin-top: 16px;
-        }
-
-        .social-links a {
-            color: white;
-            background-color: #34495e;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-decoration: none;
-            transition: background-color 0.2s;
-            cursor: pointer;
-        }
-
-        .social-links a:hover {
-            background-color: #0077b6;
-        }
-
-        .footer-bottom {
-            border-top: 1px solid #34495e;
-            padding: 20px;
-            text-align: center;
-        }
-
-        /* Mobile Menu Overlay */
-        .mobile-menu-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: rgba(0, 0, 0, 0.8);
-            z-index: 2000;
-            display: none;
-        }
-
-        .mobile-menu-overlay.active {
-            display: block;
-        }
-
-        .mobile-menu-content {
-            position: absolute;
-            right: 0;
-            top: 0;
-            bottom: 0;
-            width: 280px;
-            background-color: white;
-            padding: 40px 20px;
-            overflow-y: auto;
-        }
-
-        .close-menu {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: none;
-            border: none;
-            font-size: 20px;
-            color: #333;
-            cursor: pointer;
-        }
-
-        .mobile-nav-link {
-            display: block;
-            padding: 15px 0;
-            text-decoration: none;
-            color: #333;
-            font-size: 16px;
-            border-bottom: 1px solid #eee;
-            background: none;
-            border: none;
-            width: 100%;
-            text-align: left;
-            cursor: pointer;
-            position: relative;
-        }
-
-        .mobile-nav-link.active {
-            color: #0077b6;
-            font-weight: 600;
-        }
-
-        /* Responsive Design */
-        @media (max-width: 992px) {
-            .property-content {
-                grid-template-columns: 1fr;
-            }
-            
-            .features-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-
+        .footer { background: #2c3e50; color: white; margin-top: 60px; text-align: center; padding: 20px; }
+        
+        @keyframes slideUp { from { transform: translateY(30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
         @media (max-width: 768px) {
-            .nav-menu {
-                display: none;
-            }
-            
-            .mobile-menu-btn {
-                display: block;
-            }
-            
-            .property-header {
-                flex-direction: column;
-                padding: 20px;
-            }
-            
-            .property-header h1 {
-                font-size: 24px;
-            }
-            
-            .save-property-btn {
-                width: 100%;
-                justify-content: center;
-            }
-            
-            .main-image {
-                height: 300px;
-            }
-            
-            .image-thumbnails {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .property-meta {
-                gap: 15px;
-            }
-            
-            .property-meta span {
-                font-size: 13px;
-            }
-            
-            .landlord-info {
-                flex-direction: column;
-                text-align: center;
-            }
-        }
-
-        @media (max-width: 480px) {
-            .container {
-                padding: 15px;
-            }
-            
-            .property-header {
-                padding: 15px;
-            }
-            
-            .price-section h2 {
-                font-size: 28px;
-            }
-            
-            .property-meta {
-                flex-direction: column;
-                gap: 10px;
-            }
-            
-            .main-image {
-                height: 250px;
-            }
-            
-            .image-thumbnails img {
-                height: 80px;
-            }
+            .nav-menu { display: none; }
+            .mobile-menu-btn { display: block; }
+            .property-content { grid-template-columns: 1fr; }
+            .main-image { height: 300px; }
+            .thumbnail-grid { grid-template-columns: repeat(3, 1fr); }
+            .action-buttons { flex-direction: column; }
+            .property-header { flex-direction: column; }
+            .save-property-btn { width: 100%; justify-content: center; }
         }
     </style>
 </head>
 <body>
-    <!-- Navigation -->
     <nav class="navbar">
         <div class="nav-container">
             <div class="nav-logo">
-                <a href="index.php">
-                    <i class="fas fa-home"></i>
-                    <span>SmartHunt</span>
-                </a>
+                <a href="index.php"><i class="fas fa-home"></i><span>SmartHunt</span></a>
             </div>
-            
             <div class="nav-menu">
-                <a href="index.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'index.php' ? 'active' : ''; ?>">
-                    <i class="fas fa-search"></i> <span>Browse</span>
-                </a>
-                
+                <a href="index.php" class="nav-link">Browse</a>
                 <?php if ($isLoggedIn): ?>
-                    <a href="profile.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'profile.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-user"></i> 
-                        <span><?php echo htmlspecialchars($_SESSION['full_name'] ?? $_SESSION['username']); ?></span>
-                    </a>
-                    <a href="logout.php" class="nav-link" onclick="return confirm('Are you sure you want to logout?')">
-                        <i class="fas fa-sign-out-alt"></i> <span>Logout</span>
-                    </a>
+                    <a href="profile.php" class="nav-link">My Profile</a>
+                    <a href="logout.php" class="nav-link" onclick="return confirm('Logout?')">Logout</a>
                 <?php else: ?>
-                    <a href="login.php" class="nav-link <?php echo basename($_SERVER['PHP_SELF']) == 'login.php' ? 'active' : ''; ?>">
-                        <i class="fas fa-sign-in-alt"></i> <span>Login</span>
-                    </a>
+                    <a href="login.php" class="nav-link">Login</a>
                     <a href="register.php" class="nav-button">Sign Up</a>
                 <?php endif; ?>
             </div>
-            
-            <button class="mobile-menu-btn" onclick="toggleMobileMenu()">
-                <i class="fas fa-bars"></i>
-            </button>
+            <button class="mobile-menu-btn" onclick="toggleMobileMenu()"><i class="fas fa-bars"></i></button>
         </div>
     </nav>
 
-    <!-- Property Detail -->
     <main class="container">
         <div class="property-header">
             <div>
-                <h1><?php echo htmlspecialchars($property['property_name'] ?? 'Property Details'); ?></h1>
-                <p class="property-location">
-                    <i class="fas fa-map-marker-alt"></i>
-                    <?php echo htmlspecialchars(formatFullAddress($property) ?: 'Location available'); ?>
-                </p>
+                <h1><?php echo htmlspecialchars($property['property_name']); ?></h1>
+                <p class="property-location"><i class="fas fa-map-marker-alt"></i> <?php echo htmlspecialchars(formatFullAddress($property)); ?></p>
                 <?php if (!empty($property['status'])): ?>
-                <span class="property-status status-<?php echo strtolower($property['status']); ?>">
-                    <?php echo ucfirst($property['status']); ?>
-                </span>
+                <span class="property-status status-<?php echo strtolower($property['status']); ?>"><?php echo ucfirst($property['status']); ?></span>
                 <?php endif; ?>
             </div>
-            <button class="save-property-btn <?php echo $isSaved ? 'saved' : ''; ?>" 
-                    onclick="toggleSaveProperty(<?php echo $property['id']; ?>)"
-                    <?php echo !$isLoggedIn ? 'disabled' : ''; ?>>
-                <i class="<?php echo $isSaved ? 'fas' : 'far'; ?> fa-heart"></i>
-                <span><?php echo $isSaved ? 'Saved' : 'Save Property'; ?></span>
+            <button class="save-property-btn <?php echo $isSaved ? 'saved' : ''; ?>" onclick="toggleSaveProperty()" <?php echo !$isLoggedIn ? 'disabled' : ''; ?>>
+                <i class="<?php echo $isSaved ? 'fas' : 'far'; ?> fa-heart"></i><span><?php echo $isSaved ? 'Saved' : 'Save Property'; ?></span>
             </button>
         </div>
 
-        <div class="property-content">
-            <div class="property-gallery">
-                <div class="main-image">
-                    <img src="<?php echo getPropertyImages($property)[0]; ?>" alt="Main property image" id="mainPropertyImage">
-                </div>
-                <div class="image-thumbnails">
-                    <?php foreach (getPropertyImages($property) as $index => $image): ?>
-                    <img src="<?php echo $image; ?>" alt="Property image <?php echo $index + 1; ?>" onclick="changeMainImage(this.src)">
-                    <?php endforeach; ?>
-                </div>
+        <!-- Image Gallery -->
+        <div class="gallery-section">
+            <div class="main-image" onclick="openLightbox()">
+                <img id="mainImage" src="<?php echo !empty($propertyImages) ? getPropertyImageUrl($propertyImages[0]['image_path']) : 'assets/icons/bed.jpg'; ?>" alt="<?php echo htmlspecialchars($property['property_name']); ?>">
             </div>
+            <?php if (count($propertyImages) > 1): ?>
+            <div class="thumbnail-grid" id="thumbnailGrid">
+                <?php foreach ($propertyImages as $index => $image): ?>
+                <div class="thumbnail <?php echo $index === 0 ? 'active' : ''; ?>" onclick="changeMainImage('<?php echo getPropertyImageUrl($image['image_path']); ?>', this)">
+                    <img src="<?php echo getPropertyImageUrl($image['image_path']); ?>" alt="Thumbnail <?php echo $index + 1; ?>">
+                </div>
+                <?php endforeach; ?>
+            </div>
+            <div class="image-counter"><i class="fas fa-images"></i> <?php echo count($propertyImages); ?> photos</div>
+            <?php endif; ?>
+        </div>
 
+        <div class="property-content">
             <div class="property-info">
-                <div class="price-section">
-                    <h2>Ksh<?php echo number_format($property['monthly_rent'] ?? 0, 2); ?> <span class="period">/month</span></h2>
+                <div class="info-card price-section">
+                    <h2>Ksh <?php echo number_format($property['monthly_rent'] ?? 0, 2); ?> <span class="period">/month</span></h2>
                     <div class="property-meta">
-                        <?php if (!empty($property['bedrooms'])): ?>
-                        <span><i class="fas fa-bed"></i> <?php echo $property['bedrooms']; ?> bed</span>
-                        <?php endif; ?>
-                        <?php if (!empty($property['bathrooms'])): ?>
-                        <span><i class="fas fa-bath"></i> <?php echo $property['bathrooms']; ?> bath</span>
-                        <?php endif; ?>
-                        <?php if (!empty($property['sqft'])): ?>
-                        <span><i class="fas fa-ruler-combined"></i> <?php echo number_format($property['sqft']); ?> sqft</span>
-                        <?php endif; ?>
-                        <?php if (!empty($property['property_type'])): ?>
-                        <span><i class="fas fa-building"></i> <?php echo ucfirst($property['property_type']); ?></span>
-                        <?php endif; ?>
+                        <?php if (!empty($property['bedrooms'])): ?><span><i class="fas fa-bed"></i> <?php echo $property['bedrooms']; ?> bed</span><?php endif; ?>
+                        <?php if (!empty($property['bathrooms'])): ?><span><i class="fas fa-bath"></i> <?php echo $property['bathrooms']; ?> bath</span><?php endif; ?>
+                        <?php if (!empty($property['sqft'])): ?><span><i class="fas fa-ruler-combined"></i> <?php echo number_format($property['sqft']); ?> sqft</span><?php endif; ?>
+                        <?php if (!empty($property['property_type'])): ?><span><i class="fas fa-building"></i> <?php echo ucfirst($property['property_type']); ?></span><?php endif; ?>
                     </div>
                 </div>
 
-                <div class="description-section">
-                    <h3>Description</h3>
-                    <p><?php echo htmlspecialchars($property['description'] ?? 'No description available.'); ?></p>
+                <div class="info-card">
+                    <h3><i class="fas fa-align-left"></i> Description</h3>
+                    <p><?php echo nl2br(htmlspecialchars($property['description'] ?? 'No description available.')); ?></p>
                 </div>
 
-                <div class="features-section">
-                    <h3>Features & Amenities</h3>
+                <div class="info-card">
+                    <h3><i class="fas fa-check-circle"></i> Features & Amenities</h3>
                     <div class="features-grid">
                         <?php foreach (getPropertyFeatures($property) as $feature): ?>
-                        <div class="feature-item">
-                            <i class="fas fa-check-circle"></i>
-                            <span><?php echo htmlspecialchars($feature); ?></span>
-                        </div>
+                        <div class="feature-item"><i class="fas fa-check-circle"></i><span><?php echo htmlspecialchars($feature); ?></span></div>
                         <?php endforeach; ?>
                     </div>
                 </div>
+            </div>
 
-                <div class="landlord-section">
-                    <h3>Property Owner</h3>
-                    <div class="landlord-info">
-                        <div class="landlord-avatar">
-                            <i class="fas fa-user-circle"></i>
-                        </div>
-                        <div class="landlord-details">
-                            <h4><?php echo htmlspecialchars(getLandlordInfo($property)['name']); ?></h4>
-                            <div class="landlord-rating">
-                                <div class="stars">
-                                    <?php for ($i = 1; $i <= 5; $i++): ?>
-                                        <i class="fas fa-star <?php echo $i <= floor(getLandlordInfo($property)['rating']) ? 'filled' : ''; ?>"></i>
-                                    <?php endfor; ?>
-                                    <span>(<?php echo getLandlordInfo($property)['rating']; ?>)</span>
-                                </div>
-                                <p class="small-text"><?php echo getLandlordInfo($property)['properties']; ?> properties listed</p>
-                            </div>
-                        </div>
+            <div>
+                <div class="info-card">
+                    <h3><i class="fas fa-handshake"></i> Take Action</h3>
+                    <div class="action-buttons">
+                        <button class="btn-primary" onclick="openRentRequestModal()"><i class="fas fa-paper-plane"></i> Request to Rent</button>
+                        <button class="btn-outline" onclick="openPaymentModal()"><i class="fas fa-mobile-alt"></i> Pay Rent</button>
                     </div>
                 </div>
 
-                <!-- Rent Request Form -->
-                <div class="rent-request-section">
-                    <h3>Request to Rent</h3>
-                    
-                    <?php if ($isLoggedIn): ?>
-                        <form id="rentRequestForm" class="rent-form">
-                            <input type="hidden" name="property_id" value="<?php echo $property['id']; ?>">
-                            <div class="form-group">
-                                <label for="name">Full Name *</label>
-                                <input type="text" id="name" name="name" required>
+                <div class="info-card">
+                    <h3><i class="fas fa-user-circle"></i> Property Owner</h3>
+                    <div class="landlord-info">
+                        <div class="landlord-avatar"><i class="fas fa-user-circle"></i></div>
+                        <div class="landlord-details">
+                            <h4><?php echo htmlspecialchars($landlordInfo['name']); ?></h4>
+                            <div class="landlord-contact">
+                                <p><i class="fas fa-phone"></i> <?php echo htmlspecialchars($landlordInfo['phone']); ?></p>
+                                <p><i class="fas fa-envelope"></i> <?php echo htmlspecialchars($landlordInfo['email']); ?></p>
+                                <?php if (!empty($landlordInfo['mpesa']) && $landlordInfo['mpesa'] !== 'Not provided'): ?>
+                                <p><i class="fas fa-mobile-alt"></i> M-Pesa: <?php echo htmlspecialchars($landlordInfo['mpesa']); ?></p>
+                                <?php endif; ?>
                             </div>
-                            
-                            <div class="form-group">
-                                <label for="email">Email Address *</label>
-                                <input type="email" id="email" name="email" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="phone">Phone Number *</label>
-                                <input type="tel" id="phone" name="phone" required>
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="moveDate">Desired Move-in Date *</label>
-                                <input type="date" id="moveDate" name="moveDate" required 
-                                       min="<?php echo date('Y-m-d'); ?>">
-                            </div>
-                            
-                            <div class="form-group">
-                                <label for="message">Message to Landlord</label>
-                                <textarea id="message" name="message" rows="4" 
-                                          placeholder="Tell the landlord about yourself and why you're interested..."></textarea>
-                            </div>
-                            
-                            <button type="submit" class="rent-request-btn">
-                                <i class="fas fa-paper-plane"></i> Send Rent Request
-                            </button>
-                            <button  class="rent-request-btn1" style="margin-top: 10px; background-color: #27ae60">
-                                 Make Payment
-                            </button>
-                            <p class="small-text form-note">
-                                Your request will be sent directly to the property owner.
-                                We'll also send you a copy via email.
-                            </p>
-                        </form>
-                    <?php else: ?>
-                        <div class="login-prompt">
-                            <p><i class="fas fa-lock"></i> Please login to send a rent request</p>
-                            <a href="login.php?redirect=property.php?id=<?php echo $property['id']; ?>" class="btn">
-                                Login to Continue
-                            </a>
-                            <p style="margin-top: 10px; font-size: 13px;">
-                                Don't have an account? <a href="register.php">Sign up</a>
-                            </p>
                         </div>
-                    <?php endif; ?>
+                    </div>
                 </div>
             </div>
         </div>
     </main>
 
-    <!-- Footer -->
+    <!-- Rent Request Modal -->
+    <div id="rentRequestModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-paper-plane"></i> Request to Rent</h3>
+                <button class="modal-close" onclick="closeRentRequestModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="rentRequestForm">
+                    <div class="form-group">
+                        <label>Full Name *</label>
+                        <input type="text" id="name" placeholder="Enter your full name" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Email Address *</label>
+                        <input type="email" id="email" placeholder="Enter your email" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Phone Number *</label>
+                        <input type="tel" id="phone" placeholder="e.g., 0712345678" required>
+                        <small>We'll use this to contact you</small>
+                    </div>
+                    <div class="form-group">
+                        <label>Desired Move-in Date *</label>
+                        <input type="date" id="moveDate" required min="<?php echo date('Y-m-d'); ?>">
+                    </div>
+                    <div class="form-group">
+                        <label>Message to Landlord</label>
+                        <textarea id="message" rows="4" placeholder="Tell the landlord about yourself..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closeRentRequestModal()">Cancel</button>
+                <button class="btn-primary" onclick="submitRentRequest()">Send Request</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Payment Modal -->
+    <div id="paymentModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fas fa-mobile-alt"></i> Pay Rent via M-Pesa</h3>
+                <button class="modal-close" onclick="closePaymentModal()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <div class="property-info-card">
+                    <h4><i class="fas fa-home"></i> Property Details</h4>
+                    <div class="property-detail"><span class="detail-label">Property:</span><span class="detail-value"><?php echo htmlspecialchars($property['property_name']); ?></span></div>
+                    <div class="property-detail"><span class="detail-label">Rent:</span><span class="detail-value">KES <?php echo number_format($property['monthly_rent'], 2); ?></span></div>
+                    <div class="property-detail"><span class="detail-label">Landlord:</span><span class="detail-value"><?php echo htmlspecialchars($landlordInfo['name']); ?></span></div>
+                </div>
+                <div class="form-group">
+                    <label><i class="fas fa-mobile-alt"></i> M-Pesa Phone Number *</label>
+                    <input type="tel" id="payment_phone" placeholder="e.g., 0712345678" required>
+                    <small>You'll receive an STK push to complete payment</small>
+                </div>
+                <div id="payment_status" class="payment-status"></div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-outline" onclick="closePaymentModal()">Cancel</button>
+                <button class="btn-primary" id="payment_submit_btn" onclick="initiatePayment()">Pay KES <?php echo number_format($property['monthly_rent'], 2); ?></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="lightbox" class="modal">
+        <div class="modal-content" style="max-width: 90%; background: transparent; box-shadow: none; text-align: center;">
+            <button class="modal-close" style="position: absolute; top: 20px; right: 30px; background: rgba(0,0,0,0.5);" onclick="closeLightbox()"><i class="fas fa-times"></i></button>
+            <img id="lightboxImage" style="max-width: 90%; max-height: 90vh; object-fit: contain;">
+        </div>
+    </div>
+
     <footer class="footer">
-        <div class="footer-container">
-            <div class="footer-section">
-                <h4>SmartHunt</h4>
-                <p class="small-text">Find your perfect home quickly and easily.</p>
-                <div class="social-links">
-                    <a href="#" onclick="showToast('Facebook feature coming soon!')"><i class="fab fa-facebook"></i></a>
-                    <a href="#" onclick="showToast('Twitter feature coming soon!')"><i class="fab fa-twitter"></i></a>
-                    <a href="#" onclick="showToast('Instagram feature coming soon!')"><i class="fab fa-instagram"></i></a>
-                </div>
-            </div>
-            
-            <div class="footer-section">
-                <h4>Quick Links</h4>
-                <ul>
-                    <li><a href="index.php">Browse Rentals</a></li>
-                    <li><a href="#" onclick="showToast('How it works feature coming soon!')">How it Works</a></li>
-                    <li><a href="#" onclick="showToast('For landlords feature coming soon!')">For Landlords</a></li>
-                    <li><a href="#" onclick="showToast('Safety tips feature coming soon!')">Safety Tips</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h4>Support</h4>
-                <ul>
-                    <li><a href="#" onclick="showToast('Help center feature coming soon!')">Help Center</a></li>
-                    <li><a href="#" onclick="showToast('Contact us feature coming soon!')">Contact Us</a></li>
-                    <li><a href="#" onclick="showToast('Privacy policy feature coming soon!')">Privacy Policy</a></li>
-                    <li><a href="#" onclick="showToast('Terms of service feature coming soon!')">Terms of Service</a></li>
-                </ul>
-            </div>
-            
-            <div class="footer-section">
-                <h4>Newsletter</h4>
-                <p class="small-text">Get the latest rental listings.</p>
-                <div class="newsletter-form">
-                    <input type="email" id="newsletterEmail" placeholder="Your email">
-                    <button onclick="subscribeNewsletter()">Subscribe</button>
-                </div>
-            </div>
-        </div>
-        
-        <div class="footer-bottom">
-            <p class="small-text">&copy; <?php echo date('Y'); ?> SmartHunt. All rights reserved.</p>
-        </div>
+        <p>&copy; <?php echo date('Y'); ?> SmartHunt. All rights reserved.</p>
     </footer>
 
-    <!-- Mobile Menu Overlay -->
-    <div class="mobile-menu-overlay" id="mobileMenu">
-        <div class="mobile-menu-content">
-            <button class="close-menu" onclick="toggleMobileMenu()"><i class="fas fa-times"></i></button>
-            <a href="index.php" class="mobile-nav-link">Browse</a>
-            <?php if ($isLoggedIn): ?>
-                <a href="profile.php" class="mobile-nav-link">My Profile</a>
-                <a href="saved-properties.php" class="mobile-nav-link">Saved Properties</a>
-                <a href="logout.php" class="mobile-nav-link" onclick="return confirm('Are you sure you want to logout?')">Logout</a>
-            <?php else: ?>
-                <a href="login.php" class="mobile-nav-link">Login</a>
-                <a href="register.php" class="mobile-nav-link">Sign Up</a>
-            <?php endif; ?>
-            <a href="#" class="mobile-nav-link" onclick="showToast('Help center feature coming soon!')">Help Center</a>
-        </div>
-    </div>
-
-    <!-- Success/Error Modal -->
-    <div id="responseModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-icon" id="modalIcon">
-                <i class="fas fa-check-circle"></i>
-            </div>
-            <h3 id="modalTitle">Success!</h3>
-            <p id="modalMessage">Your request has been sent successfully.</p>
-            <button class="modal-close-btn" onclick="closeModal()">Continue</button>
-        </div>
-    </div>
-
-    <!-- Toast Notification -->
     <div id="toast" class="toast-notification"></div>
 
     <script>
-        // Mobile menu functionality
+        // Mobile menu
         function toggleMobileMenu() {
-            const menu = document.getElementById('mobileMenu');
-            menu.classList.toggle('active');
+            document.getElementById('mobileMenu')?.classList.toggle('active');
         }
 
-        document.querySelector('.mobile-menu-btn').addEventListener('click', toggleMobileMenu);
-        
-        document.querySelector('.close-menu').addEventListener('click', function() {
-            document.getElementById('mobileMenu').classList.remove('active');
-        });
-        
-        document.getElementById('mobileMenu').addEventListener('click', function(e) {
-            if (e.target === this) {
-                this.classList.remove('active');
-            }
-        });
-
-        // Toast notification function
-        function showToast(message, type = 'info') {
+        // Toast notification
+        function showToast(message, isError = false) {
             const toast = document.getElementById('toast');
             toast.textContent = message;
-            toast.className = 'toast-notification ' + type;
+            toast.style.backgroundColor = isError ? '#e74c3c' : '#333';
             toast.classList.add('show');
-            
-            setTimeout(() => {
-                toast.classList.remove('show');
-            }, 3000);
+            setTimeout(() => toast.classList.remove('show'), 3000);
         }
 
         // Image gallery
-        function changeMainImage(src) {
-            document.getElementById('mainPropertyImage').src = src;
+        function changeMainImage(src, element) {
+            document.getElementById('mainImage').src = src;
+            document.querySelectorAll('.thumbnail').forEach(t => t.classList.remove('active'));
+            element.classList.add('active');
         }
 
-        // Toggle save property
-        function toggleSaveProperty(propertyId) {
+        function openLightbox() {
+            const img = document.getElementById('lightboxImage');
+            img.src = document.getElementById('mainImage').src;
+            document.getElementById('lightbox').classList.add('active');
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+        }
+
+        // Save property
+        function toggleSaveProperty() {
             <?php if (!$isLoggedIn): ?>
-                showToast('Please login to save properties', 'error');
-                setTimeout(() => {
-                    window.location.href = 'login.php?redirect=property.php?id=' + propertyId;
-                }, 1500);
+                showToast('Please login to save properties', true);
+                setTimeout(() => window.location.href = 'login.php?redirect=property.php?id=<?php echo $property['id']; ?>', 1500);
                 return;
             <?php endif; ?>
 
@@ -1326,17 +547,14 @@ function getLandlordInfo($property) {
             
             fetch(window.location.href, {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                },
-                body: 'action=toggle_save&property_id=' + propertyId
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'action=toggle_save&property_id=<?php echo $property['id']; ?>'
             })
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
                     const icon = btn.querySelector('i');
                     const text = btn.querySelector('span');
-                    
                     if (data.saved) {
                         icon.classList.remove('far');
                         icon.classList.add('fas');
@@ -1348,129 +566,201 @@ function getLandlordInfo($property) {
                         btn.classList.remove('saved');
                         text.textContent = 'Save Property';
                     }
-                    
-                    showToast(data.message, 'success');
-                } else {
-                    showToast(data.message || 'Error saving property', 'error');
+                    showToast(data.message);
                 }
             })
-            .catch(error => {
-                showToast('Error saving property', 'error');
-            })
-            .finally(() => {
-                btn.disabled = false;
-            });
+            .finally(() => btn.disabled = false);
         }
 
-        // Rent request form submission
-        document.getElementById('rentRequestForm')?.addEventListener('submit', function(e) {
-            e.preventDefault();
+        // Rent Request
+        function openRentRequestModal() {
+            document.getElementById('rentRequestModal').classList.add('active');
+        }
+
+        function closeRentRequestModal() {
+            document.getElementById('rentRequestModal').classList.remove('active');
+        }
+
+        function submitRentRequest() {
+            const name = document.getElementById('name').value.trim();
+            const email = document.getElementById('email').value.trim();
+            const phone = document.getElementById('phone').value.trim();
+            const moveDate = document.getElementById('moveDate').value;
+            const message = document.getElementById('message').value.trim();
             
-            const formData = new FormData(this);
+            if (!name || !email || !phone || !moveDate) {
+                showToast('Please fill all required fields', true);
+                return;
+            }
+            
+            const phoneRegex = /^(07|01)[0-9]{8}$/;
+            if (!phoneRegex.test(phone)) {
+                showToast('Enter a valid Kenyan phone number', true);
+                return;
+            }
+            
+            const formData = new FormData();
             formData.append('action', 'send_rent_request');
+            formData.append('name', name);
+            formData.append('email', email);
+            formData.append('phone', phone);
+            formData.append('moveDate', moveDate);
+            formData.append('message', message);
             
-            const submitBtn = this.querySelector('button[type="submit"]');
+            const submitBtn = event.target;
             const originalText = submitBtn.innerHTML;
             submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sending...';
             submitBtn.disabled = true;
             
-            fetch(window.location.href, {
-                method: 'POST',
-                body: new URLSearchParams(formData)
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    // Show success modal
-                    document.getElementById('modalIcon').innerHTML = '<i class="fas fa-check-circle"></i>';
-                    document.getElementById('modalTitle').textContent = 'Success!';
-                    document.getElementById('modalMessage').textContent = data.message || 'Your rent request has been sent successfully!';
-                    document.getElementById('responseModal').classList.add('active');
-                    
-                    // Reset form
-                    this.reset();
-                } else {
-                    showToast(data.message || 'Error sending request', 'error');
-                }
-            })
-            .catch(error => {
-                showToast('Error sending request', 'error');
-            })
-            .finally(() => {
-                submitBtn.innerHTML = originalText;
-                submitBtn.disabled = false;
-            });
-        });
-
-        // Modal functions
-        function closeModal() {
-            document.getElementById('responseModal').classList.remove('active');
-        }
-
-        // Close modal when clicking outside
-        window.onclick = function(event) {
-            const modal = document.getElementById('responseModal');
-            if (event.target === modal) {
-                modal.classList.remove('active');
-            }
-        };
-
-        // Newsletter subscription
-        function subscribeNewsletter() {
-            const email = document.getElementById('newsletterEmail').value.trim();
-            
-            if (!email) {
-                showToast('Please enter your email', 'error');
-                return;
-            }
-            
-            if (!isValidEmail(email)) {
-                showToast('Please enter a valid email address', 'error');
-                return;
-            }
-            
-            // Simulate subscription
-            showToast('Successfully subscribed to newsletter!', 'success');
-            document.getElementById('newsletterEmail').value = '';
-        }
-
-        // Email validation
-        function isValidEmail(email) {
-            const re = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-            return re.test(email);
-        }
-
-        // Set minimum date for move-in date
-        document.addEventListener('DOMContentLoaded', function() {
-            const moveDate = document.getElementById('moveDate');
-            if (moveDate) {
-                const today = new Date().toISOString().split('T')[0];
-                moveDate.setAttribute('min', today);
-            }
-            
-            // Image error handling
-            const images = document.querySelectorAll('.property-image img, .main-image img, .image-thumbnails img');
-            const fallbackImage = 'https://images.unsplash.com/photo-1560448204-e02f11c3d0e2?w=800&h=600&fit=crop';
-            
-            images.forEach(img => {
-                img.addEventListener('error', function() {
-                    this.src = fallbackImage;
+            fetch(window.location.href, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message);
+                        closeRentRequestModal();
+                        document.getElementById('rentRequestForm').reset();
+                    } else {
+                        showToast(data.message, true);
+                    }
+                })
+                .catch(() => showToast('An error occurred', true))
+                .finally(() => {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
                 });
+        }
+
+        // Payment
+        let paymentCheckInterval = null;
+
+        function openPaymentModal() {
+            document.getElementById('paymentModal').classList.add('active');
+            document.getElementById('payment_phone').value = '';
+            document.getElementById('payment_status').style.display = 'none';
+            const btn = document.getElementById('payment_submit_btn');
+            btn.disabled = false;
+            btn.innerHTML = 'Pay KES <?php echo number_format($property['monthly_rent'], 2); ?>';
+        }
+
+        function closePaymentModal() {
+            if (paymentCheckInterval) clearInterval(paymentCheckInterval);
+            document.getElementById('paymentModal').classList.remove('active');
+        }
+
+        function initiatePayment() {
+            const phone = document.getElementById('payment_phone').value.trim();
+            const phoneRegex = /^(07|01)[0-9]{8}$/;
+            
+            if (!phone) {
+                showToast('Enter your M-Pesa phone number', true);
+                return;
+            }
+            if (!phoneRegex.test(phone)) {
+                showToast('Enter a valid Kenyan phone number', true);
+                return;
+            }
+            
+            const formData = new FormData();
+            formData.append('action', 'initiate_payment');
+            formData.append('phone_number', phone);
+            formData.append('amount', <?php echo $property['monthly_rent']; ?>);
+            
+            const submitBtn = document.getElementById('payment_submit_btn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            submitBtn.disabled = true;
+            
+            const statusDiv = document.getElementById('payment_status');
+            statusDiv.className = 'payment-status info';
+            statusDiv.innerHTML = '<i class="fas fa-clock"></i> Initiating payment...';
+            statusDiv.style.display = 'flex';
+            
+            fetch(window.location.href, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message);
+                        statusDiv.innerHTML = '<i class="fas fa-clock"></i> Payment initiated. Waiting for confirmation...';
+                        
+                        let checkCount = 0;
+                        paymentCheckInterval = setInterval(() => {
+                            checkCount++;
+                            if (checkCount > 12) {
+                                clearInterval(paymentCheckInterval);
+                                statusDiv.className = 'payment-status warning';
+                                statusDiv.innerHTML = '<i class="fas fa-clock"></i> Still processing. You will receive an SMS.';
+                                submitBtn.innerHTML = originalText;
+                                submitBtn.disabled = false;
+                                return;
+                            }
+                            checkPaymentStatus(data.payment_id);
+                        }, 5000);
+                    } else {
+                        showToast(data.message, true);
+                        statusDiv.className = 'payment-status error';
+                        statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> ' + data.message;
+                        submitBtn.innerHTML = originalText;
+                        submitBtn.disabled = false;
+                    }
+                })
+                .catch(() => {
+                    showToast('An error occurred', true);
+                    statusDiv.className = 'payment-status error';
+                    statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> An error occurred';
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                });
+        }
+
+        function checkPaymentStatus(paymentId) {
+            const formData = new FormData();
+            formData.append('action', 'check_payment_status');
+            formData.append('payment_id', paymentId);
+            
+            fetch(window.location.href, { method: 'POST', body: formData })
+                .then(response => response.json())
+                .then(data => {
+                    const statusDiv = document.getElementById('payment_status');
+                    const submitBtn = document.getElementById('payment_submit_btn');
+                    
+                    if (data.status === 'completed') {
+                        clearInterval(paymentCheckInterval);
+                        statusDiv.className = 'payment-status success';
+                        statusDiv.innerHTML = '<i class="fas fa-check-circle"></i> ' + data.message;
+                        setTimeout(() => {
+                            closePaymentModal();
+                            location.reload();
+                        }, 3000);
+                    } else if (data.status === 'failed') {
+                        clearInterval(paymentCheckInterval);
+                        statusDiv.className = 'payment-status error';
+                        statusDiv.innerHTML = '<i class="fas fa-times-circle"></i> ' + data.message;
+                        submitBtn.innerHTML = 'Pay Now';
+                        submitBtn.disabled = false;
+                    } else {
+                        statusDiv.innerHTML = '<i class="fas fa-clock"></i> ' + data.message;
+                    }
+                });
+        }
+
+        // Close modals on outside click
+        document.querySelectorAll('.modal').forEach(modal => {
+            modal.addEventListener('click', function(e) {
+                if (e.target === this) this.classList.remove('active');
             });
         });
+
+        // Set min date for move-in
+        document.getElementById('moveDate').min = new Date().toISOString().split('T')[0];
 
         // Keyboard shortcuts
         document.addEventListener('keydown', function(e) {
-            // Press 'Escape' to close modal and mobile menu
             if (e.key === 'Escape') {
-                document.getElementById('responseModal').classList.remove('active');
-                document.getElementById('mobileMenu').classList.remove('active');
+                document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
             }
-            
-            // Press 's' to save property (if logged in)
             if (e.key === 's' && !e.ctrlKey && !e.metaKey && <?php echo $isLoggedIn ? 'true' : 'false'; ?>) {
                 e.preventDefault();
-                toggleSaveProperty(<?php echo $property['id']; ?>);
+                toggleSaveProperty();
             }
         });
     </script>
