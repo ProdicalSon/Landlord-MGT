@@ -110,6 +110,20 @@ class NotificationModel {
         }
     }
 
+/**
+ * Create notification for landlord
+ */
+public function createForLandlord($landlord_id, $type, $message, $property_id = null) {
+    return $this->create($landlord_id, $type, $message, $property_id);
+}
+
+/**
+ * Get notifications for landlord
+ */
+public function getLandlordNotifications($landlord_id) {
+    return $this->getUserNotifications($landlord_id);
+}
+
     // Create notification
     public function create($user_id, $type, $message, $property_id = null) {
         $query = "INSERT INTO " . $this->table_name . " 

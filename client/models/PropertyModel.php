@@ -152,6 +152,38 @@ class PropertyModel {
         
         return implode(', ', $parts);
     }
+
+
+    /**
+ * Get property images
+ * @param int $property_id
+ * @return array
+ */
+public function getPropertyImages($property_id) {
+    try {
+        $query = "SELECT * FROM property_images WHERE property_id = :property_id ORDER BY is_primary DESC, id ASC";
+        $stmt = $this->conn->prepare($query);
+        $stmt->bindParam(':property_id', $property_id);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (PDOException $e) {
+        error_log("Get property images error: " . $e->getMessage());
+        return [];
+    }
+}
+
+/**
+ * Get all properties with images
+ */
+public function getAllPropertiesWithImages($filters = []) {
+    $properties = $this->getAllProperties($filters);
+    
+    foreach ($properties as &$property) {
+        $property['images'] = $this->getPropertyImages($property['id']);
+    }
+    
+    return $properties;
+}
     /**
  * Get property with landlord M-Pesa details
  */

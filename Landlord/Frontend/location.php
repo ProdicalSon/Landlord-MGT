@@ -1,16 +1,56 @@
+<?php
+// Landlord/Frontend/location.php
+session_start();
+
+// Check if landlord is logged in
+if (!isset($_SESSION['landlord_id'])) {
+    $_SESSION['redirect_after_login'] = 'location.php';
+    header('Location: login.php');
+    exit;
+}
+
+require_once __DIR__ . '/models/LandlordUserModel.php';
+require_once __DIR__ . '/models/LandlordPropertyModel.php';
+
+$userModel = new LandlordUserModel();
+$propertyModel = new LandlordPropertyModel();
+
+$landlord_id = $_SESSION['landlord_id'];
+$landlord = $userModel->getLandlordById($landlord_id);
+
+// If landlord not found in database, logout
+if (!$landlord) {
+    header('Location: logout.php');
+    exit;
+}
+
+// Get property statistics
+$stats = $propertyModel->getPropertyStats($landlord_id);
+$properties = $propertyModel->getLandlordProperties($landlord_id);
+
+// Format landlord name
+$landlordName = $userModel->getFullName($landlord) ?: $landlord['username'];
+$firstName = explode(' ', $landlordName)[0];
+
+// Get unread notifications count
+$unreadNotifications = 7; // Placeholder
+$unreadInquiries = 5; // Placeholder
+$pendingPayments = 2; // Placeholder
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="assets/icons/smartlogo.png">
-    <title>SmartHunt - Landlord Dashboard</title>
+    <title>Property Locations - SmartHunt Landlord</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <style>
-      
         * {
             margin: 0;
             padding: 0;
@@ -94,7 +134,8 @@
             transition: all 0.3s;
         }
 
-        .sidebar-menu a:hover, .sidebar-menu a.active {
+        .sidebar-menu a:hover,
+        .sidebar-menu a.active {
             background-color: var(--light-gray);
             color: var(--primary);
         }
@@ -153,16 +194,78 @@
             color: var(--primary);
         }
 
-        .login-image {
+        .user-menu {
             display: flex;
             align-items: center;
+            gap: 20px;
         }
 
-        .login-image img {
+        .user-info {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            position: relative;
+        }
+
+        .user-avatar {
             width: 40px;
             height: 40px;
+            background: var(--primary);
             border-radius: 50%;
-            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            font-size: 18px;
+            overflow: hidden;
+        }
+
+        .user-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            min-width: 200px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .user-info:hover .dropdown-menu {
+            display: block;
+        }
+
+        .dropdown-menu a {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 15px;
+            text-decoration: none;
+            color: var(--text);
+            transition: background 0.3s;
+        }
+
+        .dropdown-menu a:hover {
+            background: var(--light-gray);
+        }
+
+        .dropdown-menu hr {
+            margin: 5px 0;
+            border: none;
+            border-top: 1px solid var(--gray);
+        }
+
+        .logout-btn {
+            color: var(--danger) !important;
         }
 
         .content h1 {
@@ -176,105 +279,7 @@
             margin-bottom: 25px;
         }
 
-        .cards {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-
-        .card {
-            background: var(--light);
-            border-radius: 12px;
-            padding: 20px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        .card h3 {
-            font-size: 18px;
-            margin-bottom: 10px;
-            color: var(--dark);
-        }
-
-        .card p {
-            margin-bottom: 15px;
-            font-size: 15px;
-        }
-
-        .card button {
-            background-color: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 15px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 14px;
-            margin-right: 8px;
-            margin-top: 10px;
-            transition: background-color 0.3s;
-        }
-
-        .card button:hover {
-            background-color: #e61e4d;
-        }
-
-        .progress-bar {
-            width: 100%;
-            background-color: var(--gray);
-            border-radius: 10px;
-            margin: 10px 0;
-            height: 10px;
-        }
-
-        .progress {
-            height: 100%;
-            background-color: var(--success);
-            border-radius: 10px;
-            width: 0%;
-            transition: width 0.5s ease;
-        }
-
-        .alert {
-            background-color: #fff3cd;
-            border-left: 4px solid var(--warning);
-            padding: 10px 15px;
-            margin: 10px 0;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .footer {
-            background-color: var(--dark);
-            color: white;
-            text-align: center;
-            padding: 20px;
-            margin-top: auto;
-        }
-
-        .footer img {
-            height: 40px;
-            margin-bottom: 10px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        .notification-badge {
-            background-color: var(--danger);
-            color: white;
-            border-radius: 50%;
-            padding: 3px 8px;
-            font-size: 12px;
-            margin-left: 5px;
-        }
-
-        /* Location Styles - Maintaining existing styling patterns */
+        /* Location Styles */
         .location-container {
             background: var(--light);
             border-radius: 12px;
@@ -287,7 +292,6 @@
             background: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
             color: white;
             padding: 25px 30px;
-            text-align: center;
         }
 
         .location-header h1 {
@@ -307,6 +311,8 @@
             align-items: center;
             padding: 20px 30px;
             border-bottom: 1px solid var(--light-gray);
+            flex-wrap: wrap;
+            gap: 15px;
         }
 
         .search-box {
@@ -315,8 +321,11 @@
         }
 
         .search-box input {
-            padding-left: 40px;
-            border-radius: 20px;
+            width: 100%;
+            padding: 10px 15px 10px 40px;
+            border: 1px solid var(--gray);
+            border-radius: 8px;
+            font-size: 14px;
         }
 
         .search-box i {
@@ -327,41 +336,40 @@
             color: var(--text);
         }
 
-        .filter-controls {
-            display: flex;
-            gap: 15px;
-        }
-
-        .filter-controls select {
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid var(--gray);
-            background-color: var(--light);
-        }
-
         .location-stats {
             display: flex;
-            gap: 20px;
-            margin-bottom: 20px;
+            gap: 15px;
         }
 
         .stat-card {
             background: var(--light-gray);
             border-radius: 8px;
-            padding: 15px;
+            padding: 10px 20px;
             text-align: center;
-            min-width: 120px;
         }
 
         .stat-card .value {
-            font-size: 24px;
+            font-size: 20px;
             font-weight: 700;
             color: var(--primary);
         }
 
         .stat-card .label {
-            font-size: 14px;
+            font-size: 12px;
             color: var(--text);
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+        }
+
+        .filter-controls select {
+            padding: 8px 15px;
+            border-radius: 6px;
+            border: 1px solid var(--gray);
+            background-color: var(--light);
+            font-size: 14px;
         }
 
         .location-content {
@@ -376,25 +384,18 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            height: 500px;
         }
 
         .map-container h3 {
             font-size: 18px;
             margin-bottom: 15px;
             color: var(--dark);
-            text-align: center;
         }
 
-        .map-placeholder {
-            background: var(--light-gray);
+        #map {
+            height: 450px;
             border-radius: 8px;
-            height: 400px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: var(--text);
-            font-size: 16px;
+            background: var(--light-gray);
         }
 
         .location-list {
@@ -402,7 +403,7 @@
             border-radius: 12px;
             padding: 20px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            max-height: 500px;
+            max-height: 550px;
             overflow-y: auto;
         }
 
@@ -410,7 +411,6 @@
             font-size: 18px;
             margin-bottom: 20px;
             color: var(--dark);
-            text-align: center;
         }
 
         .location-item {
@@ -432,8 +432,8 @@
         }
 
         .location-icon {
-            width: 40px;
-            height: 40px;
+            width: 45px;
+            height: 45px;
             border-radius: 50%;
             background: var(--light-gray);
             display: flex;
@@ -456,7 +456,7 @@
         }
 
         .location-details p {
-            font-size: 14px;
+            font-size: 13px;
             color: var(--text);
             margin-bottom: 5px;
         }
@@ -464,144 +464,78 @@
         .location-stats-small {
             display: flex;
             gap: 15px;
-            margin-top: 8px;
+            margin-top: 5px;
         }
 
         .stat-small {
             display: flex;
             align-items: center;
             gap: 5px;
-            font-size: 12px;
+            font-size: 11px;
             color: var(--text);
         }
 
         .stat-small i {
             color: var(--primary);
+            font-size: 11px;
         }
 
-        .location-actions {
-            display: flex;
-            gap: 8px;
-        }
-
-        .location-btn {
-            padding: 6px 12px;
-            border-radius: 6px;
-            font-size: 12px;
-            cursor: pointer;
-            transition: all 0.3s;
-            border: none;
-        }
-
-        .btn-view {
-            background-color: var(--secondary);
-            color: white;
-        }
-
-        .btn-view:hover {
-            background-color: #3367d6;
-        }
-
-        .btn-edit {
-            background-color: var(--warning);
-            color: white;
-        }
-
-        .btn-edit:hover {
-            background-color: #e6a200;
-        }
-
-        .location-details-container {
-            background: var(--light);
+        .location-badge {
+            padding: 2px 8px;
             border-radius: 12px;
-            padding: 30px;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-            margin-top: 30px;
+            font-size: 11px;
+            font-weight: 500;
         }
 
-        .location-details-header {
-            display: flex;
-            justify-content: between;
-            align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid var(--light-gray);
+        .badge-available {
+            background: #d4edda;
+            color: #155724;
         }
 
-        .location-details-header h2 {
-            font-size: 24px;
-            color: var(--dark);
+        .badge-occupied {
+            background: #fff3cd;
+            color: #856404;
         }
 
-        .location-info-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+        .badge-maintenance {
+            background: #f8d7da;
+            color: #721c24;
         }
 
-        .info-card {
-            background: var(--light-gray);
-            padding: 20px;
-            border-radius: 8px;
-        }
-
-        .info-card h4 {
-            font-size: 16px;
-            font-weight: 600;
-            margin-bottom: 10px;
-            color: var(--dark);
-        }
-
-        .info-card p {
-            font-size: 14px;
-            color: var(--text);
-            line-height: 1.6;
-        }
-
-        .amenities-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 10px;
-            margin-top: 10px;
-        }
-
-        .amenity-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 14px;
-            color: var(--text);
-        }
-
-        .amenity-item i {
-            color: var(--success);
-        }
-
-        /* Empty state */
         .empty-state {
             text-align: center;
-            padding: 50px 30px;
+            padding: 50px 20px;
             color: var(--text);
         }
 
         .empty-state i {
-            font-size: 60px;
+            font-size: 48px;
             color: var(--gray);
-            margin-bottom: 20px;
+            margin-bottom: 15px;
         }
 
-        .empty-state h3 {
-            font-size: 22px;
+        .footer {
+            background-color: var(--dark);
+            color: white;
+            text-align: center;
+            padding: 20px;
+            margin-top: auto;
+        }
+
+        .footer img {
+            height: 40px;
             margin-bottom: 10px;
-            color: var(--dark);
         }
 
-        .empty-state p {
-            margin-bottom: 20px;
+        .notification-badge {
+            background-color: var(--danger);
+            color: white;
+            border-radius: 50%;
+            padding: 3px 8px;
+            font-size: 12px;
+            margin-left: 5px;
         }
 
-        /* Responsive Design */
         @media (max-width: 992px) {
             .sidebar {
                 width: 220px;
@@ -623,13 +557,15 @@
             .main-content {
                 margin-left: 0;
             }
-            .cards {
+            .location-content {
                 grid-template-columns: 1fr;
             }
             .location-controls {
                 flex-direction: column;
-                gap: 15px;
                 align-items: stretch;
+            }
+            .search-box {
+                width: 100%;
             }
             .location-stats {
                 justify-content: center;
@@ -637,11 +573,8 @@
             .filter-controls {
                 justify-content: center;
             }
-            .location-content {
-                grid-template-columns: 1fr;
-            }
-            .location-info-grid {
-                grid-template-columns: 1fr;
+            #map {
+                height: 350px;
             }
         }
     </style>
@@ -656,477 +589,447 @@
             </div>
 
             <ul class="sidebar-menu">
-                <li><a href="index.php" data-content="dashboard"><i class="fas fa-home"></i> Dashboard</a></li> 
+                <li><a href="index.php"><i class="fas fa-home"></i> Dashboard</a></li> 
                 <li class="dropdown">
-                    <a href="#" data-content="properties"><i class="fas fa-building"></i> Properties</a>
+                    <a href="#"><i class="fas fa-building"></i> Properties</a>
                     <div class="dropdown-content">
-                        <a href="addproperty.php" data-content="add-property"><i class="fas fa-plus"></i> Add Property</a>
-                        <a href="propertylistings.php" data-content="edit-listings"><i class="fas fa-edit"></i>Listings</a>
-                        <a href="#" data-content="manage-location"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
+                        <a href="addproperty.php"><i class="fas fa-plus"></i> Add Property</a>
+                        <a href="propertylistings.php"><i class="fas fa-edit"></i> Listings</a>
+                        <a href="location.php" class="active"><i class="fas fa-map-marker-alt"></i> Manage Location</a>
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#" data-content="tenants"><i class="fas fa-users"></i> Tenants <span class="notification-badge">3</span></a> 
+                    <a href="#"><i class="fas fa-users"></i> Tenants <span class="notification-badge"><?php echo $stats['occupied'] ?? 0; ?></span></a> 
                     <div class="dropdown-content">
-                        <a href="#" data-content="view-tenants"><i class="fas fa-list"></i> View Tenants</a>
-                        <a href="#" data-content="tenant-bookings"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
+                        <a href="view-tenant.php"><i class="fas fa-list"></i> View Tenants</a>
+                        <a href="tenant-bookings.php"><i class="fas fa-calendar-check"></i> Tenant Bookings</a>
                     </div>
                 </li>
                 <li class="dropdown">
-                    <a href="#" data-content="inquiries"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge">5</span></a>
+                    <a href="#"><i class="fas fa-question-circle"></i> Inquiries <span class="notification-badge"><?php echo $unreadInquiries; ?></span></a>
                     <div class="dropdown-content">
-                        <a href="#" data-content="inquiries-list"><i class="fas fa-inbox"></i> Inquiries</a>
-                        <a href="#" data-content="chat"><i class="fas fa-comments"></i> Chat</a>
+                        <a href="landlordinquiries.php"><i class="fas fa-inbox"></i> Inquiries</a>
+                        <a href="#"><i class="fas fa-comments"></i> Chat</a>
                     </div>
                 </li>
-                <li><a href="#" data-content="payments"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge">2</span></a></li>
-                <li><a href="#" class="active" data-content="location"><i class="fas fa-map-marked-alt"></i> Location</a></li>
-                <li><a href="announcements.php" data-content="announcements"><i class="fas fa-bullhorn"></i> Announcements</a></li>
-                <li><a href="landlordreports.php" data-content="reports"><i class="fas fa-chart-bar"></i> Reports</a></li>
-                <li><a href="profilesettings.php" data-content="profile-settings"><i class="fas fa-user-cog"></i> Profile Setting</a></li>
-                <li><a href="notifications.php" data-content="notifications"><i class="fas fa-bell"></i> Notifications <span class="notification-badge">7</span></a></li>
-                <li><a href="support.php" data-content="support"><i class="fas fa-headset"></i> Support</a></li>
+                <li><a href="payments.php"><i class="fas fa-credit-card"></i> Payments <span class="notification-badge"><?php echo $pendingPayments; ?></span></a></li>
+                <li><a href="announcements.php"><i class="fas fa-bullhorn"></i> Announcements</a></li>
+                <li><a href="landlordreports.php"><i class="fas fa-chart-bar"></i> Reports</a></li>
+                <li><a href="profilesettings.php"><i class="fas fa-user-cog"></i> Profile</a></li>
+                <li><a href="notifications.php"><i class="fas fa-bell"></i> Notifications <span class="notification-badge"><?php echo $unreadNotifications; ?></span></a></li>
+                <li><a href="support.php"><i class="fas fa-headset"></i> Support</a></li>
             </ul>
         </aside>
 
         <!-- Main Content -->
         <main class="main-content">
             <nav class="navbar">
-                <div class="navbar-brand">Landlord Dashboard</div>
+                <div class="navbar-brand">Property Locations</div>
                 
-                <div class="login-image">
-                    <div class="dropdown">
-                        <a href="#"><img src="https://placehold.co/40x40/4285F4/FFFFFF?text=U" alt="User Icon"></a>
-                        <div class="dropdown-content">
-                            <a href="login.php"><i class="fas fa-sign-in-alt"></i> Login</a>
-                            <a href="registerlandlord.php"><i class="fas fa-user-plus"></i> Sign Up</a> 
-                            <a href="profilesettings.php"><i class="fas fa-cog"></i> Settings</a>
-                            <a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                <div class="user-menu">
+                    <div class="user-info">
+                        <div class="user-details">
+                            <div class="user-name"><?php echo htmlspecialchars($landlordName); ?></div>
+                            <div class="user-role">Landlord</div>
                         </div>
-                    </div>    
+                        <div class="user-avatar">
+                            <?php echo strtoupper(substr($firstName, 0, 1)); ?>
+                        </div>
+                        
+                        <div class="dropdown-menu">
+                            <a href="profilesettings.php"><i class="fas fa-user"></i> My Profile</a>
+                            <a href="index.php"><i class="fas fa-tachometer-alt"></i> Dashboard</a>
+                            <hr>
+                            <a href="logout.php" class="logout-btn"><i class="fas fa-sign-out-alt"></i> Logout</a>
+                        </div>
+                    </div>
                 </div>
             </nav>
 
             <!-- Location Section -->
-            <section class="content" id="location-content">
-                <div class="location-container">
-                    <div class="location-header">
-                        <h1><i class="fas fa-map-marked-alt"></i> Property Locations</h1>
-                        <p>Manage and view all your property locations on an interactive map</p>
+            <div class="location-container">
+                <div class="location-header">
+                    <h1><i class="fas fa-map-marked-alt"></i> Property Locations</h1>
+                    <p>View all your properties on an interactive map</p>
+                </div>
+                
+                <div class="location-controls">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-location" placeholder="Search by property name, city, or address...">
                     </div>
                     
-                    <div class="location-controls">
-                        <div class="search-box">
-                            <i class="fas fa-search"></i>
-                            <input type="text" id="search-locations" placeholder="Search locations...">
+                    <div class="location-stats">
+                        <div class="stat-card">
+                            <div class="value" id="total-properties"><?php echo count($properties); ?></div>
+                            <div class="label">Properties</div>
                         </div>
-                        
-                        <div class="location-stats">
-                            <div class="stat-card">
-                                <div class="value" id="total-locations">6</div>
-                                <div class="label">Total Locations</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="value" id="occupied-locations">4</div>
-                                <div class="label">Occupied</div>
-                            </div>
-                            <div class="stat-card">
-                                <div class="value" id="vacant-locations">2</div>
-                                <div class="label">Vacant</div>
-                            </div>
+                        <div class="stat-card">
+                            <div class="value" id="available-properties"><?php echo $stats['available'] ?? 0; ?></div>
+                            <div class="label">Available</div>
                         </div>
-                        
-                        <div class="filter-controls">
-                            <select id="location-status-filter">
-                                <option value="all">All Properties</option>
-                                <option value="occupied">Occupied</option>
-                                <option value="vacant">Vacant</option>
-                                <option value="maintenance">Maintenance</option>
-                            </select>
-                            <select id="location-type-filter">
-                                <option value="all">All Types</option>
-                                <option value="apartment">Apartments</option>
-                                <option value="house">Houses</option>
-                                <option value="commercial">Commercial</option>
-                            </select>
+                        <div class="stat-card">
+                            <div class="value" id="occupied-properties"><?php echo $stats['occupied'] ?? 0; ?></div>
+                            <div class="label">Occupied</div>
                         </div>
                     </div>
                     
-                    <div class="location-content">
-                        <div class="map-container">
-                            <h3>Property Locations Map</h3>
-                            <div class="map-placeholder">
-                                <div>
-                                    <i class="fas fa-map-marked-alt" style="font-size: 48px; margin-bottom: 15px; color: var(--primary);"></i>
-                                    <p>Interactive Map View</p>
-                                    <p style="font-size: 14px; margin-top: 10px;">Properties are displayed on the map</p>
-                                    <button class="location-btn btn-view" style="margin-top: 15px;">
-                                        <i class="fas fa-sync-alt"></i> Refresh Map
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="location-list">
-                            <h3>Property Locations</h3>
-                            <div id="locations-list">
-                                <!-- Locations will be dynamically populated here -->
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="location-details-container" id="location-details">
-                        <!-- Location details will be dynamically populated here -->
+                    <div class="filter-controls">
+                        <select id="status-filter">
+                            <option value="all">All Status</option>
+                            <option value="available">Available</option>
+                            <option value="occupied">Occupied</option>
+                            <option value="maintenance">Maintenance</option>
+                        </select>
+                        <select id="type-filter">
+                            <option value="all">All Types</option>
+                            <option value="apartment">Apartments</option>
+                            <option value="house">Houses</option>
+                            <option value="studio">Studios</option>
+                            <option value="bedsitter">Bedsitters</option>
+                        </select>
                     </div>
                 </div>
-            </section>
+                
+                <div class="location-content">
+                    <div class="map-container">
+                        <h3><i class="fas fa-map"></i> Interactive Map</h3>
+                        <div id="map"></div>
+                    </div>
+                    
+                    <div class="location-list">
+                        <h3><i class="fas fa-list"></i> Property Locations</h3>
+                        <div id="properties-list">
+                            <!-- Properties will be loaded here -->
+                            <div class="empty-state">
+                                <i class="fas fa-spinner fa-spin"></i>
+                                <p>Loading properties...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </main>
     </div>
 
-    <!-- Footer -->
     <footer class="footer">
-        <img src="https://placehold.co/100x30/FFFFFF/FF385C?text=SmartHunt" alt="SmartHunt Logo"> 
-        <h6>&copy; Algorithm-X Softwares. <br>All rights reserved</h6>
+        <img src="assets/icons/smartlogo.png" alt="SmartHunt Logo">
+        <p>&copy; <?php echo date('Y'); ?> SmartHunt. All rights reserved.</p>
     </footer>
 
     <script>
-        // Sample location data
-        const locationsData = [
-            {
-                id: 1,
-                name: "Tripple A Apartments",
-                address: "123 Main Gate Road, Campus Area",
-                city: "Nairobi",
-                type: "apartment",
-                status: "occupied",
-                coordinates: { lat: -1.2921, lng: 36.8219 },
-                properties: 12,
-                occupied: 8,
-                vacant: 4,
-                amenities: ["Wi-Fi", "Parking", "Security", "Water", "Electricity"],
-                description: "Modern apartments located in the heart of campus area, perfect for students.",
-                contact: "+254 712 345 678",
-                rating: 4.5
-            },
-            {
-                id: 2,
-                name: "Green Valley Homes",
-                address: "456 University Road, Westlands",
-                city: "Nairobi",
-                type: "house",
-                status: "occupied",
-                coordinates: { lat: -1.2580, lng: 36.7928 },
-                properties: 8,
-                occupied: 3,
-                vacant: 5,
-                amenities: ["Garden", "Parking", "Security", "Water", "Electricity", "Laundry"],
-                description: "Spacious bedsitters with beautiful garden views in a quiet neighborhood.",
-                contact: "+254 723 456 789",
-                rating: 4.2
-            },
-            {
-                id: 3,
-                name: "Campus View Apartments",
-                address: "789 Student Lane, Kilimani",
-                city: "Nairobi",
-                type: "apartment",
-                status: "occupied",
-                coordinates: { lat: -1.3000, lng: 36.7800 },
-                properties: 6,
-                occupied: 6,
-                vacant: 0,
-                amenities: ["Wi-Fi", "Parking", "Security", "Gym", "Pool", "24/7 Electricity"],
-                description: "Luxury 1-bedroom apartments with stunning campus views and premium amenities.",
-                contact: "+254 734 567 890",
-                rating: 4.8
-            },
-            {
-                id: 4,
-                name: "Sunset Heights",
-                address: "321 Hilltop Avenue, Kileleshwa",
-                city: "Nairobi",
-                type: "apartment",
-                status: "vacant",
-                coordinates: { lat: -1.2700, lng: 36.7900 },
-                properties: 4,
-                occupied: 2,
-                vacant: 2,
-                amenities: ["Parking", "Security", "Water", "Electricity", "Balcony"],
-                description: "Modern 2-bedroom apartments perfect for students and young professionals.",
-                contact: "+254 745 678 901",
-                rating: 4.3
-            },
-            {
-                id: 5,
-                name: "River Side Apartments",
-                address: "654 Riverside Drive, Karen",
-                city: "Nairobi",
-                type: "house",
-                status: "occupied",
-                coordinates: { lat: -1.3200, lng: 36.7100 },
-                properties: 10,
-                occupied: 10,
-                vacant: 0,
-                amenities: ["Wi-Fi", "Parking", "Security", "Water", "Garden"],
-                description: "Affordable single rooms with shared amenities in a serene environment.",
-                contact: "+254 756 789 012",
-                rating: 4.0
-            },
-            {
-                id: 6,
-                name: "Downtown Suites",
-                address: "987 Central Business District",
-                city: "Nairobi",
-                type: "commercial",
-                status: "maintenance",
-                coordinates: { lat: -1.2860, lng: 36.8230 },
-                properties: 5,
-                occupied: 0,
-                vacant: 5,
-                amenities: ["Wi-Fi", "Parking", "Security", "Elevator", "24/7 Access"],
-                description: "Currently under renovation. Modern commercial spaces coming soon.",
-                contact: "+254 767 890 123",
-                rating: 0
-            }
-        ];
+        // Property data from PHP
+        const properties = <?php echo json_encode($properties); ?>;
+        let map;
+        let markers = [];
+        let currentPopup = null;
 
-        // Function to render locations
-        function renderLocations(locations = locationsData) {
-            const locationsList = document.getElementById('locations-list');
+        // Nairobi coordinates (center of Kenya)
+        const nairobiCoordinates = [-1.2921, 36.8219];
+
+        // Initialize map
+        function initMap() {
+            // Create map instance
+            map = L.map('map').setView(nairobiCoordinates, 12);
             
-            if (locations.length === 0) {
-                locationsList.innerHTML = `
+            // Add tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add properties to map
+            addPropertiesToMap(properties);
+            
+            // Fit bounds to show all markers
+            if (markers.length > 0) {
+                const group = L.featureGroup(markers);
+                map.fitBounds(group.getBounds().pad(0.1));
+            }
+        }
+
+        // Add properties to map
+        function addPropertiesToMap(propertiesList) {
+            // Clear existing markers
+            markers.forEach(marker => map.removeLayer(marker));
+            markers = [];
+            
+            // Add new markers
+            propertiesList.forEach(property => {
+                // Use property coordinates if available, otherwise use city center approximation
+                let lat, lng;
+                
+                if (property.latitude && property.longitude) {
+                    lat = parseFloat(property.latitude);
+                    lng = parseFloat(property.longitude);
+                } else {
+                    // Approximate coordinates based on city
+                    const cityCoords = getCityCoordinates(property.city);
+                    lat = cityCoords.lat;
+                    lng = cityCoords.lng;
+                }
+                
+                // Get status color
+                let markerColor = getMarkerColor(property.status);
+                
+                // Create custom marker icon
+                const markerIcon = L.divIcon({
+                    className: 'custom-marker',
+                    html: `<div style="background-color: ${markerColor}; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-size: 14px; border: 2px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.2);">
+                            <i class="fas fa-home"></i>
+                          </div>`,
+                    iconSize: [30, 30],
+                    popupAnchor: [0, -15]
+                });
+                
+                // Create marker
+                const marker = L.marker([lat, lng], { icon: markerIcon }).addTo(map);
+                
+                // Create popup content
+                const popupContent = `
+                    <div style="min-width: 200px; max-width: 250px;">
+                        <h4 style="color: var(--primary); margin-bottom: 5px;">${escapeHtml(property.property_name)}</h4>
+                        <p style="margin-bottom: 5px;"><i class="fas fa-map-marker-alt"></i> ${escapeHtml(property.neighborhood || '')}, ${escapeHtml(property.city || '')}</p>
+                        <p style="margin-bottom: 5px;"><strong>KES ${formatNumber(property.monthly_rent)}/month</strong></p>
+                        <p style="margin-bottom: 10px;">
+                            <span class="badge ${getStatusClass(property.status)}">${property.status}</span>
+                        </p>
+                        <div style="display: flex; gap: 8px;">
+                            <button onclick="viewProperty(${property.id})" style="background: var(--primary); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">View Details</button>
+                            <button onclick="getDirections(${property.id})" style="background: var(--secondary); color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Directions</button>
+                        </div>
+                    </div>
+                `;
+                
+                marker.bindPopup(popupContent);
+                
+                // Store property data with marker
+                marker.property = property;
+                markers.push(marker);
+                
+                // Add click event
+                marker.on('click', () => {
+                    if (currentPopup) {
+                        currentPopup.close();
+                    }
+                    marker.openPopup();
+                    currentPopup = marker;
+                    highlightPropertyInList(property.id);
+                });
+            });
+        }
+
+        // Get city coordinates
+        function getCityCoordinates(city) {
+            const coordinates = {
+                'Nairobi': [-1.2921, 36.8219],
+                'Mombasa': [-4.0435, 39.6682],
+                'Kisumu': [-0.0917, 34.7680],
+                'Nakuru': [-0.3031, 36.0800],
+                'Eldoret': [0.5143, 35.2698],
+                'Thika': [-1.0388, 37.0833],
+                'Machakos': [-1.5177, 37.2634],
+                'Meru': [0.0500, 37.6500],
+                'Nyeri': [-0.4194, 36.9500],
+                'Kitale': [1.0167, 35.0000]
+            };
+            return coordinates[city] ? { lat: coordinates[city][0], lng: coordinates[city][1] } : nairobiCoordinates;
+        }
+
+        // Get marker color based on status
+        function getMarkerColor(status) {
+            switch(status) {
+                case 'available': return '#00A699';
+                case 'occupied': return '#FFB400';
+                case 'maintenance': return '#FF5A5F';
+                default: return '#FF385C';
+            }
+        }
+
+        // Get status class for badge
+        function getStatusClass(status) {
+            switch(status) {
+                case 'available': return 'badge-available';
+                case 'occupied': return 'badge-occupied';
+                case 'maintenance': return 'badge-maintenance';
+                default: return '';
+            }
+        }
+
+        // Escape HTML
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Format number
+        function formatNumber(num) {
+            return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+        }
+
+        // Display properties in list
+        function displayPropertiesList(propertiesList) {
+            const container = document.getElementById('properties-list');
+            
+            if (propertiesList.length === 0) {
+                container.innerHTML = `
                     <div class="empty-state">
                         <i class="fas fa-map-marker-alt"></i>
-                        <h3>No Locations Found</h3>
-                        <p>You don't have any locations matching your search criteria.</p>
+                        <h3>No Properties Found</h3>
+                        <p>No properties match your search criteria.</p>
                     </div>
                 `;
                 return;
             }
             
-            // Update location statistics
-            updateLocationStats(locations);
-            
-            locationsList.innerHTML = locations.map(location => `
-                <div class="location-item" data-id="${location.id}" onclick="showLocationDetails(${location.id})">
+            container.innerHTML = propertiesList.map(property => `
+                <div class="location-item" data-id="${property.id}" onclick="focusOnProperty(${property.id})">
                     <div class="location-icon">
-                        <i class="fas fa-${getLocationIcon(location.type)}"></i>
+                        <i class="fas fa-${getPropertyIcon(property.property_type)}"></i>
                     </div>
                     <div class="location-details">
-                        <h4>${location.name}</h4>
-                        <p>${location.address}</p>
-                        <p style="color: var(--primary); font-size: 12px;">
-                            <i class="fas fa-map-marker-alt"></i> ${location.city}
-                        </p>
+                        <h4>${escapeHtml(property.property_name)}</h4>
+                        <p><i class="fas fa-map-marker-alt"></i> ${escapeHtml(property.neighborhood || '')}, ${escapeHtml(property.city || '')}</p>
                         <div class="location-stats-small">
-                            <div class="stat-small">
-                                <i class="fas fa-home"></i>
-                                <span>${location.properties} units</span>
-                            </div>
-                            <div class="stat-small">
-                                <i class="fas fa-user-check"></i>
-                                <span>${location.occupied} occupied</span>
-                            </div>
-                            <div class="stat-small">
-                                <i class="fas fa-door-open"></i>
-                                <span>${location.vacant} vacant</span>
-                            </div>
+                            <span class="stat-small"><i class="fas fa-bed"></i> ${property.bedrooms || 0} beds</span>
+                            <span class="stat-small"><i class="fas fa-bath"></i> ${property.bathrooms || 0} baths</span>
+                            <span class="stat-small"><i class="fas fa-ruler-combined"></i> ${property.sqft || 0} sqft</span>
                         </div>
                     </div>
-                    <div class="location-actions">
-                        <button class="location-btn btn-view" onclick="event.stopPropagation(); viewOnMap(${location.id})">
-                            <i class="fas fa-map"></i> Map
-                        </button>
-                        <button class="location-btn btn-edit" onclick="event.stopPropagation(); editLocation(${location.id})">
-                            <i class="fas fa-edit"></i> Edit
-                        </button>
+                    <div>
+                        <span class="location-badge ${getStatusClass(property.status)}">
+                            ${property.status}
+                        </span>
                     </div>
                 </div>
             `).join('');
         }
 
-        // Function to show location details
-        function showLocationDetails(locationId) {
-            const location = locationsData.find(l => l.id === locationId);
-            if (location) {
-                // Update active state
-                document.querySelectorAll('.location-item').forEach(item => {
-                    item.classList.remove('active');
-                });
-                document.querySelector(`.location-item[data-id="${locationId}"]`).classList.add('active');
-                
-                const locationDetails = document.getElementById('location-details');
-                
-                locationDetails.innerHTML = `
-                    <div class="location-details-header">
-                        <h2>${location.name}</h2>
-                        <span class="payment-status status-${location.status}">
-                            ${location.status.charAt(0).toUpperCase() + location.status.slice(1)}
-                        </span>
-                    </div>
-                    
-                    <div class="location-info-grid">
-                        <div class="info-card">
-                            <h4><i class="fas fa-map-marker-alt"></i> Address</h4>
-                            <p>${location.address}<br>${location.city}</p>
-                        </div>
-                        
-                        <div class="info-card">
-                            <h4><i class="fas fa-info-circle"></i> Property Details</h4>
-                            <p><strong>Type:</strong> ${getLocationType(location.type)}</p>
-                            <p><strong>Total Units:</strong> ${location.properties}</p>
-                            <p><strong>Occupied:</strong> ${location.occupied}</p>
-                            <p><strong>Vacant:</strong> ${location.vacant}</p>
-                            ${location.rating > 0 ? `<p><strong>Rating:</strong> ${location.rating}/5 <i class="fas fa-star" style="color: var(--warning);"></i></p>` : ''}
-                        </div>
-                        
-                        <div class="info-card">
-                            <h4><i class="fas fa-phone"></i> Contact Information</h4>
-                            <p><strong>Phone:</strong> ${location.contact}</p>
-                            <p><strong>Email:</strong> info@${location.name.toLowerCase().replace(/\s+/g, '')}.com</p>
-                        </div>
-                        
-                        <div class="info-card">
-                            <h4><i class="fas fa-concierge-bell"></i> Amenities</h4>
-                            <div class="amenities-list">
-                                ${location.amenities.map(amenity => `
-                                    <div class="amenity-item">
-                                        <i class="fas fa-check-circle"></i>
-                                        <span>${amenity}</span>
-                                    </div>
-                                `).join('')}
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="info-card">
-                        <h4><i class="fas fa-align-left"></i> Description</h4>
-                        <p>${location.description}</p>
-                    </div>
-                    
-                    <div style="display: flex; gap: 10px; margin-top: 20px;">
-                        <button class="location-btn btn-view" onclick="viewOnMap(${location.id})">
-                            <i class="fas fa-map-marked-alt"></i> View on Map
-                        </button>
-                        <button class="location-btn btn-edit" onclick="editLocation(${location.id})">
-                            <i class="fas fa-edit"></i> Edit Location
-                        </button>
-                        <button class="location-btn" style="background-color: var(--primary); color: white;" onclick="shareLocation(${location.id})">
-                            <i class="fas fa-share"></i> Share Location
-                        </button>
-                    </div>
-                `;
-            }
-        }
-
-        // Function to update location statistics
-        function updateLocationStats(locations) {
-            const totalLocations = locations.length;
-            const occupiedLocations = locations.filter(loc => loc.status === 'occupied').length;
-            const vacantLocations = locations.filter(loc => loc.status === 'vacant').length;
-            
-            document.getElementById('total-locations').textContent = totalLocations;
-            document.getElementById('occupied-locations').textContent = occupiedLocations;
-            document.getElementById('vacant-locations').textContent = vacantLocations;
-        }
-
-        // Helper function to get location icon
-        function getLocationIcon(type) {
+        // Get property icon
+        function getPropertyIcon(type) {
             const icons = {
                 apartment: 'building',
                 house: 'home',
-                commercial: 'store'
+                studio: 'paintbrush',
+                bedsitter: 'bed',
+                condo: 'building'
             };
-            return icons[type] || 'map-marker-alt';
+            return icons[type] || 'home';
         }
 
-        // Helper function to get location type display name
-        function getLocationType(type) {
-            const types = {
-                apartment: 'Apartment Building',
-                house: 'Residential House',
-                commercial: 'Commercial Property'
-            };
-            return types[type] || type;
-        }
-
-        // Function to filter locations
-        function filterLocations() {
-            const searchTerm = document.getElementById('search-locations').value.toLowerCase();
-            const statusFilter = document.getElementById('location-status-filter').value;
-            const typeFilter = document.getElementById('location-type-filter').value;
-            
-            const filteredLocations = locationsData.filter(location => {
-                const matchesSearch = location.name.toLowerCase().includes(searchTerm) || 
-                                     location.address.toLowerCase().includes(searchTerm) ||
-                                     location.city.toLowerCase().includes(searchTerm);
-                const matchesStatus = statusFilter === 'all' || location.status === statusFilter;
-                const matchesType = typeFilter === 'all' || location.type === typeFilter;
+        // Focus on property on map
+        function focusOnProperty(propertyId) {
+            const property = properties.find(p => p.id === propertyId);
+            if (property) {
+                let lat, lng;
                 
-                return matchesSearch && matchesStatus && matchesType;
-            });
-            
-            renderLocations(filteredLocations);
-            
-            // Clear details if no locations or if current detail is not in filtered list
-            const currentDetailId = document.querySelector('.location-item.active')?.dataset.id;
-            if (filteredLocations.length === 0 || !filteredLocations.find(l => l.id == currentDetailId)) {
-                document.getElementById('location-details').innerHTML = '';
+                if (property.latitude && property.longitude) {
+                    lat = parseFloat(property.latitude);
+                    lng = parseFloat(property.longitude);
+                } else {
+                    const coords = getCityCoordinates(property.city);
+                    lat = coords.lat;
+                    lng = coords.lng;
+                }
+                
+                map.setView([lat, lng], 15);
+                
+                // Find and open marker popup
+                const marker = markers.find(m => m.property.id === propertyId);
+                if (marker) {
+                    marker.openPopup();
+                    highlightPropertyInList(propertyId);
+                }
             }
         }
 
-        // Location action functions
-        function viewOnMap(locationId) {
-            const location = locationsData.find(l => l.id === locationId);
-            if (location) {
-                alert(`Showing ${location.name} on the map at coordinates: ${location.coordinates.lat}, ${location.coordinates.lng}`);
-                // In real application, this would center the map on the location
-            }
-        }
-
-        function editLocation(locationId) {
-            const location = locationsData.find(l => l.id === locationId);
-            if (location) {
-                alert(`Editing location: ${location.name}`);
-                // In real application, this would open an edit form
-            }
-        }
-
-        function shareLocation(locationId) {
-            const location = locationsData.find(l => l.id === locationId);
-            if (location) {
-                alert(`Sharing location: ${location.name}\nAddress: ${location.address}`);
-                // In real application, this would open a share dialog
-            }
-        }
-
-        // Initialize locations when page loads
-        document.addEventListener('DOMContentLoaded', function() {
-            // Set location as active
-            document.querySelectorAll('.sidebar-menu a').forEach(link => {
-                link.classList.remove('active');
-            });
-            document.querySelector('[data-content="location"]').classList.add('active');
-            
-            // Hide all content sections except location
-            document.querySelectorAll('.content').forEach(section => {
-                if (section.id !== 'location-content') {
-                    section.classList.add('hidden');
+        // Highlight property in list
+        function highlightPropertyInList(propertyId) {
+            document.querySelectorAll('.location-item').forEach(item => {
+                item.classList.remove('active');
+                if (item.dataset.id == propertyId) {
+                    item.classList.add('active');
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
                 }
             });
+        }
+
+        // Filter properties
+        function filterProperties() {
+            const searchTerm = document.getElementById('search-location').value.toLowerCase();
+            const statusFilter = document.getElementById('status-filter').value;
+            const typeFilter = document.getElementById('type-filter').value;
             
-            renderLocations();
+            let filtered = properties;
             
-            // Show details for first location by default
-            if (locationsData.length > 0) {
-                showLocationDetails(locationsData[0].id);
+            // Apply search
+            if (searchTerm) {
+                filtered = filtered.filter(p => 
+                    p.property_name?.toLowerCase().includes(searchTerm) ||
+                    p.city?.toLowerCase().includes(searchTerm) ||
+                    p.neighborhood?.toLowerCase().includes(searchTerm) ||
+                    p.address?.toLowerCase().includes(searchTerm)
+                );
             }
             
-            // Add event listeners for filtering
-            document.getElementById('search-locations').addEventListener('input', filterLocations);
-            document.getElementById('location-status-filter').addEventListener('change', filterLocations);
-            document.getElementById('location-type-filter').addEventListener('change', filterLocations);
+            // Apply status filter
+            if (statusFilter !== 'all') {
+                filtered = filtered.filter(p => p.status === statusFilter);
+            }
+            
+            // Apply type filter
+            if (typeFilter !== 'all') {
+                filtered = filtered.filter(p => p.property_type === typeFilter);
+            }
+            
+            // Update display
+            displayPropertiesList(filtered);
+            addPropertiesToMap(filtered);
+        }
+
+        // View property details
+        function viewProperty(propertyId) {
+            window.location.href = `property.php?id=${propertyId}`;
+        }
+
+        // Get directions
+        function getDirections(propertyId) {
+            const property = properties.find(p => p.id === propertyId);
+            if (property) {
+                let address = `${property.address || ''}, ${property.neighborhood || ''}, ${property.city || ''}`;
+                const mapsUrl = `https://www.google.com/maps/search/${encodeURIComponent(address)}`;
+                window.open(mapsUrl, '_blank');
+            }
+        }
+
+        // Update statistics
+        function updateStatistics() {
+            const total = properties.length;
+            const available = properties.filter(p => p.status === 'available').length;
+            const occupied = properties.filter(p => p.status === 'occupied').length;
+            
+            document.getElementById('total-properties').textContent = total;
+            document.getElementById('available-properties').textContent = available;
+            document.getElementById('occupied-properties').textContent = occupied;
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', function() {
+            // Initialize map
+            initMap();
+            
+            // Display properties list
+            displayPropertiesList(properties);
+            
+            // Update statistics
+            updateStatistics();
+            
+            // Add event listeners for filters
+            document.getElementById('search-location').addEventListener('input', filterProperties);
+            document.getElementById('status-filter').addEventListener('change', filterProperties);
+            document.getElementById('type-filter').addEventListener('change', filterProperties);
         });
     </script>
 </body>
