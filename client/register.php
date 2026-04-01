@@ -349,21 +349,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             </div>
 
-            <div class="form-group">
-                <label class="required">I am a</label>
-                <div class="radio-group">
-                    <div class="radio-option">
-                        <input type="radio" id="student" name="user_type" value="student" 
-                               <?php echo (!isset($_POST['user_type']) || $_POST['user_type'] === 'student') ? 'checked' : ''; ?>>
-                        <label for="student">Student</label>
-                    </div>
-                    <div class="radio-option">
-                        <input type="radio" id="landlord" name="user_type" value="landlord"
-                               <?php echo ($_POST['user_type'] ?? '') === 'landlord' ? 'checked' : ''; ?>>
-                        <label for="landlord">Landlord</label>
-                    </div>
-                </div>
-            </div>
+        
 
             <div class="form-group">
                 <label for="password" class="required">Password</label>

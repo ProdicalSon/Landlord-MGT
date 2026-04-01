@@ -2,6 +2,10 @@
 // Landlord/Frontend/index.php
 session_start();
 
+// Enable error reporting for debugging
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 // Check if landlord is logged in
 if (!isset($_SESSION['landlord_id'])) {
     $_SESSION['redirect_after_login'] = 'index.php';
@@ -9,11 +13,40 @@ if (!isset($_SESSION['landlord_id'])) {
     exit;
 }
 
-require_once __DIR__ . '/models/LandlordUserModel.php';
-require_once __DIR__ . '/models/LandlordPropertyModel.php';
+// Define base path
+define('BASE_PATH', __DIR__);
 
-$userModel = new LandlordUserModel();
-$propertyModel = new LandlordPropertyModel();
+// Include models with correct paths
+$userModelPath = BASE_PATH . '/models/LandlordUserModel.php';
+$propertyModelPath = BASE_PATH . '/models/LandlordPropertyModel.php';
+
+// Check if files exist
+if (!file_exists($userModelPath)) {
+    die('Error: LandlordUserModel file not found at: ' . $userModelPath);
+}
+if (!file_exists($propertyModelPath)) {
+    die('Error: LandlordPropertyModel file not found at: ' . $propertyModelPath);
+}
+
+// Include the files
+require_once $userModelPath;
+require_once $propertyModelPath;
+
+// Check if classes exist after including
+if (!class_exists('LandlordUserModel')) {
+    die('Error: LandlordUserModel class not found after including file. Check for syntax errors in: ' . $userModelPath);
+}
+if (!class_exists('LandlordPropertyModel')) {
+    die('Error: LandlordPropertyModel class not found after including file. Check for syntax errors in: ' . $propertyModelPath);
+}
+
+// Initialize models
+try {
+    $userModel = new LandlordUserModel();
+    $propertyModel = new LandlordPropertyModel();
+} catch (Exception $e) {
+    die('Error initializing models: ' . $e->getMessage());
+}
 
 $landlord_id = $_SESSION['landlord_id'];
 $landlord = $userModel->getLandlordById($landlord_id);
@@ -37,6 +70,7 @@ $pendingPayments = 2; // Placeholder
 // Format landlord name for display
 $landlordName = $userModel->getFullName($landlord) ?: $landlord['username'];
 $firstName = explode(' ', $landlordName)[0];
+
 ?>
 <!DOCTYPE html>
 <html lang="en">
